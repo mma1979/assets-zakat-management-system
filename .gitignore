@@ -1,0 +1,37 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Logs and coverage
+logs/
+*.log
+coverage/
+
+# Env files
+.env
+.env.*
+*.local
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# .NET / Visual Studio
+backend/ZakatVault/.vs/
+**/bin/
+**/obj/
+*.suo
+*.user
+*.csproj.user
+
+# Appsettings
+**/appsettings.*.json
+!**/appsettings.json
+
+# Docker
+docker-compose.override.yml
