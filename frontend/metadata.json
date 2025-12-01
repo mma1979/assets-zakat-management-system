@@ -1,0 +1,5 @@
+{
+  "name": "ZakatVault",
+  "description": "A comprehensive savings management and Zakat calculation application tracking Gold, Silver, and Currency assets with automated market rate updates.",
+  "requestFramePermissions": []
+}
