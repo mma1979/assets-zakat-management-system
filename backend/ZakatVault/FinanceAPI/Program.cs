@@ -1,0 +1,169 @@
+﻿using FinanceAPI.Converters;
+using FinanceAPI.Data;
+using FinanceAPI.Services;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+
+using Scalar.AspNetCore;
+
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// Configure OpenAPI
+builder.Services.AddOpenApi();
+
+// Database Context
+builder.Services.AddDbContext<FinanceDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// JWT Configuration
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPriceAlertService, PriceAlertService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ILiabilityService, LiabilityService>();
+builder.Services.AddScoped<IRatesService, RatesService>();
+builder.Services.AddScoped<IZakatConfigService, ZakatConfigService>();
+builder.Services.AddHttpContextAccessor();
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+   
+    // Property naming - camelCase is standard for modern APIs
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+
+    // Null handling - omit nulls to reduce payload size
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+
+    // Indentation - readable in dev, compact in production
+    options.SerializerOptions.WriteIndented = builder.Environment.IsDevelopment();
+
+    // Enum handling - strings are more readable and API-friendly
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+
+    // Number handling - allow strings for better JS compatibility
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
+
+    // Circular reference handling - prevent errors
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+
+    // Security - prevent deep nesting attacks
+    options.SerializerOptions.MaxDepth = 32;
+
+    // Case-insensitive property matching for deserialization
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+
+    // Allow trailing commas in JSON (more forgiving parsing)
+    options.SerializerOptions.AllowTrailingCommas = true;
+
+    // Read comments in JSON (useful for config files)
+    options.SerializerOptions.ReadCommentHandling = JsonCommentHandling.Skip;
+
+    // Add Converters
+    options.SerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+    options.SerializerOptions.Converters.Add(new UnixMillisecondsDateTimeConverter());
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+
+
+
+});
+
+
+// Aspire Service Defaults
+builder.AddServiceDefaults();
+
+var app = builder.Build();
+
+var factory = new FinanceDbFactory();
+using var context = factory.CreateDbContext(Array.Empty<string>());
+
+try
+{
+   // Log.Information("Starting database migration...");
+
+    // Get applied migrations before running
+    var appliedBefore = context.Database.GetAppliedMigrations().ToHashSet();
+
+    // Run migrations
+    context.Database.Migrate();
+
+    // Get applied migrations after running
+    var appliedAfter = context.Database.GetAppliedMigrations().ToHashSet();
+
+    // Find newly applied migrations
+    var newlyApplied = appliedAfter.Except(appliedBefore).ToList();
+
+   // Log.Information($"Migration completed successfully. {newlyApplied.Count} new migration(s) applied.");
+
+}
+catch (Exception e)
+{
+    //Log.Error(e.Message, e);
+}
+
+// Configure the HTTP request pipeline
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options
+        .WithTitle("Finance API")
+        .WithTheme(ScalarTheme.Mars)
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+});
+
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection(); 
+}
+app.UseCors("AllowAll");
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+// Aspire defaults
+app.MapDefaultEndpoints();
+
+app.Run();

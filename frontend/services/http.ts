@@ -5,9 +5,9 @@ import axios from 'axios';
 //   : '/api';
 
 const http = axios.create({
-  baseURL: process.env.API_ORIGIN,
+  //baseURL: process.env.API_ORIGIN,
   withCredentials: true,
-  headers: { Accept: 'application/json' }
+  headers: { Accept: 'application/json', 'Content-Type': 'application/json' }
 });
 
 export default http;

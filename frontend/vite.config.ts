@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Proxy API requests to avoid CORS errors during development
         '/api': {
-          target: 'https://savings-api.mabdelhay.com',
+          target: 'http://localhost:5259/api',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },

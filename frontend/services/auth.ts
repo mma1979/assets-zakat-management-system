@@ -12,22 +12,36 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
   // Try real endpoint first
   try {
     const response = await http.post(`${API_URL}/login`, { email, password });
-    return response.data;
+    return {
+      token: response.data.token,
+      user: {
+        id: response.data.userId,
+        name: response.data.name,
+        email: response.data.email,
+      }
+    };
   } catch (e) {
     console.warn("Real auth endpoint failed, falling back to mock for demo if allowed", e);
   }
 
-   throw new Error('Invalid credentials');
+  throw new Error('Invalid credentials');
 };
 
 export const registerUser = async (name: string, email: string, password: string): Promise<AuthResponse> => {
   try {
     const response = await http.post(`${API_URL}/register`, { name, email, password });
-    return response.data;
+    return {
+      token: response.data.token,
+      user: {
+        id: response.data.userId,
+        name: response.data.name,
+        email: response.data.email,
+      }
+    };
   } catch (e) {
     console.error(e);
     // Mock registration success
-   throw e;
+    throw e;
   }
 };
 
