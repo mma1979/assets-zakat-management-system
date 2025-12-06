@@ -3,13 +3,13 @@
 This guide explains how to configure environment values and run the full stack using Docker Compose.
 
 ## Overview
-- Services
+- **Services**
   - `frontend` (Nginx + static React build) on `http://localhost:5051`
   - `backend` (.NET API) on `http://localhost:8080`
   - `sqlserver` (SQL Server) internal only; persisted via Docker volume
-- Networking
-  - Inside Docker, the frontend proxies `GET/POST /api/...` to the backend.
-  - From your browser, use `http://localhost:5051/api/...` to hit the API via Nginx.
+- **Networking**
+  - Inside Docker, the frontend proxies `/api/...` requests to the backend.
+  - Runtime environment variables are injected into the frontend static files on container startup.
 
 ## Prerequisites
 - Docker Desktop (Windows/macOS) or Docker Engine (Linux)
@@ -17,121 +17,87 @@ This guide explains how to configure environment values and run the full stack u
 
 ## Environment Configuration
 
-You can supply values via a root `.env` file. Compose automatically reads it when run in the repo root.
+You **MUST** create a `.env` file at the repository root to supply secrets and configuration.
 
-Create a `.env` file at the repository root:
+Create a `.env` file with the following keys:
 
 ```env
-# Database
-SA_PASSWORD=ChangeMe_StrongP@ssw0rd
+# Database Credentials
+# Must meet SQL Server complexity requirements (uppercase, lowercase, number, special char)
+SA_PASSWORD=YourStrongPassword123!
 
-# Backend configuration overrides (optional)
-JwtSettings__SecretKey=ReplaceWithAtLeast32CharsSecretKey
-JwtSettings__Issuer=ZakatVaultApi
-JwtSettings__Audience=ZakatVaultApiUsers
-JwtSettings__ExpirationMinutes=10080
+# JWT Authentication Settings
+JWT_SECRET_KEY=YourSuperSecretKeyThatIsAtLeast32CharsLong
+JWT_ISSUER=ZakatVaultApi
+JWT_AUDIENCE=ZakatVaultApiUsers
+JWT_EXPIRATION_MINUTES=10080
 
-# Frontend proxy target for API (internal Docker URL)
-API_ORIGIN=http://backend:80
+# Frontend Configuration
+# Google API Key (for specific frontend features)
+API_KEY=AIzaSy...
+# Resend.com API Key (for email notifications)
+RESEND_API_KEY=re_123...
+RESEND_SENDER=Invoice AI <noreply@example.com>
+NOTIFICATION_EMAIL=your_email@example.com
+# Optional: Backend URL accessible from the browser
+BACKEND_URL=http://localhost:8080
 ```
 
-Notes:
-- `SA_PASSWORD` must meet SQL Server complexity requirements.
-- The backend reads configuration from `appsettings.json` but can be overridden by environment variables using the double-underscore pattern shown above.
-- `API_ORIGIN` is used by the frontend container’s Nginx to proxy `/api` requests to the backend.
+> **Note:** Do not use `localhost` for service-to-service communication within Docker; use service names (handled automatically mostly). The `BACKEND_URL` is for the browser to know where the API is if not proxied.
 
 ## Docker Compose
 
 The project includes `docker-compose.yml` at the root that builds and runs all services:
-- `backend` builds from `./backend/ZakatVault/ZakatVault.Api/Dockerfile` and listens on port `80` in the container, published as `8080` on your host.
-- `frontend` builds from `./frontend/Dockerfile` and publishes port `80` as `5051` on your host.
-- `sqlserver` runs the official SQL Server image and stores data in a named volume.
+- **backend**: Builds from `./backend/ZakatVault/ZakatVault.Api/Dockerfile`.
+- **frontend**: Builds from `./frontend/Dockerfile`. Includes a runtime entrypoint to inject environment variables into the static React app.
+- **sqlserver**: Official SQL Server image.
 
 ## Run
 
-- Build and start:
+1. **Build and start:**
+   ```sh
+   docker compose up --build -d
+   ```
 
-```sh
-docker compose up --build -d
-```
+2. **Check status:**
+   ```sh
+   docker compose ps
+   ```
 
-- Check status:
-
-```sh
-docker compose ps
-```
-
-- Access the app:
-
-```
-Frontend: http://localhost:5051
-API (direct): http://localhost:8080
-```
+3. **Access the application:**
+   - Frontend: `http://localhost:5051`
+   - API (Swagger/Direct): `http://localhost:8080/swagger` (if enabled) or `http://localhost:8080/api/...`
 
 ## API Access Patterns
-- Through frontend proxy:
+- **Through frontend proxy:**
   - `http://localhost:5051/api/auth/login`
-  - `http://localhost:5051/api/data`
-- Direct backend:
+- **Direct backend:**
   - `http://localhost:8080/api/auth/login`
-  - `http://localhost:8080/api/data`
-
-The backend controllers are under `backend/ZakatVault/ZakatVault.Api/Controllers` and expose routes prefixed with `/api`.
 
 ## Updating Environment Values
-- Edit the root `.env` and re-create containers:
-
+If you change `.env`, you must recreate the containers:
 ```sh
 docker compose down
 docker compose up --build -d
 ```
 
-- To reset the database completely (drops data):
-
+## Resetting Data
+To drop the database and start fresh:
 ```sh
 docker compose down -v
 docker compose up --build -d
 ```
 
 ## Troubleshooting
-- `ERR_NAME_NOT_RESOLVED` or calls to `http://backend/...` from the browser
-  - Use `http://localhost:5051/api/...` instead. The hostname `backend` only exists inside Docker.
-- 401 Unauthorized from `/api/data`
-  - Login first and include the `Authorization: Bearer <token>` header.
-- CORS errors
-  - Requests via `http://localhost:5051/api/...` avoid cross-origin. If directly calling the backend from another origin, ensure CORS is updated in `Program.cs`.
-- SQL Server fails to start due to weak password
-  - Update `SA_PASSWORD` in `.env` to a strong value.
-
-## Useful Commands
-- View logs:
-
-```sh
-docker compose logs -f frontend
-docker compose logs -f backend
-docker compose logs -f sqlserver
-```
-
-- Rebuild only one service:
-
-```sh
-docker compose build frontend
-```
-
-- Restart a service:
-
-```sh
-docker compose restart backend
-```
-
-## Security Considerations
-- Do not hard-code secrets in Dockerfiles or source code.
-- Keep `.env` out of version control (it is already excluded by `.gitignore`).
-- Rotate JWT secrets and database passwords as needed.
+- **Frontend variables missing/placeholder**: Check container logs to see if the entrypoint script ran successfully.
+  ```sh
+  docker compose logs frontend
+  ```
+- **SQL Server Connection Error**: Ensure `SA_PASSWORD` is strong enough.
+- **Emails not sending**: Verify `RESEND_API_KEY` and that the domain is verified in Resend (or use the registered testing email).
 
 ## Directory Pointers
 - Compose file: `docker-compose.yml`
 - Backend Dockerfile: `backend/ZakatVault/ZakatVault.Api/Dockerfile`
 - Frontend Dockerfile: `frontend/Dockerfile`
-- Backend configuration: `backend/ZakatVault/ZakatVault.Api/appsettings.json`, `Program.cs`
-- Frontend HTTP setup: `frontend/services/http.ts`, proxy in `frontend/Dockerfile`
+- Frontend Entrypoint: `frontend/docker-entrypoint.sh`

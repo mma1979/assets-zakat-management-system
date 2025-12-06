@@ -2,5 +2,4 @@
   <Project Path="FinanceAPI.AppHost/FinanceAPI.AppHost.csproj" Id="1ef45bef-2168-4039-bfa9-450ec46b08b9" />
   <Project Path="FinanceAPI.ServiceDefaults/FinanceAPI.ServiceDefaults.csproj" Id="c5287b32-2005-4be8-bf9d-50ba8f83c322" />
   <Project Path="FinanceAPI/FinanceAPI.csproj" Id="777795c9-0e4d-4a93-8165-b804d47c9d39" />
-  <Project Path="ZakatVault.Api/ZakatVault.Api.csproj" />
 </Solution>

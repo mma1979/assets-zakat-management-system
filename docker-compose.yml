@@ -3,20 +3,28 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Abc@1234
+      - SA_PASSWORD=${SA_PASSWORD}
     volumes:
       - sql_data:/var/opt/mssql
     restart: unless-stopped
+    ports:
+      - "1444:1433"
 
   backend:
     build:
       context: ./backend/ZakatVault
-      dockerfile: ZakatVault.Api/Dockerfile
+      dockerfile: FinanceAPI/Dockerfile
     environment:
-      - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ZakatVaultDb;User Id=sa;Password=Abc@1234;TrustServerCertificate=True;MultipleActiveResultSets=True;Max Pool Size=200;
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ZakatVaultDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True;Max Pool Size=200;
+      # JWT Configuration
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      - JwtSettings__Issuer=${JWT_ISSUER}
+      - JwtSettings__Audience=${JWT_AUDIENCE}
+      - JwtSettings__ExpirationInDays=${JWT_EXPIRATION_IN_DAYS:-14}
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
       - sqlserver
     restart: unless-stopped
@@ -28,12 +36,14 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - BACKEND_URL=http://backend:80
-      - API_KEY=AIzaSyA8r7JEC7YG3DfRcTKS3hqhOJkQuER5Hew
-      - RESEND_API_KEY=re_PPh1RPYd_FvHm69NoPpP1RFxuQo8q9YSG
-      - RESEND_SENDER=Invoice AI <noreply@wizeinvoice.com>
-      - NOTIFICATION_EMAIL=mamado2000@gmail.com
-      - API_ORIGIN=http://backend:80
+      # These variables are substituted into the static JS files at runtime by the entrypoint script
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:8080}
+      - API_KEY=${API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_SENDER=${RESEND_SENDER}
+      - NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
+      # This variable is used by Nginx configuration for proxying
+      - API_ORIGIN=http://backend:8080
     ports:
       - "5051:80"
     depends_on:
