@@ -27,14 +27,14 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   const { t, language, dir } = useLanguage();
   const { updateZakatConfig } = useStore();
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  
+
   // Zakat Calculation Configuration
   const zakatDate = data.zakatConfig?.zakatDate || format(new Date(), 'yyyy-MM-dd');
   const reminderEnabled = data.zakatConfig?.reminderEnabled || false;
   const userEmail = data.zakatConfig?.email || '';
-  
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateZakatConfig({ 
+    updateZakatConfig({
       ...data.zakatConfig,
       zakatDate: e.target.value,
       reminderEnabled: data.zakatConfig?.reminderEnabled
@@ -59,10 +59,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
 
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
-        updateZakatConfig({ 
+        updateZakatConfig({
           zakatDate,
           email: userEmail,
-          reminderEnabled: true 
+          reminderEnabled: true
         });
         // Test notification
         new Notification("ZakatVault", { body: t('reminderActive') });
@@ -70,10 +70,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
         alert(t('permDenied'));
       }
     } else {
-      updateZakatConfig({ 
+      updateZakatConfig({
         zakatDate,
         email: userEmail,
-        reminderEnabled: false 
+        reminderEnabled: false
       });
     }
   };
@@ -83,7 +83,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     if (reminderEnabled && zakatDate) {
       const today = new Date();
       const due = parseLocal(zakatDate);
-      
+
       // Simple check: Is today the day?
       if (isSameDay(today, due)) {
         // Prevent spamming
@@ -93,7 +93,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
         if (lastSent !== todayStr) {
           // 1. Browser Notification
           if ('Notification' in window && Notification.permission === 'granted') {
-             new Notification(t('zakatDueTitle'), {
+            new Notification(t('zakatDueTitle'), {
               body: t('zakatDueBody'),
               icon: '/favicon.ico'
             });
@@ -105,15 +105,15 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
             sendZakatReminderEmail(userEmail, zakatDate)
               .then(result => {
                 if (result.success) {
-                   console.log("Email sent successfully");
-                   setEmailStatus('sent');
+                  console.log("Email sent successfully");
+                  setEmailStatus('sent');
                 } else {
-                   console.error("Email failed", result.message);
-                   setEmailStatus('error');
+                  console.error("Email failed", result.message);
+                  setEmailStatus('error');
                 }
               });
           }
-          
+
           sessionStorage.setItem('zakatNotificationSent', todayStr);
         }
       }
@@ -122,7 +122,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
 
   const calculation = useMemo(() => {
     // 0. Time Windows
-    const startDate = parseLocal(zakatDate);
+    let startDate = parseLocal(zakatDate);
+    if (!isValidDate(startDate)) {
+      startDate = new Date();
+    }
     const lunarYearDays = 354; // Approx lunar year
     const lunarEndDate = addDays(startDate, lunarYearDays);
 
@@ -133,7 +136,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       else holdings[tx.assetType] -= tx.amount;
     });
 
-    const assetValue = 
+    const assetValue =
       (holdings.GOLD * data.rates.gold_egp) +
       (holdings.GOLD_21 * (data.rates.gold21_egp || 0)) +
       (holdings.SILVER * data.rates.silver_egp) +
@@ -144,10 +147,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     const deductibleLiabilities = data.liabilities
       .filter(l => {
         if (!l.isDeductible) return false;
-        
+
         // Check date logic
-        if (!l.dueDate) return false; 
-        
+        if (!l.dueDate) return false;
+
         const due = parseLocal(l.dueDate);
         if (!isValidDate(due)) return false;
 
@@ -155,7 +158,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
         // Basically: due \in [zakatDate, zakatDate + 354]
         const isOnOrAfterStart = isAfter(due, startDate) || isSameDay(due, startDate);
         const isOnOrBeforeEnd = isBefore(due, lunarEndDate) || isSameDay(due, lunarEndDate);
-        
+
         return isOnOrAfterStart && isOnOrBeforeEnd;
       })
       .reduce((sum, l) => sum + l.amount, 0);
@@ -165,9 +168,9 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     // 3. Nisab Thresholds
     const nisabGoldValue = NISAB_GOLD_GRAMS * data.rates.gold_egp;
     const nisabSilverValue = NISAB_SILVER_GRAMS * data.rates.silver_egp;
-    
+
     const isEligible = zakatBase >= nisabGoldValue;
-    
+
     const zakatDue = isEligible ? zakatBase * ZAKAT_RATE : 0;
 
     return {
@@ -194,70 +197,68 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
 
       {/* Date Configuration */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-start gap-6">
-         <div className="flex items-center gap-4 w-full">
-            <div className="p-3 bg-emerald-100 text-emerald-700 rounded-xl">
-               <CalendarClock size={24} />
-            </div>
-            <div>
-               <h3 className="font-bold text-slate-800">{t('zakatDueDate')}</h3>
-               <p className="text-sm text-slate-500">{t('lunarYearWindow')}</p>
-            </div>
-         </div>
-         
-         <div className="w-full flex flex-wrap gap-4 items-center">
-             {/* Date Input */}
-             <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
-                <input 
-                   type="date" 
-                   value={zakatDate}
-                   onChange={handleDateChange}
-                   className="bg-white p-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-700 w-full"
-                />
-                {dir === 'rtl' ? <ArrowRight className="text-slate-300 hidden sm:block" size={16} transform="scale(-1, 1)" /> : <ArrowRight className="text-slate-300 hidden sm:block" size={16} />}
-                <div className="text-center px-2 hidden sm:block">
-                   <div className="text-xs text-slate-400 font-medium uppercase">{t('days354')}</div>
-                   <div className="text-sm font-bold text-slate-700" dir="ltr">{format(calculation.lunarEndDate, 'yyyy-MM-dd')}</div>
-                </div>
-             </div>
+        <div className="flex items-center gap-4 w-full">
+          <div className="p-3 bg-emerald-100 text-emerald-700 rounded-xl">
+            <CalendarClock size={24} />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800">{t('zakatDueDate')}</h3>
+            <p className="text-sm text-slate-500">{t('lunarYearWindow')}</p>
+          </div>
+        </div>
 
-             {/* Email Input */}
-             <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
-                <Mail size={18} className="text-slate-400 ms-2" />
-                <input 
-                  type="email" 
-                  value={userEmail} 
-                  onChange={handleEmailChange}
-                  placeholder={t('emailAddress')}
-                  className="bg-transparent border-none outline-none text-sm w-full p-1"
-                  dir="ltr"
-                />
-                {emailStatus === 'sent' && <span className="text-xs text-emerald-600 px-2">{t('emailSent')}</span>}
-                {emailStatus === 'error' && <span className="text-xs text-rose-600 px-2">{t('emailFailed')}</span>}
-             </div>
-             
-             {/* Reminder Button */}
-             <button
-               onClick={toggleReminder}
-               title={reminderEnabled ? t('reminderActive') : t('enableReminder')}
-               className={`p-3 rounded-xl transition-all duration-200 flex items-center justify-center border ${
-                 reminderEnabled 
-                   ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-200' 
-                   : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50 hover:text-slate-600'
-               }`}
-             >
-               {reminderEnabled ? <BellRing size={20} /> : <Bell size={20} />}
-             </button>
-         </div>
+        <div className="w-full flex flex-wrap gap-4 items-center">
+          {/* Date Input */}
+          <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
+            <input
+              type="date"
+              value={zakatDate}
+              onChange={handleDateChange}
+              className="bg-white p-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-700 w-full"
+            />
+            {dir === 'rtl' ? <ArrowRight className="text-slate-300 hidden sm:block" size={16} transform="scale(-1, 1)" /> : <ArrowRight className="text-slate-300 hidden sm:block" size={16} />}
+            <div className="text-center px-2 hidden sm:block">
+              <div className="text-xs text-slate-400 font-medium uppercase">{t('days354')}</div>
+              <div className="text-sm font-bold text-slate-700" dir="ltr">{format(calculation.lunarEndDate, 'yyyy-MM-dd')}</div>
+            </div>
+          </div>
+
+          {/* Email Input */}
+          <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
+            <Mail size={18} className="text-slate-400 ms-2" />
+            <input
+              type="email"
+              value={userEmail}
+              onChange={handleEmailChange}
+              placeholder={t('emailAddress')}
+              className="bg-transparent border-none outline-none text-sm w-full p-1"
+              dir="ltr"
+            />
+            {emailStatus === 'sent' && <span className="text-xs text-emerald-600 px-2">{t('emailSent')}</span>}
+            {emailStatus === 'error' && <span className="text-xs text-rose-600 px-2">{t('emailFailed')}</span>}
+          </div>
+
+          {/* Reminder Button */}
+          <button
+            onClick={toggleReminder}
+            title={reminderEnabled ? t('reminderActive') : t('enableReminder')}
+            className={`p-3 rounded-xl transition-all duration-200 flex items-center justify-center border ${reminderEnabled
+              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-200'
+              : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50 hover:text-slate-600'
+              }`}
+          >
+            {reminderEnabled ? <BellRing size={20} /> : <Bell size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Result Card */}
-      <div className={`p-8 rounded-3xl text-center border-2 transition-colors duration-300 ${
-        calculation.isEligible 
-          ? 'bg-emerald-600 border-emerald-500 text-white' 
-          : 'bg-white border-slate-200 text-slate-800'
-      }`}>
+      <div className={`p-8 rounded-3xl text-center border-2 transition-colors duration-300 ${calculation.isEligible
+        ? 'bg-emerald-600 border-emerald-500 text-white'
+        : 'bg-white border-slate-200 text-slate-800'
+        }`}>
         <div className="inline-flex items-center justify-center p-4 bg-white/20 rounded-full mb-4">
-          {calculation.isEligible ? <CheckCircle size={40} className="text-white"/> : <Info size={40} className="text-slate-400"/>}
+          {calculation.isEligible ? <CheckCircle size={40} className="text-white" /> : <Info size={40} className="text-slate-400" />}
         </div>
         <h3 className={`text-lg font-medium ${calculation.isEligible ? 'text-emerald-100' : 'text-slate-500'}`}>
           {t('totalZakatDue')}
@@ -274,24 +275,12 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Info size={18} className="text-blue-500"/> {t('calcDetails')}
+            <Info size={18} className="text-blue-500" /> {t('calcDetails')}
           </h4>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between p-2 rounded hover:bg-slate-50">
               <span className="text-slate-500">{t('totalAssets')}</span>
               <span className="font-semibold">{formatNum(calculation.assetValue)} EGP</span>
-            </div>
-            <div className="flex justify-between p-2 rounded hover:bg-slate-50 text-rose-600">
-              <div className="flex flex-col">
-                 <span>{t('lessDebts')}</span>
-                 <span className="text-[10px] text-rose-400">
-                   {format(parseLocal(zakatDate), 'dd MMM')} - {format(calculation.lunarEndDate, 'dd MMM')}
-                 </span>
-              </div>
-              <span className="font-semibold">({formatNum(calculation.deductibleLiabilities)} EGP)</span>
-            </div>
-            <div className="border-t border-dashed border-slate-200 my-2"></div>
-            <div className="flex justify-between p-2 rounded bg-slate-50">
               <span className="font-bold text-slate-700">{t('netZakatBase')}</span>
               <span className="font-bold text-slate-900">{formatNum(calculation.zakatBase)} EGP</span>
             </div>
@@ -300,7 +289,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <AlertTriangle size={18} className="text-amber-500"/> {t('nisabThresholds')}
+            <AlertTriangle size={18} className="text-amber-500" /> {t('nisabThresholds')}
           </h4>
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
