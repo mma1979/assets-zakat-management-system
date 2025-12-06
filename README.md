@@ -30,14 +30,14 @@ SA_PASSWORD=YourStrongPassword123!
 JWT_SECRET_KEY=YourSuperSecretKeyThatIsAtLeast32CharsLong
 JWT_ISSUER=ZakatVaultApi
 JWT_AUDIENCE=ZakatVaultApiUsers
-JWT_EXPIRATION_MINUTES=10080
+JWT_EXPIRATION_IN_DAYS=14
 
 # Frontend Configuration
 # Google API Key (for specific frontend features)
 API_KEY=AIzaSy...
 # Resend.com API Key (for email notifications)
 RESEND_API_KEY=re_123...
-RESEND_SENDER=Invoice AI <noreply@example.com>
+RESEND_SENDER=Zakat Vault <noreply@example.com>
 NOTIFICATION_EMAIL=your_email@example.com
 # Optional: Backend URL accessible from the browser
 BACKEND_URL=http://localhost:8080
