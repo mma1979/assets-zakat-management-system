@@ -30,6 +30,65 @@ const INITIAL_DATA: StoreData = {
 
 type DataKey = keyof typeof API_ENDPOINTS;
 
+// Helper to safely persist to local storage
+const persistLocal = (newData: StoreData) => {
+  try {
+    localStorage.setItem('zakat_vault_offline_cache', JSON.stringify(newData));
+  } catch (e) {
+    console.error("Local persistence failed", e);
+  }
+};
+
+// Helper to get Auth headers dynamically
+const getAuthHeaders = () => {
+  const token = getStoredToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+
+  if (token) {
+    if (token.startsWith('mock-jwt-token')) {
+      headers['Authorization'] = 'Basic ' + btoa('mabdelhay:Abc@1234');
+    } else {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+};
+
+// Generic fetch function for any data type
+const fetchData = async <T,>(key: DataKey, defaultValue: T): Promise<T> => {
+  try {
+    const response = await http.get(API_ENDPOINTS[key], { headers: getAuthHeaders() });
+    if (response.status === 200) {
+      return response.data;
+    } else if (response.status === 404) {
+      console.log(`No remote data for ${key}, using default.`);
+      return defaultValue;
+    } else {
+      throw new Error(`Server returned status: ${response.status}`);
+    }
+  } catch (e) {
+    console.error(`Failed to load ${key}:`, e);
+    return defaultValue;
+  }
+};
+
+// Generic save function for any data type
+const saveDataPart = async <T,>(key: DataKey, value: T): Promise<boolean> => {
+  const token = getStoredToken();
+  if (!token) return false;
+
+  try {
+    const response = await http.post(API_ENDPOINTS[key], value, { headers: getAuthHeaders() });
+    return response.status >= 200 && response.status < 300;
+  } catch (e) {
+    console.error(`Save failed for ${key}:`, e);
+    return false;
+  }
+};
+
 export const useStore = () => {
   const [data, setData] = useState<StoreData>(() => {
     try {
@@ -52,108 +111,50 @@ export const useStore = () => {
     priceAlerts: false
   });
 
-  // Helper to safely persist to local storage
-  const persistLocal = (newData: StoreData) => {
-    try {
-      localStorage.setItem('zakat_vault_offline_cache', JSON.stringify(newData));
-    } catch (e) {
-      console.error("Local persistence failed", e);
-    }
-  };
-
-  // Helper to get Auth headers dynamically
-  const getAuthHeaders = () => {
+  // Load all data from API
+  const loadAllData = useCallback(async () => {
     const token = getStoredToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    };
-
-    if (token) {
-      if (token.startsWith('mock-jwt-token')) {
-        headers['Authorization'] = 'Basic ' + btoa('mabdelhay:Abc@1234');
-      } else {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    if (!token) {
+      setIsLoaded(true);
+      return;
     }
-    return headers;
-  };
-
-  // Generic fetch function for any data type
-  const fetchData = async <T,>(key: DataKey, defaultValue: T): Promise<T> => {
-    try {
-      const response = await http.get(API_ENDPOINTS[key], { headers: getAuthHeaders() });
-      if (response.status === 200) {
-        return response.data;
-      } else if (response.status === 404) {
-        console.log(`No remote data for ${key}, using default.`);
-        return defaultValue;
-      } else {
-        throw new Error(`Server returned status: ${response.status}`);
-      }
-    } catch (e) {
-      console.error(`Failed to load ${key}:`, e);
-      return defaultValue;
-    }
-  };
-
-  // Generic save function for any data type
-  const saveDataPart = async <T,>(key: DataKey, value: T): Promise<boolean> => {
-    const token = getStoredToken();
-    if (!token) return false;
 
     try {
-      const response = await http.post(API_ENDPOINTS[key], value, { headers: getAuthHeaders() });
-      return response.status >= 200 && response.status < 300;
+      // Load all data in parallel
+      const [transactions, liabilities, rates, zakatConfig, priceAlerts] = await Promise.all([
+        fetchData('transactions', INITIAL_DATA.transactions),
+        fetchData('liabilities', INITIAL_DATA.liabilities),
+        fetchData('rates', INITIAL_DATA.rates),
+        fetchData('zakatConfig', INITIAL_DATA.zakatConfig as ZakatConfig),
+        fetchData('priceAlerts', INITIAL_DATA.priceAlerts)
+      ]);
+
+      const mergedData: StoreData = {
+        transactions: Array.isArray(transactions) ? transactions : [],
+        liabilities: Array.isArray(liabilities) ? liabilities : [],
+        rates: rates || DEFAULT_RATES,
+        zakatConfig: {
+          ...INITIAL_DATA.zakatConfig,
+          ...(zakatConfig || {})
+        },
+        priceAlerts: Array.isArray(priceAlerts) ? priceAlerts : []
+      };
+
+      setData(mergedData);
+      persistLocal(mergedData);
+      setSyncError(null);
     } catch (e) {
-      console.error(`Save failed for ${key}:`, e);
-      return false;
+      console.error("Failed to load data:", e);
+      setSyncError("Cannot connect to cloud. Working offline (changes saved locally).");
+    } finally {
+      setIsLoaded(true);
     }
-  };
-
-  // Load all data from API on mount
-  useEffect(() => {
-    const loadAllData = async () => {
-      const token = getStoredToken();
-      if (!token) {
-        setIsLoaded(true);
-        return;
-      }
-
-      try {
-        // Load all data in parallel
-        const [transactions, liabilities, rates, zakatConfig, priceAlerts] = await Promise.all([
-          fetchData('transactions', INITIAL_DATA.transactions),
-          fetchData('liabilities', INITIAL_DATA.liabilities),
-          fetchData('rates', INITIAL_DATA.rates),
-          fetchData('zakatConfig', INITIAL_DATA.zakatConfig as ZakatConfig),
-          fetchData('priceAlerts', INITIAL_DATA.priceAlerts)
-        ]);
-
-        const mergedData: StoreData = {
-          transactions: Array.isArray(transactions) ? transactions : [],
-          liabilities: Array.isArray(liabilities) ? liabilities : [],
-          rates: rates || DEFAULT_RATES,
-          zakatConfig: {
-            ...INITIAL_DATA.zakatConfig,
-            ...(zakatConfig || {})
-          },
-          priceAlerts: Array.isArray(priceAlerts) ? priceAlerts : []
-        };
-
-        setData(mergedData);
-        persistLocal(mergedData);
-        setSyncError(null);
-      } catch (e) {
-        console.error("Failed to load data:", e);
-        setSyncError("Cannot connect to cloud. Working offline (changes saved locally).");
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
-    loadAllData();
   }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]);
 
   // Helper to update data and sync specific part
   const updateDataPart = async <K extends DataKey>(
@@ -190,10 +191,40 @@ export const useStore = () => {
     updateDataPart('transactions', newTransactions, tx);
   }, [data.transactions]);
 
-  const removeTransaction = useCallback((id: string) => {
-    const newTransactions = data.transactions.filter(t => t.id !== id);
-    updateDataPart('transactions', newTransactions);
-  }, [data.transactions]);
+  const removeTransaction = useCallback(async (id: string) => {
+    // Optimistic remove? Maybe better to wait for server since we reload?
+    // User requested: "call Delete ... then reload data again"
+    // So we will trigger delete then reload.
+
+    const token = getStoredToken();
+    if (!token) {
+      // Offline / No Auth fallback: just remove locally
+      const newTransactions = data.transactions.filter(t => t.id !== id);
+      updateDataPart('transactions', newTransactions);
+      return;
+    }
+
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, transactions: true }));
+
+    try {
+      const response = await http.delete(`${API_ENDPOINTS.transactions}/${id}`, { headers: getAuthHeaders() });
+      if (response.status >= 200 && response.status < 300) {
+        await loadAllData();
+      } else {
+        throw new Error(`Delete failed with status ${response.status}`);
+      }
+    } catch (e) {
+      console.error("Failed to delete transaction:", e);
+      setSyncError("Failed to delete transaction on server.");
+      // Optional: Revert? The local data wasn't changed yet if we strictly follow "Delete then reload".
+      // But if we want optimistic, we should have removed it first.
+      // Given request "call Delete ... then reload", I will Stick to that flow.
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, transactions: false }));
+    }
+  }, [data.transactions, loadAllData]);
 
   // Liability operations
   const addLiability = useCallback((l: Liability) => {
