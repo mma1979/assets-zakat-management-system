@@ -17,22 +17,25 @@ interface AssetManagerProps {
 export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransaction, onRemoveTransaction }) => {
   const { t, language } = useLanguage();
   const { updatePriceAlerts } = useStore();
-  
+
   const [showModal, setShowModal] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [activeTab, setActiveTab] = useState<AssetType>('GOLD');
-  
+
   // New Transaction Form State
   const [formType, setFormType] = useState<'BUY' | 'SELL'>('BUY');
   const [formAsset, setFormAsset] = useState<AssetType>('GOLD');
   const [formAmount, setFormAmount] = useState('');
   const [formPrice, setFormPrice] = useState('');
   const [formDate, setFormDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [errors, setErrors] = useState<{amount?: string, price?: string, date?: string}>({});
+  const [errors, setErrors] = useState<{ amount?: string, price?: string, date?: string }>({});
 
   // Alert Form State
   const [alertTargetPrice, setAlertTargetPrice] = useState('');
   const [alertCondition, setAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
+
+  // Delete Confirmation State
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const getCurrentRate = (type: AssetType) => {
     switch (type) {
@@ -67,20 +70,20 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   }, [formAsset, formType, showModal]);
 
   const validateForm = () => {
-    const newErrors: {amount?: string, price?: string, date?: string} = {};
-    
+    const newErrors: { amount?: string, price?: string, date?: string } = {};
+
     if (!formAmount || parseFloat(formAmount) <= 0) {
       newErrors.amount = t('errPositive');
     }
-    
+
     if (!formPrice || parseFloat(formPrice) < 0) {
       newErrors.price = t('errPositive');
     }
-    
+
     if (!formDate) {
       newErrors.date = t('errRequired');
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -129,7 +132,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   const assetMetrics = useMemo(() => {
     const metrics: Record<string, { quantity: number, avgCost: number }> = {};
     (Object.keys(ASSET_LABELS) as AssetType[]).forEach((type) => {
-       metrics[type] = calculateAssetMetrics(data.transactions, type);
+      metrics[type] = calculateAssetMetrics(data.transactions, type);
     });
     return metrics;
   }, [data.transactions]);
@@ -147,11 +150,11 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-           <h2 className="text-2xl font-bold text-slate-800">{t('assetHeader')}</h2>
-           <p className="text-slate-500">{t('assetSubtitle')}</p>
+          <h2 className="text-2xl font-bold text-slate-800">{t('assetHeader')}</h2>
+          <p className="text-slate-500">{t('assetSubtitle')}</p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setShowAlertModal(true)}
             className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg transition-colors font-medium"
             title={t('priceAlerts')}
@@ -159,7 +162,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
             <Bell size={20} />
             <span className="hidden sm:inline">{t('priceAlerts')}</span>
           </button>
-          <button 
+          <button
             onClick={() => {
               setShowModal(true);
               setErrors({});
@@ -178,11 +181,10 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
           <button
             key={type}
             onClick={() => setActiveTab(type)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors border ${
-              activeTab === type 
-              ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
-              : 'text-slate-500 hover:bg-slate-100 border-transparent'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors border ${activeTab === type
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                : 'text-slate-500 hover:bg-slate-100 border-transparent'
+              }`}
           >
             {getAssetIcon(type)}
             {t(`asset_${type}` as any)}
@@ -195,20 +197,20 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('currentHoldings')}</p>
           <div className="text-3xl font-bold text-slate-800 mt-1 flex items-baseline gap-2">
-             {formatNum(assetMetrics[activeTab]?.quantity ?? 0)} <span className="text-lg text-slate-400 font-normal">{ASSET_UNITS[activeTab]}</span>
+            {formatNum(assetMetrics[activeTab]?.quantity ?? 0)} <span className="text-lg text-slate-400 font-normal">{ASSET_UNITS[activeTab]}</span>
           </div>
         </div>
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('avgPurchasePrice')}</p>
           <div className="text-3xl font-bold text-slate-800 mt-1">
-             {formatCurrency(assetMetrics[activeTab]?.avgCost ?? 0)}
-             <span className="text-sm text-slate-400 font-normal block">{t('perUnit')}</span>
+            {formatCurrency(assetMetrics[activeTab]?.avgCost ?? 0)}
+            <span className="text-sm text-slate-400 font-normal block">{t('perUnit')}</span>
           </div>
         </div>
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('currentMarketValue')}</p>
           <div className="text-3xl font-bold text-emerald-600 mt-1">
-             {formatCurrency((assetMetrics[activeTab]?.quantity ?? 0) * getCurrentRate(activeTab))}
+            {formatCurrency((assetMetrics[activeTab]?.quantity ?? 0) * getCurrentRate(activeTab))}
           </div>
         </div>
       </div>
@@ -216,7 +218,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
       {/* Transactions List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50">
-          <History size={18} className="text-slate-400"/>
+          <History size={18} className="text-slate-400" />
           <h3 className="font-semibold text-slate-700">{t('txHistory')}</h3>
         </div>
         <div className="overflow-x-auto">
@@ -242,11 +244,10 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                 currentTxs.map(tx => (
                   <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        tx.type === 'BUY' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                      }`}>
-                        {tx.type === 'BUY' 
-                          ? <ArrowUp size={14} className="text-emerald-600" strokeWidth={2.5} /> 
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${tx.type === 'BUY' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }`}>
+                        {tx.type === 'BUY'
+                          ? <ArrowUp size={14} className="text-emerald-600" strokeWidth={2.5} />
                           : <ArrowDown size={14} className="text-rose-600" strokeWidth={2.5} />
                         }
                         {t(tx.type === 'BUY' ? 'buy' : 'sell')}
@@ -262,8 +263,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     <td className="px-6 py-4 text-slate-600">{formatNum(tx.pricePerUnit)} EGP</td>
                     <td className="px-6 py-4 text-slate-600">{formatNum(tx.amount * tx.pricePerUnit)} EGP</td>
                     <td className="px-6 py-4 text-end">
-                      <button 
-                        onClick={() => onRemoveTransaction(tx.id)}
+                      <button
+                        onClick={() => setDeleteConfirmId(tx.id)}
                         className="text-slate-400 hover:text-rose-500 transition-colors"
                       >
                         <Trash2 size={16} />
@@ -287,46 +288,45 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                 <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset')}</label>
-                    <select 
-                      value={formAsset} onChange={(e) => setFormAsset(e.target.value as AssetType)}
-                      className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset')}</label>
+                  <select
+                    value={formAsset} onChange={(e) => setFormAsset(e.target.value as AssetType)}
+                    className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">{t('type')}</label>
+                  <div className="flex bg-slate-100 rounded-lg p-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormType('BUY')}
+                      className={`flex-1 py-1 text-sm rounded-md font-medium transition-all ${formType === 'BUY' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500'}`}
                     >
-                      {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
-                    </select>
-                 </div>
-                 <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('type')}</label>
-                    <div className="flex bg-slate-100 rounded-lg p-1">
-                      <button 
-                        type="button"
-                        onClick={() => setFormType('BUY')}
-                        className={`flex-1 py-1 text-sm rounded-md font-medium transition-all ${formType === 'BUY' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500'}`}
-                      >
-                        {t('buy')}
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => setFormType('SELL')}
-                        className={`flex-1 py-1 text-sm rounded-md font-medium transition-all ${formType === 'SELL' ? 'bg-white shadow-sm text-rose-700' : 'text-slate-500'}`}
-                      >
-                        {t('sell')}
-                      </button>
-                    </div>
-                 </div>
+                      {t('buy')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormType('SELL')}
+                      className={`flex-1 py-1 text-sm rounded-md font-medium transition-all ${formType === 'SELL' ? 'bg-white shadow-sm text-rose-700' : 'text-slate-500'}`}
+                    >
+                      {t('sell')}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('date')}</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={formDate} onChange={e => setFormDate(e.target.value)}
-                  className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${
-                    errors.date 
-                      ? 'border-rose-500 focus:ring-rose-500' 
+                  className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${errors.date
+                      ? 'border-rose-500 focus:ring-rose-500'
                       : 'border-slate-200 focus:ring-emerald-500'
-                  }`}
+                    }`}
                 />
                 {errors.date && <p className="text-xs text-rose-500 mt-1">{errors.date}</p>}
               </div>
@@ -336,14 +336,13 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                   <label className="block text-xs font-medium text-slate-500 mb-1">
                     {t('amount')} ({ASSET_UNITS[formAsset]})
                   </label>
-                  <input 
-                    type="number" step="0.01" min="0" 
+                  <input
+                    type="number" step="0.01" min="0"
                     value={formAmount} onChange={e => setFormAmount(e.target.value)}
-                    className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${
-                      errors.amount 
-                        ? 'border-rose-500 focus:ring-rose-500' 
+                    className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${errors.amount
+                        ? 'border-rose-500 focus:ring-rose-500'
                         : 'border-slate-200 focus:ring-emerald-500'
-                    }`}
+                      }`}
                     placeholder="0.00"
                     dir="ltr"
                   />
@@ -353,14 +352,13 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                   <label className="block text-xs font-medium text-slate-500 mb-1">
                     {t('priceUnit')} (EGP)
                   </label>
-                  <input 
-                    type="number" step="0.01" min="0" 
+                  <input
+                    type="number" step="0.01" min="0"
                     value={formPrice} onChange={e => setFormPrice(e.target.value)}
-                    className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${
-                      errors.price 
-                        ? 'border-rose-500 focus:ring-rose-500' 
+                    className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${errors.price
+                        ? 'border-rose-500 focus:ring-rose-500'
                         : 'border-slate-200 focus:ring-emerald-500'
-                    }`}
+                      }`}
                     placeholder="Market Rate"
                     dir="ltr"
                   />
@@ -368,8 +366,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                 </div>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg mt-2 transition-transform active:scale-[0.98]"
               >
                 {t('saveTransaction')}
@@ -388,29 +386,29 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                 <Bell size={20} className="text-emerald-600" />
                 <h3 className="font-bold text-slate-800">{t('priceAlerts')} - {t(`asset_${activeTab}` as any)}</h3>
               </div>
-              <button onClick={() => setShowAlertModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+              <button onClick={() => setShowAlertModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
-            
+
             <div className="p-4 bg-slate-50/50">
-               <form onSubmit={handleAddAlert} className="flex gap-2">
-                 <select 
-                   value={alertCondition} onChange={(e) => setAlertCondition(e.target.value as 'ABOVE' | 'BELOW')}
-                   className="p-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                 >
-                   <option value="ABOVE">{t('above')}</option>
-                   <option value="BELOW">{t('below')}</option>
-                 </select>
-                 <input 
-                   type="number" 
-                   value={alertTargetPrice} onChange={(e) => setAlertTargetPrice(e.target.value)}
-                   className="flex-1 p-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder={t('targetPrice')}
-                   required
-                 />
-                 <button type="submit" className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
-                   <BellRing size={20} />
-                 </button>
-               </form>
+              <form onSubmit={handleAddAlert} className="flex gap-2">
+                <select
+                  value={alertCondition} onChange={(e) => setAlertCondition(e.target.value as 'ABOVE' | 'BELOW')}
+                  className="p-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="ABOVE">{t('above')}</option>
+                  <option value="BELOW">{t('below')}</option>
+                </select>
+                <input
+                  type="number"
+                  value={alertTargetPrice} onChange={(e) => setAlertTargetPrice(e.target.value)}
+                  className="flex-1 p-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder={t('targetPrice')}
+                  required
+                />
+                <button type="submit" className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                  <BellRing size={20} />
+                </button>
+              </form>
             </div>
 
             <div className="max-h-60 overflow-y-auto p-4 space-y-2">
@@ -429,6 +427,41 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{t('deleteConfirmTitle')}</h3>
+              <p className="text-slate-500 text-sm mb-6">{t('deleteConfirmBody')}</p>
+
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={() => {
+                    if (deleteConfirmId) {
+                      onRemoveTransaction(deleteConfirmId);
+                      setDeleteConfirmId(null);
+                    }
+                  }}
+                  className="px-4 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm"
+                >
+                  {t('confirm')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
