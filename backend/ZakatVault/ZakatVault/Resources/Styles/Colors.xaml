@@ -44,4 +44,13 @@
     <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
     <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
     <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+
+    <!-- Dashboard Colors from Image -->
+    <Color x:Key="ChartGold24k">#FFC107</Color>
+    <Color x:Key="ChartGold21k">#F57F17</Color>
+    <Color x:Key="ChartSilver">#B0BEC5</Color>
+    <Color x:Key="ChartUSD">#00C853</Color>
+    <Color x:Key="ChartEGP">#2979FF</Color>
+    <Color x:Key="AdvisorPurple">#EDE7F6</Color>
+    <Color x:Key="AdvisorPurpleDark">#512BD4</Color> <!-- Using Primary -->
 </ResourceDictionary>

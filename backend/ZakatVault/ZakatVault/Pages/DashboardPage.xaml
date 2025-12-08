@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:ZakatVault.Resources.Strings"
+             x:Class="ZakatVault.Pages.DashboardPage"
+             Title="Dashboard"
+             BackgroundColor="#F5F7FA">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <!-- Header Section -->
+            <Grid Padding="0" Margin="0,10,0,10">
+                <VerticalStackLayout>
+                    <Label Text="{x:Static strings:AppResources.Dashboard}" FontSize="26" FontAttributes="Bold" TextColor="{DynamicResource MidnightBlue}" />
+                    <Label Text="{x:Static strings:AppResources.DashboardDesc}" FontSize="14" TextColor="{DynamicResource Gray500}" />
+                </VerticalStackLayout>
+                <!-- Action Buttons (Placeholders) -->
+                <HorizontalStackLayout HorizontalOptions="End" VerticalOptions="Start" Spacing="10">
+                    <Button Text="⬇" BackgroundColor="White" TextColor="{DynamicResource Gray600}" HeightRequest="40" WidthRequest="40" CornerRadius="8" Padding="0" BorderColor="{DynamicResource Gray200}" BorderWidth="1" />
+                    <Button Text="✎" BackgroundColor="White" TextColor="{DynamicResource Gray600}" HeightRequest="40" WidthRequest="40" CornerRadius="8" Padding="0" BorderColor="{DynamicResource Gray200}" BorderWidth="1" />
+                    <Button Text="🔄" BackgroundColor="White" TextColor="{DynamicResource Gray600}" HeightRequest="40" WidthRequest="40" CornerRadius="8" Padding="0" BorderColor="{DynamicResource Gray200}" BorderWidth="1" />
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- AI Advisor Card -->
+            <Border BackgroundColor="{DynamicResource AdvisorPurple}" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                <VerticalStackLayout Spacing="15">
+                    <HorizontalStackLayout Spacing="10">
+                        <!-- Icon Placeholder -->
+                        <Border BackgroundColor="{DynamicResource BrandGreenLight}" Padding="10"  StrokeShape="RoundRectangle 30"  HeightRequest="40" WidthRequest="40">
+                            <Label Text="✨" TextColor="{DynamicResource BrandGreen}" HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout>
+                            <Label Text="{x:Static strings:AppResources.AIAdvisor}" FontAttributes="Bold" FontSize="16" TextColor="{DynamicResource MidnightBlue}" />
+                            <Label Text="{x:Static strings:AppResources.AIAdvisorDesc}" FontSize="12" TextColor="{DynamicResource Gray600}" LineBreakMode="WordWrap" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+
+                    <Button Text="{x:Static strings:AppResources.AnalyzePortfolio}" 
+                            BackgroundColor="{DynamicResource AdvisorPurpleDark}" 
+                            TextColor="White" 
+                            FontAttributes="Bold"
+                            CornerRadius="8"
+                            HorizontalOptions="Center"
+                            Padding="20,10" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Stats Cards -->
+            <VerticalStackLayout Spacing="15">
+                <!-- Net Worth -->
+                <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                    <HorizontalStackLayout Spacing="15" VerticalOptions="Center">
+                        <Border BackgroundColor="#E3F2FD" Padding="15" StrokeShape="RoundRectangle 15" HeightRequest="50" WidthRequest="50">
+                            <Label Text="📈" TextColor="#1565C0" HorizontalOptions="Center" VerticalOptions="Center" FontSize="18"/>
+                        </Border>
+                        <VerticalStackLayout VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.NetWorth}" TextColor="{DynamicResource Gray500}" FontSize="12" />
+                            <Label Text="EGP 664,521.16" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Total Assets -->
+                <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                    <HorizontalStackLayout Spacing="15" VerticalOptions="Center">
+                        <Border BackgroundColor="#FFF8E1" Padding="15" StrokeShape="RoundRectangle 15" HeightRequest="50" WidthRequest="50">
+                            <Label Text="⚖" TextColor="#F9A825" HorizontalOptions="Center" VerticalOptions="Center" FontSize="18"/>
+                        </Border>
+                        <VerticalStackLayout VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.TotalAssets}" TextColor="{DynamicResource Gray500}" FontSize="12" />
+                            <Label Text="EGP 1,449,827.16" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Total Liabilities -->
+                <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                    <HorizontalStackLayout Spacing="15" VerticalOptions="Center">
+                        <Border BackgroundColor="#FFEBEE" Padding="15" StrokeShape="RoundRectangle 15" HeightRequest="50" WidthRequest="50">
+                            <Label Text="💲" TextColor="#C62828" HorizontalOptions="Center" VerticalOptions="Center" FontSize="18"/>
+                        </Border>
+                        <VerticalStackLayout VerticalOptions="Center">
+                            <Label Text="{x:Static strings:AppResources.TotalLiabilities}" TextColor="{DynamicResource Gray500}" FontSize="12" />
+                            <Label Text="EGP 785,306.00" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Chart Section 1: Portfolio Composition -->
+            <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="{x:Static strings:AppResources.PortfolioComposition}" FontAttributes="Bold" FontSize="16" TextColor="{DynamicResource MidnightBlue}" />
+
+                    <!-- Placeholder for Donut Chart -->
+                    <BoxView HeightRequest="200" Color="Transparent" />
+                    <!-- We'll simulate the chart legend since we can't draw the donut easily without a library -->
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                        <Label Text="■ Gold (24k)" TextColor="{DynamicResource ChartGold24k}" FontSize="12" />
+                        <Label Text="■ Gold (21k)" TextColor="{DynamicResource ChartGold21k}" FontSize="12" />
+                        <Label Text="■ Silver" TextColor="{DynamicResource ChartSilver}" FontSize="12" />
+                        <Label Text="■ US Dollar" TextColor="{DynamicResource ChartUSD}" FontSize="12" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Current Market Rates -->
+            <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                <VerticalStackLayout Spacing="15">
+                    <Grid>
+                        <Label Text="{x:Static strings:AppResources.MarketRates}" FontAttributes="Bold" FontSize="16" TextColor="{DynamicResource MidnightBlue}" VerticalOptions="Center" />
+                        <Label Text="{x:Static strings:AppResources.Edit}" TextColor="{DynamicResource BrandGreen}" FontSize="12" HorizontalOptions="End" VerticalOptions="Center" />
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="5">
+                        <!-- Rate Item -->
+                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
+                            <Grid>
+                                <Label Text="● Gold (24k)" TextColor="{DynamicResource ChartGold24k}" VerticalOptions="Center" />
+                                <Label Text="6,419.5 EGP/g" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
+                            </Grid>
+                        </Border>
+                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
+                            <Grid>
+                                <Label Text="● Gold (21k)" TextColor="{DynamicResource ChartGold21k}" VerticalOptions="Center" />
+                                <Label Text="5,607.77 EGP/g" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
+                            </Grid>
+                        </Border>
+                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
+                            <Grid>
+                                <Label Text="● Silver" TextColor="{DynamicResource ChartSilver}" VerticalOptions="Center" />
+                                <Label Text="89.49 EGP/g" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
+                            </Grid>
+                        </Border>
+                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
+                            <Grid>
+                                <Label Text="● US Dollar" TextColor="{DynamicResource ChartUSD}" VerticalOptions="Center" />
+                                <Label Text="47.55 EGP/$" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <Label Text="{x:Static strings:AppResources.MarketDisclaimer}" FontSize="10" TextColor="{DynamicResource Gray500}" BackgroundColor="{DynamicResource AdvisorPurple}" Padding="10" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Chart Section 2: Portfolio Value History -->
+            <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="{x:Static strings:AppResources.PortfolioHistory}" FontAttributes="Bold" FontSize="16" TextColor="{DynamicResource MidnightBlue}" />
+                    <Label Text="{x:Static strings:AppResources.HistoryDesc}" FontSize="12" TextColor="{DynamicResource Gray500}" />
+
+                    <!-- Placeholder for Line Chart -->
+                    <BoxView HeightRequest="200" Color="#FAFAFA" />
+                    <Label Text="(Line Chart Placeholder)" HorizontalOptions="Center" TextColor="{DynamicResource Gray400}" Margin="0,-110,0,0" />
+                    <BoxView HeightRequest="1" Color="Transparent" Margin="0,100,0,0"/>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Final Spacing -->
+            <BoxView HeightRequest="50" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

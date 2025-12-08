@@ -6,15 +6,14 @@
              BackgroundColor="#F5F7FA">
 
     <ScrollView>
-        <Grid RowDefinitions="*" VerticalOptions="FillAndExpand">
+        <Grid RowDefinitions="*">
             
             <VerticalStackLayout Spacing="0" VerticalOptions="Center" HorizontalOptions="Center" Padding="20">
                 
-                <Frame BackgroundColor="White" 
-                       CornerRadius="20" 
+                <Border BackgroundColor="White" 
                        Padding="40"
                        WidthRequest="450"
-                       HasShadow="True">
+                        StrokeShape="RoundRectangle 30">
                     <VerticalStackLayout Spacing="25">
                         
                         <!-- Icon -->
@@ -53,17 +52,17 @@
                             <!-- Email -->
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="Email Address" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="14" />
-                                <Border Stroke="#E5E7EB" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="12,0" HeightRequest="50">
-                                    <Entry Placeholder="" TextColor="{DynamicResource Black}" VerticalOptions="Center" />
-                                </Border>
+                               
+                                    <Entry Placeholder="" TextColor="{DynamicResource Black}" VerticalOptions="Center"  />
+                               
                             </VerticalStackLayout>
 
                             <!-- Password -->
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="Password" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="14" />
-                                <Border Stroke="#E5E7EB" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="12,0" HeightRequest="50">
+                               
                                     <Entry IsPassword="True" TextColor="{DynamicResource Black}" VerticalOptions="Center" />
-                                </Border>
+                              
                             </VerticalStackLayout>
 
                             <!-- Sign In Button -->
@@ -91,7 +90,7 @@
 
                         </VerticalStackLayout>
                     </VerticalStackLayout>
-                </Frame>
+                </Border>
                 
             </VerticalStackLayout>
             

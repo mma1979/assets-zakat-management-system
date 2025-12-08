@@ -6,9 +6,25 @@
     xmlns:local="clr-namespace:ZakatVault.Pages"
     Title="ZakatVault">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:LoginPage}"
-        Route="MainPage" />
+    <!-- Login Page -->
+    <ShellItem Route="Login">
+        <ShellContent ContentTemplate="{DataTemplate local:LoginPage}" Route="LoginPage" />
+    </ShellItem>
+
+    <!-- Secure Area -->
+    <TabBar Route="Secure">
+        <Tab Title="Dashboard" Icon="{x:Null}">
+            <ShellContent ContentTemplate="{DataTemplate local:DashboardPage}" Route="DashboardPage" />
+        </Tab>
+        <Tab Title="Assets" Icon="{x:Null}">
+            <ShellContent ContentTemplate="{DataTemplate local:AssetsPage}" Route="AssetsPage" />
+        </Tab>
+        <Tab Title="Liabilities" Icon="{x:Null}">
+            <ShellContent ContentTemplate="{DataTemplate local:LiabilitiesPage}" Route="LiabilitiesPage" />
+        </Tab>
+        <Tab Title="Calculator" Icon="{x:Null}">
+            <ShellContent ContentTemplate="{DataTemplate local:ZakatCalcPage}" Route="ZakatCalcPage" />
+        </Tab>
+    </TabBar>
 
 </Shell>
