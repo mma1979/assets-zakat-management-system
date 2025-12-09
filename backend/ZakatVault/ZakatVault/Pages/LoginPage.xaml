@@ -22,7 +22,8 @@
                                 HeightRequest="60"
                                 WidthRequest="60"
                                 StrokeShape="RoundRectangle 30"
-                                HorizontalOptions="Center">
+                                HorizontalOptions="Center" 
+                                Shadow="#000000 4 4">
                             <Label Text="➔" 
                                    TextColor="{DynamicResource BrandGreen}"
                                    FontSize="24"

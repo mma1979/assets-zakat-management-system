@@ -1,4 +1,4 @@
-namespace ZakatVault.Pages;
+﻿namespace ZakatVault.Pages;
 
 public partial class DashboardPage : ContentPage
 {
@@ -6,4 +6,6 @@ public partial class DashboardPage : ContentPage
 	{
 		InitializeComponent();
 	}
+
+  
 }

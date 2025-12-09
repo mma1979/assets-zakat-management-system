@@ -5,6 +5,8 @@
              x:Class="ZakatVault.Pages.DashboardPage"
              Title="Dashboard"
              BackgroundColor="#F5F7FA">
+    
+   
 
     <ScrollView>
         <VerticalStackLayout Spacing="20" Padding="20">

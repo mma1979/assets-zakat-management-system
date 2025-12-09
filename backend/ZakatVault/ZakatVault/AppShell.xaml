@@ -13,18 +13,29 @@
 
     <!-- Secure Area -->
     <TabBar Route="Secure">
-        <Tab Title="Dashboard" Icon="{x:Null}">
-            <ShellContent ContentTemplate="{DataTemplate local:DashboardPage}" Route="DashboardPage" />
-        </Tab>
-        <Tab Title="Assets" Icon="{x:Null}">
-            <ShellContent ContentTemplate="{DataTemplate local:AssetsPage}" Route="AssetsPage" />
-        </Tab>
-        <Tab Title="Liabilities" Icon="{x:Null}">
-            <ShellContent ContentTemplate="{DataTemplate local:LiabilitiesPage}" Route="LiabilitiesPage" />
-        </Tab>
-        <Tab Title="Calculator" Icon="{x:Null}">
-            <ShellContent ContentTemplate="{DataTemplate local:ZakatCalcPage}" Route="ZakatCalcPage" />
-        </Tab>
+        
+        <ShellContent
+            Title="Dahsboard"
+            Icon="icon_dashboard.png"
+            ContentTemplate="{DataTemplate local:DashboardPage}" Route="DashboardPage" />
+
+        <ShellContent
+            Title="Assets"
+            Icon="icon_fund.png"
+            ContentTemplate="{DataTemplate local:AssetsPage}" Route="AssetsPage" />
+
+        <ShellContent
+            Title="Liabilities"
+            Icon="icon_send.png"
+            ContentTemplate="{DataTemplate local:LiabilitiesPage}" Route="LiabilitiesPage" />
+
+        <ShellContent
+            Title="Calculator"
+            Icon="icon_invest.png"
+            ContentTemplate="{DataTemplate local:ZakatCalcPage}" Route="ZakatCalcPage" />
+
+      
+
     </TabBar>
 
 </Shell>
