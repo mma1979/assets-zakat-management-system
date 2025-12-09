@@ -4,15 +4,40 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:ZakatVault.Pages"
+    Shell.FlyoutBehavior="Flyout"
     Title="ZakatVault">
 
+    <Shell.FlyoutHeader>
+        <Grid BackgroundColor="{StaticResource Primary}" HeightRequest="200">
+            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="10">
+                <Image Source="dotnet_bot.png"
+                       HeightRequest="100"
+                       WidthRequest="100" 
+                       HorizontalOptions="Center" />
+                <Label Text="ZakatVault User"
+                       TextColor="White"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Grid>
+    </Shell.FlyoutHeader>
+
+    <MenuItem Text="Change Language" 
+              Clicked="OnChangeLanguageClicked"
+              IconImageSource="icon_dashboard.png"/> 
+              
+    <MenuItem Text="Logout" 
+              Clicked="OnLogoutClicked"
+              IconImageSource="icon_send.png"/>
+
     <!-- Login Page -->
-    <ShellItem Route="Login">
+    <ShellItem Route="Login" FlyoutItemIsVisible="False">
         <ShellContent ContentTemplate="{DataTemplate local:LoginPage}" Route="LoginPage" />
     </ShellItem>
 
     <!-- Secure Area -->
-    <TabBar Route="Secure">
+    <TabBar Route="Secure" FlyoutDisplayOptions="AsMultipleItems">
         
         <ShellContent
             Title="Dahsboard"

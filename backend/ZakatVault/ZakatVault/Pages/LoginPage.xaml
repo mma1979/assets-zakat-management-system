@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ZakatVault.Pages.LoginPage"
              Title=""
+             Shell.FlyoutBehavior="Disabled"
              BackgroundColor="#F5F7FA">
 
     <ScrollView>
