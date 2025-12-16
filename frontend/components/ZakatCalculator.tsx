@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import { StoreData } from '../types';
+import { StoreData, ZakatCalculationResult } from '../types';
 import { NISAB_GOLD_GRAMS, NISAB_SILVER_GRAMS, ZAKAT_RATE } from '../constants';
 import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, BellRing, Mail } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -25,8 +25,9 @@ const isValidDate = (d: Date) => d instanceof Date && !isNaN(d.getTime());
 
 export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   const { t, language, dir } = useLanguage();
-  const { updateZakatConfig } = useStore();
+  const { updateZakatConfig, fetchZakatCalculation, isSyncing } = useStore();
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [serverCalculation, setServerCalculation] = useState<ZakatCalculationResult | null>(null);
 
   // Zakat Calculation Configuration
   const zakatDate = data.zakatConfig?.zakatDate || format(new Date(), 'yyyy-MM-dd');
@@ -120,7 +121,13 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     }
   }, [reminderEnabled, zakatDate, userEmail, t, emailStatus]);
 
-  const calculation = useMemo(() => {
+  useEffect(() => {
+    if (!isSyncing) {
+      fetchZakatCalculation().then(setServerCalculation).catch(console.error);
+    }
+  }, [fetchZakatCalculation, zakatDate, data.transactions, data.liabilities, isSyncing]);
+
+  const clientCalculation = useMemo(() => {
     // 0. Time Windows
     let startDate = parseLocal(zakatDate);
     if (!isValidDate(startDate)) {
@@ -184,6 +191,20 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       lunarEndDate
     };
   }, [data, zakatDate]);
+
+  const calculation = useMemo(() => {
+    if (serverCalculation) {
+      return {
+        ...clientCalculation,
+        assetValue: serverCalculation.TotalAssets,
+        deductibleLiabilities: serverCalculation.TotalDebts,
+        zakatBase: serverCalculation.NetZakatBase,
+        zakatDue: serverCalculation.TotalZakatDue,
+        isEligible: serverCalculation.TotalZakatDue > 0
+      };
+    }
+    return clientCalculation;
+  }, [clientCalculation, serverCalculation]);
 
   const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
   const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');

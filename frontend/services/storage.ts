@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StoreData, Transaction, Liability, MarketRates, ZakatConfig, PriceAlert } from '../types';
+import { StoreData, Transaction, Liability, MarketRates, ZakatConfig, PriceAlert, ZakatCalculationResult } from '../types';
 import { DEFAULT_RATES } from '../constants';
 import { format } from 'date-fns';
 import { getStoredToken } from './auth';
@@ -11,7 +11,8 @@ const API_ENDPOINTS = {
   liabilities: '/api/liabilities',
   rates: '/api/rates',
   zakatConfig: '/api/zakat-config',
-  priceAlerts: '/api/price-alerts'
+  priceAlerts: '/api/price-alerts',
+  zakatCalc: '/api/ZakatCalc'
 } as const;
 
 const INITIAL_DATA: StoreData = {
@@ -108,7 +109,8 @@ export const useStore = () => {
     liabilities: false,
     rates: false,
     zakatConfig: false,
-    priceAlerts: false
+    priceAlerts: false,
+    zakatCalc: false
   });
 
   // Load all data from API
@@ -157,7 +159,7 @@ export const useStore = () => {
   }, [loadAllData]);
 
   // Helper to update data and sync specific part
-  const updateDataPart = async <K extends DataKey>(
+  const updateDataPart = async <K extends keyof StoreData>(
     key: K,
     value: StoreData[K],
     remotePayload?: any
@@ -252,6 +254,10 @@ export const useStore = () => {
     updateDataPart('priceAlerts', priceAlerts);
   }, []);
 
+  const fetchZakatCalculation = useCallback(async () => {
+    return fetchData<ZakatCalculationResult | null>('zakatCalc', null);
+  }, []);
+
   return {
     data,
     isLoaded,
@@ -264,6 +270,7 @@ export const useStore = () => {
     removeLiability,
     updateRates,
     updateZakatConfig,
-    updatePriceAlerts
+    updatePriceAlerts,
+    fetchZakatCalculation
   };
 };

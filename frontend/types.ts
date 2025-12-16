@@ -68,3 +68,12 @@ export interface StoreData {
   zakatConfig?: ZakatConfig;
   priceAlerts: PriceAlert[];
 }
+
+export interface ZakatCalculationResult {
+  UserId: number;
+  TotalAssets: number;
+  TotalDebts: number;
+  NetZakatBase: number;
+  GlodAmount: number;
+  TotalZakatDue: number;
+}
