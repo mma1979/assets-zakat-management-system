@@ -15,6 +15,7 @@ public class FinanceDbContext : DbContext
     public DbSet<Rate> Rates { get; set; }
 
     public DbSet<ViewRatesModel> ViewRates { get; set; }
+    public DbSet<VwZakatCalc> VwZakatCalc { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,10 @@ public class FinanceDbContext : DbContext
         modelBuilder.Entity<ViewRatesModel>()
             .ToView("VW_Rates", "dbo")
             .HasNoKey();
+
+        modelBuilder.Entity<VwZakatCalc>()
+          .ToView("VW_ZakatCalc", "dbo")
+          .HasNoKey();
 
         // User Configuration
         modelBuilder.Entity<User>(entity =>

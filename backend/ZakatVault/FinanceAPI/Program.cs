@@ -54,6 +54,7 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ILiabilityService, LiabilityService>();
 builder.Services.AddScoped<IRatesService, RatesService>();
 builder.Services.AddScoped<IZakatConfigService, ZakatConfigService>();
+builder.Services.AddScoped<IZakatCalcService, ZakatCalcService>();
 builder.Services.AddHttpContextAccessor();
 
 // CORS
