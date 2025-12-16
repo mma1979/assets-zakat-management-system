@@ -70,10 +70,13 @@ export interface StoreData {
 }
 
 export interface ZakatCalculationResult {
-  UserId: number;
-  TotalAssets: number;
-  TotalDebts: number;
-  NetZakatBase: number;
-  GlodAmount: number;
-  TotalZakatDue: number;
+  userId: number;
+  totalAssets: number;
+  totalDebts: number;
+  netZakatBase: number;
+  glodAmount: number;
+  totalZakatDue: number;
+  nisabGoldValue: number;
+  nisabSilverValue: number;
+  lunarEndDate: string;
 }

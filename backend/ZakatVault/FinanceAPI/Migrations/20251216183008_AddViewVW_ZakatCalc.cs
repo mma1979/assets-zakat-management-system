@@ -32,10 +32,15 @@ namespace FinanceAPI.Migrations
                 UserId, SUM(TotalCredits) TotalCredits, SUM(TotalDebts) TotalDebts,
                 SUM(TotalCredits) - SUM(TotalDebts) NetWorth,(Select top 1 Value From Rates Where Name='GOLD') Gold
                 from aggregations
-                group by UserId)
+                group by UserId),
+                gold_nisab as (select top 1 (gold_egp * 85.0) NisabGoldValue from VW_Rates),
+                silver_nisab as (select top 1 (silver_egp * 595.0) NisabSilverValue from VW_Rates)
 
                 Select UserId,TotalCredits TotalAssets,TotalDebts,NetWorth NetZakatBase,
-                NetWorth/Gold as GlodAmount, NetWorth*.025 as TotalZakatDue
+                NetWorth/Gold as GlodAmount, NetWorth*.025 as TotalZakatDue,
+                (select top 1 NisabGoldValue from gold_nisab) NisabGoldValue,
+                (select top 1 NisabSilverValue from silver_nisab) NisabSilverValue,
+                '' as LunarEndDate
                 From net
                 """);
         }

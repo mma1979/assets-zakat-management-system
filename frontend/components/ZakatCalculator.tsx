@@ -193,18 +193,17 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   }, [data, zakatDate]);
 
   const calculation = useMemo(() => {
-    if (serverCalculation) {
-      return {
-        ...clientCalculation,
-        assetValue: serverCalculation.TotalAssets,
-        deductibleLiabilities: serverCalculation.TotalDebts,
-        zakatBase: serverCalculation.NetZakatBase,
-        zakatDue: serverCalculation.TotalZakatDue,
-        isEligible: serverCalculation.TotalZakatDue > 0
-      };
-    }
-    return clientCalculation;
-  }, [clientCalculation, serverCalculation]);
+    return {
+      assetValue: serverCalculation?.totalAssets ?? 0,
+      deductibleLiabilities: serverCalculation?.totalDebts ?? 0,
+      zakatBase: serverCalculation?.netZakatBase ?? 0,
+      nisabGoldValue: serverCalculation?.nisabGoldValue ?? 0,
+      nisabSilverValue: serverCalculation?.nisabSilverValue ?? 0,
+      zakatDue: serverCalculation?.totalZakatDue ?? 0,
+      lunarEndDate: '2025-12-25', // serverCalculation.LunarEndDate,
+      isEligible: (serverCalculation?.totalZakatDue ?? 0) > 0,
+    };
+  }, [serverCalculation]);
 
   const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
   const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
