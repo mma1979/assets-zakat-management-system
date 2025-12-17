@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { calculateAssetMetrics } from '../utils/calculations';
 import { useStore } from '../services/storage';
+import { CustomDatePicker } from './DatePicker';
 
 interface AssetManagerProps {
   data: StoreData;
@@ -182,8 +183,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
             key={type}
             onClick={() => setActiveTab(type)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors border ${activeTab === type
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                : 'text-slate-500 hover:bg-slate-100 border-transparent'
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              : 'text-slate-500 hover:bg-slate-100 border-transparent'
               }`}
           >
             {getAssetIcon(type)}
@@ -253,7 +254,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                         {t(tx.type === 'BUY' ? 'buy' : 'sell')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-600" dir="ltr">{format(new Date(tx.date), 'MMM dd, yyyy')}</td>
+                    <td className="px-6 py-4 text-slate-600" dir="ltr">{format(new Date(tx.date), 'dd-MM-yyyy')}</td>
                     <td className="px-6 py-4 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         {getAssetIcon(tx.assetType)}
@@ -281,7 +282,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
       {/* Add Transaction Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
               <h3 className="font-bold text-slate-800">{t('addTransaction')}</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
@@ -320,13 +321,10 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
 
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('date')}</label>
-                <input
-                  type="date"
-                  value={formDate} onChange={e => setFormDate(e.target.value)}
-                  className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${errors.date
-                      ? 'border-rose-500 focus:ring-rose-500'
-                      : 'border-slate-200 focus:ring-emerald-500'
-                    }`}
+                <CustomDatePicker
+                  value={formDate}
+                  onChange={setFormDate}
+                  className={errors.date ? "border-rose-500" : ""}
                 />
                 {errors.date && <p className="text-xs text-rose-500 mt-1">{errors.date}</p>}
               </div>
@@ -340,8 +338,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     type="number" step="0.01" min="0"
                     value={formAmount} onChange={e => setFormAmount(e.target.value)}
                     className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${errors.amount
-                        ? 'border-rose-500 focus:ring-rose-500'
-                        : 'border-slate-200 focus:ring-emerald-500'
+                      ? 'border-rose-500 focus:ring-rose-500'
+                      : 'border-slate-200 focus:ring-emerald-500'
                       }`}
                     placeholder="0.00"
                     dir="ltr"
@@ -356,8 +354,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     type="number" step="0.01" min="0"
                     value={formPrice} onChange={e => setFormPrice(e.target.value)}
                     className={`w-full p-2 rounded-lg border focus:outline-none focus:ring-2 ${errors.price
-                        ? 'border-rose-500 focus:ring-rose-500'
-                        : 'border-slate-200 focus:ring-emerald-500'
+                      ? 'border-rose-500 focus:ring-rose-500'
+                      : 'border-slate-200 focus:ring-emerald-500'
                       }`}
                     placeholder="Market Rate"
                     dir="ltr"

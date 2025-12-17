@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { StoreData, MarketRates, Transaction } from '../types';
-import { 
+import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend,
-  LineChart, Line, XAxis, YAxis, CartesianGrid 
+  LineChart, Line, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 import { TrendingUp, DollarSign, Scale, RefreshCw, AlertCircle, Edit2, X, Download, FileSpreadsheet } from 'lucide-react';
 import { fetchMarketRates } from '../services/geminiService';
@@ -22,7 +22,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
   const [error, setError] = useState<string | null>(null);
   const [showRateModal, setShowRateModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  
+
   // Rate Editing State
   const [editRates, setEditRates] = useState<MarketRates>(data.rates);
 
@@ -30,7 +30,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
   const summary = useMemo(() => {
     // 1. Calculate holdings using FIFO logic for quantities
     const holdings: Record<string, number> = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 0 };
-    
+
     data.transactions.forEach(tx => {
       if (tx.type === 'BUY') holdings[tx.assetType] += tx.amount;
       else holdings[tx.assetType] -= tx.amount;
@@ -63,12 +63,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     });
 
     const sortedDates = Array.from(txsByDate.keys()).sort();
-    
+
     // 2. Initialize cumulative quantities and last known prices
     const qty = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 0 };
     // Start prices at 0 or base. For history, we use the transaction price as the "market rate" at that time.
     const prices = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 1 };
-    
+
     const result: any[] = [];
 
     // 3. Process each date
@@ -78,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
         // Update cumulative quantity
         if (tx.type === 'BUY') qty[tx.assetType] += tx.amount;
         else qty[tx.assetType] -= tx.amount;
-        
+
         // Update price if meaningful (assume transaction reflects market rate)
         if (tx.pricePerUnit > 0) {
           prices[tx.assetType] = tx.pricePerUnit;
@@ -99,14 +99,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     // 4. Add "Today" data point with current market rates
     const today = format(new Date(), 'yyyy-MM-dd');
     if (result.length === 0 || result[result.length - 1].date !== today) {
-       result.push({
-          date: today,
-          GOLD: qty.GOLD * data.rates.gold_egp,
-          GOLD_21: qty.GOLD_21 * (data.rates.gold21_egp || 0),
-          SILVER: qty.SILVER * data.rates.silver_egp,
-          USD: qty.USD * data.rates.usd_egp,
-          EGP: qty.EGP
-       });
+      result.push({
+        date: today,
+        GOLD: qty.GOLD * data.rates.gold_egp,
+        GOLD_21: qty.GOLD_21 * (data.rates.gold21_egp || 0),
+        SILVER: qty.SILVER * data.rates.silver_egp,
+        USD: qty.USD * data.rates.usd_egp,
+        EGP: qty.EGP
+      });
     }
 
     return result;
@@ -153,39 +153,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
           <p className="text-slate-500">{t('dashSubtitle')}</p>
         </div>
         <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
-           <div className="text-xs text-end hidden sm:block">
-             <div className="text-slate-500">{t('ratesUpdated')}</div>
-             <div className="font-mono font-medium text-slate-700" dir="ltr">
-               {format(data.rates.lastUpdated, 'MMM dd, HH:mm')}
-             </div>
-           </div>
-           
-           <button 
+          <div className="text-xs text-end hidden sm:block">
+            <div className="text-slate-500">{t('ratesUpdated')}</div>
+            <div className="font-mono font-medium text-slate-700" dir="ltr">
+              {format(data.rates.lastUpdated, 'MMM dd, HH:mm')}
+            </div>
+          </div>
+
+          <button
             onClick={() => setShowExportModal(true)}
             className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-md transition-colors"
             title={t('exportData')}
-           >
-             <Download size={20} />
-           </button>
+          >
+            <Download size={20} />
+          </button>
 
-           <button 
+          <button
             onClick={() => {
               setEditRates(data.rates);
               setShowRateModal(true);
             }}
             className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-md transition-colors"
             title={t('edit')}
-           >
-             <Edit2 size={20} />
-           </button>
-           <button 
+          >
+            <Edit2 size={20} />
+          </button>
+          <button
             onClick={handleRefreshRates}
             disabled={updating}
             className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-md transition-colors disabled:opacity-50"
             title={t('refreshRates')}
-           >
-             <RefreshCw size={20} className={updating ? "animate-spin" : ""} />
-           </button>
+          >
+            <RefreshCw size={20} className={updating ? "animate-spin" : ""} />
+          </button>
         </div>
       </header>
 
@@ -248,12 +248,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
       {/* Main Charts Area */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Pie Chart: Composition */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 min-h-[350px] flex flex-col">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">{t('portfolioComp')}</h3>
           {pieChartData.length > 0 ? (
-            <div className="flex-1 w-full" dir="ltr"> 
+            <div className="flex-1 w-full" dir="ltr">
               <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                 <PieChart>
                   <Pie
@@ -284,8 +284,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
         {/* Current Rates List */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-4">
-             <h3 className="text-lg font-semibold text-slate-800">{t('currentRates')}</h3>
-             <button onClick={() => { setEditRates(data.rates); setShowRateModal(true); }} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">{t('edit')}</button>
+            <h3 className="text-lg font-semibold text-slate-800">{t('currentRates')}</h3>
+            <button onClick={() => { setEditRates(data.rates); setShowRateModal(true); }} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">{t('edit')}</button>
           </div>
           <div className="space-y-4">
             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
@@ -318,21 +318,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
             </div>
           </div>
           <div className="mt-6 p-4 bg-indigo-50 rounded-xl text-sm text-indigo-800">
-             {t('rateInfo')}
-             {data.rates.dataSources && data.rates.dataSources.length > 0 && (
-               <div className="mt-2 pt-2 border-t border-indigo-200">
-                 <p className="font-semibold mb-1">Sources:</p>
-                 <ul className="list-disc list-inside space-y-1">
-                   {data.rates.dataSources.map((source, idx) => (
-                     <li key={idx} className="truncate">
-                       <a href={source.uri} target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-900">
-                         {source.title || source.uri}
-                       </a>
-                     </li>
-                   ))}
-                 </ul>
-               </div>
-             )}
+            {t('rateInfo')}
+            {data.rates.dataSources && data.rates.dataSources.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-indigo-200">
+                <p className="font-semibold mb-1">Sources:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {data.rates.dataSources.map((source, idx) => (
+                    <li key={idx} className="truncate">
+                      <a href={source.uri} target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-900">
+                        {source.title || source.uri}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -341,33 +341,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <h3 className="text-lg font-semibold text-slate-800">{t('portfolioHistory')}</h3>
         <p className="text-sm text-slate-500 mb-6">{t('historySubtitle')}</p>
-        
+
         <div className="h-80 w-full" dir="ltr">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={historyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="date" 
-                tick={{fill: '#64748b', fontSize: 12}} 
-                tickLine={false} 
-                axisLine={{stroke: '#cbd5e1'}}
+              <XAxis
+                dataKey="date"
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: '#cbd5e1' }}
+                tickFormatter={(val) => {
+                  try {
+                    return format(new Date(val), 'dd-MM-yyyy');
+                  } catch (e) {
+                    return val;
+                  }
+                }}
               />
-              <YAxis 
-                tick={{fill: '#64748b', fontSize: 12}} 
-                tickLine={false} 
+              <YAxis
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value / 1000}k`}
               />
-              <RechartsTooltip 
+              <RechartsTooltip
                 formatter={(val: number) => formatCurrency(val)}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
               <Legend verticalAlign="top" height={36} />
-              <Line type="monotone" dataKey="GOLD" name={t('asset_GOLD')} stroke="#fbbf24" strokeWidth={2} dot={false} activeDot={{r: 6}} />
-              <Line type="monotone" dataKey="GOLD_21" name={t('asset_GOLD_21')} stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{r: 6}} />
-              <Line type="monotone" dataKey="SILVER" name={t('asset_SILVER')} stroke="#94a3b8" strokeWidth={2} dot={false} activeDot={{r: 6}} />
-              <Line type="monotone" dataKey="USD" name={t('asset_USD')} stroke="#10b981" strokeWidth={2} dot={false} activeDot={{r: 6}} />
-              <Line type="monotone" dataKey="EGP" name={t('asset_EGP')} stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{r: 6}} />
+              <Line type="monotone" dataKey="GOLD" name={t('asset_GOLD')} stroke="#fbbf24" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="GOLD_21" name={t('asset_GOLD_21')} stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="SILVER" name={t('asset_SILVER')} stroke="#94a3b8" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="USD" name={t('asset_USD')} stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="EGP" name={t('asset_EGP')} stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -376,83 +383,83 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
       {/* Manual Rate Edit Modal */}
       {showRateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <h3 className="font-bold text-slate-800">{t('updateRates')}</h3>
-                <button onClick={() => setShowRateModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
-             </div>
-             <form onSubmit={handleManualRateSave} className="p-6 space-y-4">
-                <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_GOLD')} (EGP/g)</label>
-                   <input type="number" required value={editRates.gold_egp} onChange={e => setEditRates({...editRates, gold_egp: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-                </div>
-                <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_GOLD_21')} (EGP/g)</label>
-                   <input type="number" required value={editRates.gold21_egp || 0} onChange={e => setEditRates({...editRates, gold21_egp: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-                </div>
-                <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_SILVER')} (EGP/g)</label>
-                   <input type="number" required value={editRates.silver_egp} onChange={e => setEditRates({...editRates, silver_egp: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-                </div>
-                <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_USD')} (EGP/$)</label>
-                   <input type="number" required value={editRates.usd_egp} onChange={e => setEditRates({...editRates, usd_egp: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-                </div>
-                <button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">{t('saveRates')}</button>
-             </form>
-           </div>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-800">{t('updateRates')}</h3>
+              <button onClick={() => setShowRateModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleManualRateSave} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_GOLD')} (EGP/g)</label>
+                <input type="number" required value={editRates.gold_egp} onChange={e => setEditRates({ ...editRates, gold_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_GOLD_21')} (EGP/g)</label>
+                <input type="number" required value={editRates.gold21_egp || 0} onChange={e => setEditRates({ ...editRates, gold21_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_SILVER')} (EGP/g)</label>
+                <input type="number" required value={editRates.silver_egp} onChange={e => setEditRates({ ...editRates, silver_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_USD')} (EGP/$)</label>
+                <input type="number" required value={editRates.usd_egp} onChange={e => setEditRates({ ...editRates, usd_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
+              </div>
+              <button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">{t('saveRates')}</button>
+            </form>
+          </div>
         </div>
       )}
 
       {/* Export Data Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                   <FileSpreadsheet className="text-emerald-600" size={20} />
-                   <h3 className="font-bold text-slate-800">{t('exportData')}</h3>
-                </div>
-                <button onClick={() => setShowExportModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
-             </div>
-             
-             <div className="p-6 space-y-4">
-                <p className="text-sm text-slate-500 mb-2">{t('exportSubtitle')}</p>
-                
-                <button 
-                  onClick={() => {
-                    exportTransactionsToCSV(data.transactions);
-                    setShowExportModal(false);
-                  }}
-                  className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
-                >
-                  <Download size={18} />
-                  {t('downloadTxs')}
-                </button>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="text-emerald-600" size={20} />
+                <h3 className="font-bold text-slate-800">{t('exportData')}</h3>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
 
-                <button 
-                  onClick={() => {
-                    exportLiabilitiesToCSV(data.liabilities);
-                    setShowExportModal(false);
-                  }}
-                  className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
-                >
-                  <Download size={18} />
-                  {t('downloadLiabs')}
-                </button>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500 mb-2">{t('exportSubtitle')}</p>
 
-                <button 
-                  onClick={() => {
-                    exportPortfolioSummaryToCSV(summary, data.rates);
-                    setShowExportModal(false);
-                  }}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-200"
-                >
-                  <Download size={18} />
-                  {t('downloadSummary')}
-                </button>
-             </div>
-           </div>
+              <button
+                onClick={() => {
+                  exportTransactionsToCSV(data.transactions);
+                  setShowExportModal(false);
+                }}
+                className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
+              >
+                <Download size={18} />
+                {t('downloadTxs')}
+              </button>
+
+              <button
+                onClick={() => {
+                  exportLiabilitiesToCSV(data.liabilities);
+                  setShowExportModal(false);
+                }}
+                className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
+              >
+                <Download size={18} />
+                {t('downloadLiabs')}
+              </button>
+
+              <button
+                onClick={() => {
+                  exportPortfolioSummaryToCSV(summary, data.rates);
+                  setShowExportModal(false);
+                }}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-200"
+              >
+                <Download size={18} />
+                {t('downloadSummary')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { addDays, format, isBefore, isAfter, isSameDay } from 'date-fns';
 import { useStore } from '../services/storage';
 import { sendZakatReminderEmail } from '../services/notificationService';
+import { CustomDatePicker } from './DatePicker';
 
 interface ZakatCalculatorProps {
   data: StoreData;
@@ -34,10 +35,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   const reminderEnabled = data.zakatConfig?.reminderEnabled || false;
   const userEmail = data.zakatConfig?.email || '';
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDateChange = (value: string) => {
     updateZakatConfig({
       ...data.zakatConfig,
-      zakatDate: e.target.value,
+      zakatDate: value,
       reminderEnabled: data.zakatConfig?.reminderEnabled
     });
   };
@@ -230,16 +231,15 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
         <div className="w-full flex flex-wrap gap-4 items-center">
           {/* Date Input */}
           <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
-            <input
-              type="date"
+            <CustomDatePicker
               value={zakatDate}
               onChange={handleDateChange}
-              className="bg-white p-2 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-700 w-full"
+              className="flex-1"
             />
             {dir === 'rtl' ? <ArrowRight className="text-slate-300 hidden sm:block" size={16} transform="scale(-1, 1)" /> : <ArrowRight className="text-slate-300 hidden sm:block" size={16} />}
             <div className="text-center px-2 hidden sm:block">
               <div className="text-xs text-slate-400 font-medium uppercase">{t('days354')}</div>
-              <div className="text-sm font-bold text-slate-700" dir="ltr">{format(calculation.lunarEndDate, 'yyyy-MM-dd')}</div>
+              <div className="text-sm font-bold text-slate-700" dir="ltr">{format(calculation.lunarEndDate, 'dd-MM-yyyy')}</div>
             </div>
           </div>
 

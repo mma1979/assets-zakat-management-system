@@ -3,6 +3,7 @@ import { StoreData, Liability } from '../types';
 import { Trash2, Calendar, DollarSign, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
+import { CustomDatePicker } from './DatePicker';
 
 interface LiabilityManagerProps {
   data: StoreData;
@@ -31,7 +32,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
     setDueDate('');
     setIsDeductible(true);
   };
-  
+
   const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
 
   return (
@@ -57,16 +58,16 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                   <div>
                     <h4 className="font-bold text-slate-800">{item.title}</h4>
                     <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                       <Calendar size={12} />
-                       {item.dueDate ? format(new Date(item.dueDate), 'MMM dd, yyyy') : t('noDate')}
-                       <span className="text-slate-300">|</span>
-                       <span>{item.isDeductible ? t('deductible') : t('notDeductible')}</span>
+                      <Calendar size={12} />
+                      {item.dueDate ? format(new Date(item.dueDate), 'dd-MM-yyyy') : t('noDate')}
+                      <span className="text-slate-300">|</span>
+                      <span>{item.isDeductible ? t('deductible') : t('notDeductible')}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="font-bold text-lg text-slate-700">-{formatNum(item.amount)} EGP</span>
-                  <button 
+                  <button
                     onClick={() => onRemoveLiability(item.id)}
                     className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                   >
@@ -85,16 +86,16 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('title')}</label>
-              <input 
+              <input
                 type="text" required value={title} onChange={e => setTitle(e.target.value)}
                 className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder={t('title')}
               />
             </div>
-            
+
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('amount')} (EGP)</label>
-              <input 
+              <input
                 type="number" required min="0" value={amount} onChange={e => setAmount(e.target.value)}
                 className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="0.00"
@@ -104,13 +105,13 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
 
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('dueDate')}</label>
-              <input 
-                type="date" required value={dueDate} onChange={e => setDueDate(e.target.value)}
-                className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              <CustomDatePicker
+                value={dueDate}
+                onChange={setDueDate}
               />
             </div>
 
-            <div 
+            <div
               className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-center gap-3 ${isDeductible ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}
               onClick={() => setIsDeductible(!isDeductible)}
             >
@@ -118,13 +119,13 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                 {isDeductible && <CheckCircle2 size={14} className="text-white" />}
               </div>
               <div className="flex-1">
-                 <p className="text-sm font-medium text-slate-700">{t('isDeductible')}</p>
-                 <p className="text-xs text-slate-400">{t('isDeductibleHint')}</p>
+                <p className="text-sm font-medium text-slate-700">{t('isDeductible')}</p>
+                <p className="text-xs text-slate-400">{t('isDeductibleHint')}</p>
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl mt-2 transition-transform active:scale-[0.98]"
             >
               {t('addLiability')}
