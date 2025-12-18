@@ -4,6 +4,7 @@ import { Trash2, Calendar, DollarSign, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CustomDatePicker } from './DatePicker';
+import { ConfirmModal } from './ConfirmModal';
 
 interface LiabilityManagerProps {
   data: StoreData;
@@ -17,6 +18,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isDeductible, setIsDeductible] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +70,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                 <div className="flex items-center gap-4">
                   <span className="font-bold text-lg text-slate-700">-{formatNum(item.amount)} EGP</span>
                   <button
-                    onClick={() => onRemoveLiability(item.id)}
+                    onClick={() => setDeleteId(item.id)}
                     className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                   >
                     <Trash2 size={18} />
@@ -133,6 +135,20 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
           </form>
         </div>
       </div>
-    </div>
+
+
+      <ConfirmModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) {
+            onRemoveLiability(deleteId);
+            setDeleteId(null);
+          }
+        }}
+        title={t('deleteLiabTitle')}
+        message={t('deleteLiabBody')}
+      />
+    </div >
   );
 };

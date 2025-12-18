@@ -8,6 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { calculateAssetMetrics } from '../utils/calculations';
 import { useStore } from '../services/storage';
 import { CustomDatePicker } from './DatePicker';
+import { ConfirmModal } from './ConfirmModal';
 
 interface AssetManagerProps {
   data: StoreData;
@@ -36,7 +37,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   const [alertCondition, setAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
 
   // Delete Confirmation State
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'TRANSACTION' | 'ALERT' } | null>(null);
 
   const getCurrentRate = (type: AssetType) => {
     switch (type) {
@@ -265,7 +266,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     <td className="px-6 py-4 text-slate-600">{formatNum(tx.amount * tx.pricePerUnit)} EGP</td>
                     <td className="px-6 py-4 text-end">
                       <button
-                        onClick={() => setDeleteConfirmId(tx.id)}
+                        onClick={() => setDeleteConfirm({ id: tx.id, type: 'TRANSACTION' })}
                         className="text-slate-400 hover:text-rose-500 transition-colors"
                       >
                         <Trash2 size={16} />
@@ -419,7 +420,10 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                       <span className="font-medium">{alert.condition === 'ABOVE' ? t('above') : t('below')}</span>
                       <span className="mx-2 font-bold">{formatNum(alert.targetPrice)} EGP</span>
                     </div>
-                    <button onClick={() => handleDeleteAlert(alert.id)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                    <button
+                      onClick={() => setDeleteConfirm({ id: alert.id, type: 'ALERT' })}
+                      className="text-slate-300 hover:text-rose-500 transition-colors"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -431,39 +435,19 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 text-center">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">{t('deleteConfirmTitle')}</h3>
-              <p className="text-slate-500 text-sm mb-6">{t('deleteConfirmBody')}</p>
-
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  onClick={() => {
-                    if (deleteConfirmId) {
-                      onRemoveTransaction(deleteConfirmId);
-                      setDeleteConfirmId(null);
-                    }
-                  }}
-                  className="px-4 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm"
-                >
-                  {t('confirm')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (deleteConfirm?.type === 'TRANSACTION') {
+            onRemoveTransaction(deleteConfirm.id);
+          } else if (deleteConfirm?.type === 'ALERT') {
+            handleDeleteAlert(deleteConfirm.id);
+          }
+        }}
+        title={deleteConfirm?.type === 'TRANSACTION' ? t('deleteConfirmTitle') : t('deleteAlertTitle')}
+        message={deleteConfirm?.type === 'TRANSACTION' ? t('deleteConfirmBody') : t('deleteAlertBody')}
+      />
     </div>
   );
 };

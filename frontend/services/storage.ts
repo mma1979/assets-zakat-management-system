@@ -234,10 +234,33 @@ export const useStore = () => {
     updateDataPart('liabilities', newLiabilities, l);
   }, [data.liabilities]);
 
-  const removeLiability = useCallback((id: string) => {
-    const newLiabilities = data.liabilities.filter(l => l.id !== id);
-    updateDataPart('liabilities', newLiabilities);
-  }, [data.liabilities]);
+  const removeLiability = useCallback(async (id: string) => {
+    const token = getStoredToken();
+    if (!token) {
+      // Offline / No Auth fallback
+      const newLiabilities = data.liabilities.filter(l => l.id !== id);
+      updateDataPart('liabilities', newLiabilities);
+      return;
+    }
+
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, liabilities: true }));
+
+    try {
+      const response = await http.delete(`${API_ENDPOINTS.liabilities}/${id}`, { headers: getAuthHeaders() });
+      if (response.status >= 200 && response.status < 300) {
+        await loadAllData();
+      } else {
+        throw new Error(`Delete failed with status ${response.status}`);
+      }
+    } catch (e) {
+      console.error("Failed to delete liability:", e);
+      setSyncError("Failed to delete liability on server.");
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, liabilities: false }));
+    }
+  }, [data.liabilities, loadAllData]);
 
   // Rates operations
   const updateRates = useCallback((rates: MarketRates) => {

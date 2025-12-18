@@ -152,6 +152,10 @@ export const translations = {
     // Confirmation
     deleteConfirmTitle: "Delete Transaction?",
     deleteConfirmBody: "Are you sure you want to delete this transaction? This action cannot be undone.",
+    deleteLiabTitle: "Delete Liability?",
+    deleteLiabBody: "Are you sure you want to delete this liability?",
+    deleteAlertTitle: "Delete Alert?",
+    deleteAlertBody: "Are you sure you want to delete this price alert?",
     confirm: "Confirm",
     cancel: "Cancel"
   },
@@ -304,6 +308,10 @@ export const translations = {
     // Confirmation
     deleteConfirmTitle: "حذف المعاملة؟",
     deleteConfirmBody: "هل أنت متأكد من رغبتك في حذف هذه المعاملة؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteLiabTitle: "حذف الالتزام؟",
+    deleteLiabBody: "هل أنت متأكد من رغبتك في حذف هذا الالتزام؟",
+    deleteAlertTitle: "حذف التنبيه؟",
+    deleteAlertBody: "هل أنت متأكد من رغبتك في حذف هذا التنبيه؟",
     confirm: "تأكيد",
     cancel: "إلغاء"
   }
