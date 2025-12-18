@@ -15,6 +15,7 @@ public interface IAuthService
 {
     Task<AuthResponseDto?> RegisterAsync(RegisterDto dto);
     Task<AuthResponseDto?> LoginAsync(LoginDto dto);
+    Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto dto);
 }
 
 public class AuthService : IAuthService
@@ -112,5 +113,16 @@ public class AuthService : IAuthService
         using var hmac = new HMACSHA512(salt);
         var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
         return computedHash.SequenceEqual(hash);
+    }
+
+    public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto dto)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return false;
+        if (!VerifyPassword(dto.CurrentPassword, user.PasswordHash)) return false;
+        if (dto.NewPassword != dto.ConfirmPassword) return false;
+        user.PasswordHash = HashPassword(dto.NewPassword);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

@@ -29,6 +29,13 @@ public class ZakatConfig
     public User? User { get; set; }
 }
 
+public class ZakatConfigRequest
+{
+    public DateTime ZakatDate { get; set; } = new DateTime(2026, 7, 23);
+    public bool ReminderEnabled { get; set; } = true;
+    public string? Email { get; set; } = "mamado2000@gmail.com";
+}
+
 public class Transaction
 {
     public int Id { get; set; }
@@ -76,6 +83,14 @@ public class LoginDto
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+}
+
+public class ChangePasswordDto
+{
+    public int UserId { get; set; }
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public class AuthResponseDto

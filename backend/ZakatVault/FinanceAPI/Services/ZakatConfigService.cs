@@ -7,6 +7,7 @@ namespace FinanceAPI.Services;
 public interface IZakatConfigService
 {
     Task<ZakatConfig> GetZakatConfigAsync(int? userId);
+    Task<bool> UpdateZakatConfigAsync(int? userId, ZakatConfigRequest configRequest);
 }
 
 public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
@@ -16,5 +17,22 @@ public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
         var config = await context.ZakatConfigs
             .FirstOrDefaultAsync(z => z.UserId == userId);
         return config ?? new();
+    }
+
+    public async Task<bool> UpdateZakatConfigAsync(int? userId, ZakatConfigRequest configRequest)
+    {
+        var config = await context.ZakatConfigs
+            .FirstOrDefaultAsync(z => z.UserId == userId);
+        if (config == null)
+        {
+            return false;
+        }
+        config.ZakatDate = configRequest.ZakatDate;
+        config.ReminderEnabled = configRequest.ReminderEnabled;
+        config.Email = configRequest.Email;
+
+        await context.SaveChangesAsync();
+
+        return true;
     }
 }

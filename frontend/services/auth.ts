@@ -48,7 +48,7 @@ export const registerUser = async (name: string, email: string, password: string
 export const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
   try {
     const token = getStoredToken();
-    const response = await http.post(`${API_URL}/change-password`,
+    const response = await http.put(`${API_URL}/change-password`,
       { currentPassword, newPassword },
       { headers: { Authorization: `Bearer ${token}` } }
     );

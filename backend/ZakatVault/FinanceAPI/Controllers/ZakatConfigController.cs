@@ -1,4 +1,5 @@
-﻿using FinanceAPI.Services;
+﻿using FinanceAPI.Models;
+using FinanceAPI.Services;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -22,4 +23,19 @@ public class ZakatConfigController(IZakatConfigService service) : ControllerBase
         var config = await service.GetZakatConfigAsync(userId);
         return Ok(config);
     }
-}
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateZakatConfig([FromBody] ZakatConfigRequest configRequest)
+    {
+        var userIdValue = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = userIdValue is not null ? int.Parse(userIdValue) : (int?)null;
+        var updatedConfig = await service.UpdateZakatConfigAsync(userId, configRequest);
+       
+        if (!updatedConfig)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+}   
