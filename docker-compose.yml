@@ -14,16 +14,21 @@ services:
     build:
       context: ./backend/ZakatVault
       dockerfile: FinanceAPI/Dockerfile
-    image: zakatvault-backend:1.0.5
+    image: zakatvault-backend:1.0.6
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__FinanceDbConnection=Server=sqlserver,1433;Database=ZakatVaultDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True;Max Pool Size=200;
+      - ConnectionStrings__FinanceDbConnection=${FinanceDbConnection}
       # JWT Configuration
       - JwtSettings__SecretKey=${JWT_SECRET_KEY}
       - JwtSettings__Issuer=${JWT_ISSUER}
       - JwtSettings__Audience=${JWT_AUDIENCE}
       - JwtSettings__ExpirationInDays=${JWT_EXPIRATION_IN_DAYS:-14}
+      - GeminiApiKey=${API_KEY}
+      - Resend__ApiToken=${RESEND_API_KEY}
+      - Resend__Sender=${RESEND_SENDER}
+    volumes:
+      - ./backend/ZakatVault/FinanceAPI/Logs:/app/Logs
     ports:
       - "8080:8080"
     depends_on:
@@ -34,7 +39,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: zakatvault-frontend:1.0.5
+    image: zakatvault-frontend:1.0.6
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

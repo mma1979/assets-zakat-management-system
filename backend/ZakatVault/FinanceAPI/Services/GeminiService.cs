@@ -23,13 +23,11 @@ public class GeminiService : IGeminiService
 {
     private readonly IConfiguration _configuration;
     private readonly string _geminiApiKey;
-    private readonly string _geminiEndpoint;
 
     public GeminiService(IConfiguration configuration)
     {
         _configuration = configuration;
-        _geminiApiKey = _configuration["GeminiAPI:ApiKey"] ?? throw new ArgumentNullException("GeminiApiKey is not configured");
-        _geminiEndpoint = _configuration["GeminiAPI:Endpoint"] ?? throw new ArgumentNullException("GeminiEndpoint is not configured");
+        _geminiApiKey = _configuration["GeminiApiKey"] ?? throw new ArgumentNullException("GeminiApiKey is not configured");
     }
 
     public async Task<RatesRequest?> FetchMarketRatesAsync()

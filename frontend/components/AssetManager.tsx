@@ -18,7 +18,7 @@ interface AssetManagerProps {
 
 export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransaction, onRemoveTransaction }) => {
   const { t, language } = useLanguage();
-  const { updatePriceAlerts } = useStore();
+  const { addPriceAlert, removePriceAlert } = useStore();
 
   const [showModal, setShowModal] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -123,12 +123,12 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
       isActive: true
     };
 
-    updatePriceAlerts([...data.priceAlerts, newAlert]);
+    addPriceAlert(newAlert);
     setAlertTargetPrice('');
   };
 
   const handleDeleteAlert = (id: string) => {
-    updatePriceAlerts(data.priceAlerts.filter(a => a.id !== id));
+    removePriceAlert(id);
   };
 
   const assetMetrics = useMemo(() => {

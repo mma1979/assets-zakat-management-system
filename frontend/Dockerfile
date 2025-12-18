@@ -1,8 +1,8 @@
-FROM node:22-alpine AS builder
+FROM node:22-bullseye-slim AS builder
 WORKDIR /app
 COPY package.json ./
-COPY package-lock.json* pnpm-lock.yaml* yarn.lock* ./
-RUN npm ci
+# COPY package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN npm install
 COPY . .
 
 RUN npm run build
@@ -17,7 +17,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Create Nginx configuration template
 RUN mkdir -p /etc/nginx/templates && \
-    cat > /etc/nginx/templates/default.conf.template <<'EOF'
+  cat > /etc/nginx/templates/default.conf.template <<'EOF'
 server {
   listen 80;
   server_name _;
