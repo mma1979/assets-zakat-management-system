@@ -6,6 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { AssetManager } from './components/AssetManager';
 import { LiabilityManager } from './components/LiabilityManager';
 import { ZakatCalculator } from './components/ZakatCalculator';
+import { SettingsPage } from './components/SettingsPage';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -16,12 +17,12 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ASSET_LABELS } from './constants';
 
 const AuthenticatedApp: React.FC = () => {
-  const { 
-    data, 
-    isLoaded, 
+  const {
+    data,
+    isLoaded,
     syncError,
     isSyncing,
-    addTransaction, 
+    addTransaction,
     removeTransaction,
     addLiability,
     removeLiability,
@@ -68,8 +69,8 @@ const AuthenticatedApp: React.FC = () => {
 
         if (currentPrice <= 0) return false;
 
-        const isHit = alert.condition === 'ABOVE' 
-          ? currentPrice > alert.targetPrice 
+        const isHit = alert.condition === 'ABOVE'
+          ? currentPrice > alert.targetPrice
           : currentPrice < alert.targetPrice;
 
         return isHit;
@@ -81,11 +82,11 @@ const AuthenticatedApp: React.FC = () => {
         const hasNotified = sessionStorage.getItem(alertKey);
 
         if (!hasNotified) {
-           const assetName = t(`asset_${alert.assetType}` as any);
-           const body = `${assetName} ${t('alertHitBody')} ${data.rates[alert.assetType === 'GOLD_21' ? 'gold21_egp' : alert.assetType === 'GOLD' ? 'gold_egp' : alert.assetType === 'SILVER' ? 'silver_egp' : 'usd_egp']} EGP`;
-           
-           new Notification(t('alertHitTitle'), { body, icon: '/favicon.ico' });
-           sessionStorage.setItem(alertKey, 'true');
+          const assetName = t(`asset_${alert.assetType}` as any);
+          const body = `${assetName} ${t('alertHitBody')} ${data.rates[alert.assetType === 'GOLD_21' ? 'gold21_egp' : alert.assetType === 'GOLD' ? 'gold_egp' : alert.assetType === 'SILVER' ? 'silver_egp' : 'usd_egp']} EGP`;
+
+          new Notification(t('alertHitTitle'), { body, icon: '/favicon.ico' });
+          sessionStorage.setItem(alertKey, 'true');
         }
       });
     }
@@ -118,27 +119,28 @@ const AuthenticatedApp: React.FC = () => {
 
       <Routes>
         <Route path="/" element={<Dashboard data={data} onUpdateRates={updateRates} />} />
-        <Route 
-          path="/assets" 
+        <Route
+          path="/assets"
           element={
-            <AssetManager 
-              data={data} 
-              onAddTransaction={addTransaction} 
-              onRemoveTransaction={removeTransaction} 
+            <AssetManager
+              data={data}
+              onAddTransaction={addTransaction}
+              onRemoveTransaction={removeTransaction}
             />
-          } 
+          }
         />
-        <Route 
-          path="/liabilities" 
+        <Route
+          path="/liabilities"
           element={
-            <LiabilityManager 
-              data={data} 
-              onAddLiability={addLiability} 
-              onRemoveLiability={removeLiability} 
+            <LiabilityManager
+              data={data}
+              onAddLiability={addLiability}
+              onRemoveLiability={removeLiability}
             />
-          } 
+          }
         />
         <Route path="/zakat" element={<ZakatCalculator data={data} />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
@@ -151,7 +153,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute />}>
-         <Route path="/*" element={<AuthenticatedApp />} />
+        <Route path="/*" element={<AuthenticatedApp />} />
       </Route>
     </Routes>
   );

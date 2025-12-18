@@ -45,6 +45,20 @@ export const registerUser = async (name: string, email: string, password: string
   }
 };
 
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+  try {
+    const token = getStoredToken();
+    const response = await http.post(`${API_URL}/change-password`,
+      { currentPassword, newPassword },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.status >= 200 && response.status < 300;
+  } catch (e) {
+    console.error("Change password failed", e);
+    throw e;
+  }
+};
+
 export const getStoredToken = () => localStorage.getItem('auth_token');
 export const getStoredUser = () => {
   const u = localStorage.getItem('auth_user');

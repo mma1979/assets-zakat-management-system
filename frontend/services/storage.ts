@@ -185,6 +185,7 @@ export const useStore = () => {
 
     setIsSyncing(false);
     setLoadingStates(prev => ({ ...prev, [key]: false }));
+    return success;
   };
 
   // Transaction operations
@@ -269,13 +270,47 @@ export const useStore = () => {
 
   // Zakat config operations
   const updateZakatConfig = useCallback((zakatConfig: ZakatConfig) => {
-    updateDataPart('zakatConfig', zakatConfig);
+    return updateDataPart('zakatConfig', zakatConfig);
   }, []);
 
   // Price alerts operations
-  const updatePriceAlerts = useCallback((priceAlerts: PriceAlert[]) => {
-    updateDataPart('priceAlerts', priceAlerts);
-  }, []);
+  const addPriceAlert = useCallback((alert: PriceAlert) => {
+    const newAlerts = [...data.priceAlerts, alert];
+    return updateDataPart('priceAlerts', newAlerts, alert);
+  }, [data.priceAlerts]);
+
+  const removePriceAlert = useCallback(async (id: string) => {
+    const token = getStoredToken();
+    if (!token) {
+      // Offline fallback
+      const newAlerts = data.priceAlerts.filter(a => a.id !== id);
+      return updateDataPart('priceAlerts', newAlerts);
+    }
+
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, priceAlerts: true }));
+
+    try {
+      const response = await http.delete(`${API_ENDPOINTS.priceAlerts}/${id}`, { headers: getAuthHeaders() });
+      if (response.status >= 200 && response.status < 300) {
+        // Reload or filter locally
+        const newAlerts = data.priceAlerts.filter(a => a.id !== id);
+        setData(prev => ({ ...prev, priceAlerts: newAlerts }));
+        // Also persist local to stay in sync
+        persistLocal({ ...data, priceAlerts: newAlerts });
+        return true;
+      } else {
+        throw new Error(`Delete failed with status ${response.status}`);
+      }
+    } catch (e) {
+      console.error("Failed to delete alert:", e);
+      setSyncError("Failed to delete alert on server.");
+      return false;
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, priceAlerts: false }));
+    }
+  }, [data.priceAlerts]);
 
   const fetchZakatCalculation = useCallback(async () => {
     return fetchData<ZakatCalculationResult | null>('zakatCalc', null);
@@ -293,7 +328,9 @@ export const useStore = () => {
     removeLiability,
     updateRates,
     updateZakatConfig,
-    updatePriceAlerts,
+
+    addPriceAlert,
+    removePriceAlert,
     fetchZakatCalculation
   };
 };
