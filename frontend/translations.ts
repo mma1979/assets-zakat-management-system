@@ -107,7 +107,10 @@ export const translations = {
     nisabThresholds: "Nisab Thresholds",
     goldNisab: "Gold Nisab (85g 24k)",
     silverNisab: "Silver Nisab (595g)",
-    days354: "تقريباً 354 يوم",
+    days354: "Approx 354 days",
+    daysRemaining: "Days Remaining",
+    dueToday: "Due Today",
+    daysOverdue: "Days Overdue",
 
     // Reminder
     enableReminder: "Enable Reminder",
@@ -264,6 +267,9 @@ export const translations = {
     goldNisab: "نصاب الذهب (85ج 24)",
     silverNisab: "نصاب الفضة (595g)",
     days354: "تقريباً 354 يوم",
+    daysRemaining: "أيام متبقية",
+    dueToday: "مستحق اليوم",
+    daysOverdue: "أيام متأخرة",
 
     // Reminder
     enableReminder: "تفعيل التذكير",

@@ -3,7 +3,7 @@ import { StoreData, ZakatCalculationResult } from '../types';
 import { NISAB_GOLD_GRAMS, NISAB_SILVER_GRAMS, ZAKAT_RATE } from '../constants';
 import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, BellRing, Mail } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { addDays, format, isBefore, isAfter, isSameDay } from 'date-fns';
+import { addDays, format, isBefore, isAfter, isSameDay, differenceInDays } from 'date-fns';
 import { useStore } from '../services/storage';
 import { sendZakatReminderEmail } from '../services/notificationService';
 import { CustomDatePicker } from './DatePicker';
@@ -17,7 +17,7 @@ const parseLocal = (dateStr: string) => {
   if (!dateStr) return new Date(NaN);
   const parts = dateStr.split('-');
   if (parts.length === 3) {
-    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2].split('T')[0]));
   }
   return new Date(dateStr);
 };
@@ -34,6 +34,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   const zakatDate = data.zakatConfig?.zakatDate || format(new Date(), 'yyyy-MM-dd');
   const reminderEnabled = data.zakatConfig?.reminderEnabled || false;
   const userEmail = data.zakatConfig?.email || '';
+
+
+
+
 
   const handleDateChange = (value: string) => {
     updateZakatConfig({
@@ -134,7 +138,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     if (!isValidDate(startDate)) {
       startDate = new Date();
     }
-    const lunarYearDays = 354; // Approx lunar year
+    const lunarYearDays = 355; // Approx lunar year
     const lunarEndDate = addDays(startDate, lunarYearDays);
 
     // 1. Calculate Total Assets Value (Market Value)
@@ -201,10 +205,40 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       nisabGoldValue: serverCalculation?.nisabGoldValue ?? 0,
       nisabSilverValue: serverCalculation?.nisabSilverValue ?? 0,
       zakatDue: serverCalculation?.totalZakatDue ?? 0,
-      lunarEndDate: '2025-12-25', // serverCalculation.LunarEndDate,
+      lunarEndDate: serverCalculation?.lunarEndDate ?? '2026-07-23',
       isEligible: (serverCalculation?.totalZakatDue ?? 0) > 0,
     };
   }, [serverCalculation]);
+
+  const remainingDays = useMemo(() => {
+
+    const endDateStr = zakatDate;
+    // It might be a string or Date depending on source
+    // parseLocal handles string 'YYYY-MM-DD'. If it's a Date object, wrapping in new Date() works or check type.
+    // Assuming string based on Step 125 edits '2026-07-23'
+
+    let due: Date;
+    // Check if it looks like a Date object safely
+    if (Object.prototype.toString.call(endDateStr) === '[object Date]') {
+      due = endDateStr as unknown as Date;
+    } else {
+      due = parseLocal(String(endDateStr));
+    }
+
+    if (!isValidDate(due)) return NaN;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return differenceInDays(due, today);
+  }, [calculation.lunarEndDate]);
+
+  const remainingText = useMemo(() => {
+    if (isNaN(remainingDays)) return "";
+    if (remainingDays > 0) return `${remainingDays} ${t('daysRemaining')}`;
+    if (remainingDays === 0) return t('dueToday');
+    return `${Math.abs(remainingDays)} ${t('daysOverdue')}`;
+  }, [remainingDays, t]);
 
   const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
   const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
@@ -235,11 +269,14 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
               value={zakatDate}
               onChange={handleDateChange}
               className="flex-1"
+              disabled={true}
             />
             {dir === 'rtl' ? <ArrowRight className="text-slate-300 hidden sm:block" size={16} transform="scale(-1, 1)" /> : <ArrowRight className="text-slate-300 hidden sm:block" size={16} />}
             <div className="text-center px-2 hidden sm:block">
-              <div className="text-xs text-slate-400 font-medium uppercase">{t('days354')}</div>
-              <div className="text-sm font-bold text-slate-700" dir="ltr">{format(calculation.lunarEndDate, 'dd-MM-yyyy')}</div>
+              <div className={`text-xs font-bold uppercase ${remainingDays < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                {remainingText}
+              </div>
+              <div className="text-sm font-bold text-slate-700" dir="ltr">{calculation.lunarEndDate}</div>
             </div>
           </div>
 
