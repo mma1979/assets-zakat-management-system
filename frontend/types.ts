@@ -37,6 +37,8 @@ export interface MarketRates {
   usd_egp: number; // Exchange rate
   lastUpdated: number; // Timestamp
   dataSources?: { title?: string; uri?: string }[];
+  rateIcons?: Record<string, string>;
+  [key: string]: number | { title?: string; uri?: string }[] | Record<string, string> | undefined;
 }
 
 export interface AssetSummary {

@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useStore } from '../services/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword } from '../services/auth';
-import { Lock, Bell, Calculator, Save, Plus, Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Lock, Bell, Calculator, Save, Plus, Trash2, ArrowRight, AlertTriangle, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor } from 'lucide-react';
 import { AssetType } from '../types';
 import { ASSET_LABELS } from '../constants';
 import { CustomDatePicker } from './DatePicker';
@@ -11,7 +11,7 @@ import { ConfirmModal } from './ConfirmModal';
 
 export const SettingsPage: React.FC = () => {
     const { t, dir } = useLanguage();
-    const { data, updateZakatConfig, addPriceAlert, removePriceAlert } = useStore();
+    const { data, updateZakatConfig, addPriceAlert, removePriceAlert, updateRates } = useStore();
     const { user } = useAuth();
 
     // Password State
@@ -34,8 +34,25 @@ export const SettingsPage: React.FC = () => {
     const [newAlertCondition, setNewAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
     const [newAlertPrice, setNewAlertPrice] = useState('');
     const [deleteAlertId, setDeleteAlertId] = useState<string | null>(null);
+
     const [isSubmittingAlert, setIsSubmittingAlert] = useState(false);
     const [isDeletingAlert, setIsDeletingAlert] = useState(false);
+
+    // Rates Management
+    // For rates we only edit EGP fields for now unless dynamic
+    const [newRateKey, setNewRateKey] = useState('');
+    const [newRateValue, setNewRateValue] = useState('');
+    const [newRateIcon, setNewRateIcon] = useState('Coins');
+    const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
+    const [isSavingRates, setIsSavingRates] = useState(false);
+    const [msgRates, setMsgRates] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    const AVAILABLE_ICONS: Record<string, any> = {
+        Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign,
+        Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee,
+        TrendingUp, BarChart3, PieChart, Activity,
+        Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor
+    };
 
     // Handlers
     const handlePasswordChange = async (e: React.FormEvent) => {
@@ -114,6 +131,63 @@ export const SettingsPage: React.FC = () => {
             } finally {
                 setIsDeletingAlert(false);
             }
+        }
+    };
+
+    const handleSaveRates = async (newRates: any) => {
+        setIsSavingRates(true);
+        setMsgRates(null);
+        try {
+            await updateRates({ ...data.rates, ...newRates, lastUpdated: Date.now() });
+            setMsgRates({ type: 'success', text: t('saveSuccess') || 'Rates updated' });
+        } catch (e) {
+            setMsgRates({ type: 'error', text: 'Failed to update rates' });
+        } finally {
+            setIsSavingRates(false);
+        }
+    };
+
+    const handleAddRate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newRateKey || !newRateValue) return;
+        const val = parseFloat(newRateValue);
+        if (isNaN(val)) return;
+
+        // prepare updates
+        const updates: any = { [newRateKey]: val };
+
+        // Handle Icon updates if supported
+        if (newRateIcon) {
+            const currentIcons = data.rates.rateIcons || {};
+            updates.rateIcons = { ...currentIcons, [newRateKey]: newRateIcon };
+        }
+
+        handleSaveRates(updates);
+        setNewRateKey('');
+        setNewRateValue('');
+        setNewRateIcon('Coins');
+    };
+
+    const handleDeleteRate = (key: string) => {
+        // Technically we can't delete from fixed interface, but for dynamic keys we can.
+        // For fixed keys, we might just set to 0 or ignore.
+        // To truly delete, we need to send the object without that key, but TS interface might complain if mandatory.
+        // We will assume dynamic keys can be deleted. Standard keys shouldn't be deleted structurally.
+        // For now, let's just create a new object without the key.
+        const { [key]: deleted, ...rest } = data.rates as any;
+        // We need to call updateRates with the new object
+        // updateDataPart merges? No, it replaces.
+        // So we need to pass the full object minus the key.
+        setIsSavingRates(true);
+        setMsgRates(null);
+        try {
+            // For strict keys in interface, this might be tricky, but we cast to any.
+            updateRates({ ...rest, lastUpdated: Date.now() });
+            setMsgRates({ type: 'success', text: 'Rate removed' });
+        } catch (e) {
+            setMsgRates({ type: 'error', text: 'Failed to remove rate' });
+        } finally {
+            setIsSavingRates(false);
         }
     };
 
@@ -313,6 +387,116 @@ export const SettingsPage: React.FC = () => {
                         <Plus size={24} />
                     </button>
                 </form>
+
+            </section>
+
+            {/* Manage Rates Section */}
+            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <Coins size={20} className="text-emerald-600" />
+                    {t('manageRates') || 'Manage Market Rates'}
+                </h3>
+
+                <div className="space-y-4 mb-6">
+                    {/* List current rates (exclude metadata) */}
+                    {Object.entries(data.rates)
+                        .filter(([k]) => k !== 'lastUpdated' && k !== 'dataSources' && k !== 'rateIcons')
+                        .map(([key, value]) => {
+                            const iconName = data.rates.rateIcons?.[key] || 'Coins';
+                            const IconComp = AVAILABLE_ICONS[iconName] || Coins;
+
+                            return (
+                                <div key={key} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-white rounded-full border border-slate-100 text-emerald-600">
+                                            <IconComp size={18} />
+                                        </div>
+                                        <span className="font-mono text-slate-700 font-semibold">{key.replace('_egp', '').toUpperCase()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="font-bold text-slate-900">{typeof value === 'number' ? value.toLocaleString() : String(value)}</span>
+                                        <button onClick={() => handleDeleteRate(key)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                </div>
+
+                <form onSubmit={handleAddRate} className="flex flex-wrap gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="flex-1 min-w-[120px] relative">
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('icon') || 'Icon'}</label>
+                        <button
+                            type="button"
+                            onClick={() => setIsIconDropdownOpen(!isIconDropdownOpen)}
+                            className="w-full p-2 border rounded-lg bg-white flex items-center justify-between hover:border-emerald-500 transition-colors"
+                        >
+                            <div className="flex items-center gap-2">
+                                {React.createElement(AVAILABLE_ICONS[newRateIcon] || Coins, { size: 18, className: "text-emerald-600" })}
+                                <span className="text-sm text-slate-700">{newRateIcon}</span>
+                            </div>
+                            <ChevronDown size={14} className="text-slate-400" />
+                        </button>
+
+                        {isIconDropdownOpen && (
+                            <div className="absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                                <div className="p-1 grid grid-cols-1 gap-1">
+                                    {Object.keys(AVAILABLE_ICONS).map(icon => (
+                                        <button
+                                            key={icon}
+                                            type="button"
+                                            onClick={() => {
+                                                setNewRateIcon(icon);
+                                                setIsIconDropdownOpen(false);
+                                            }}
+                                            className={`flex items-center gap-2 p-2 rounded-md hover:bg-slate-50 w-full text-left transition-colors ${newRateIcon === icon ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700'}`}
+                                        >
+                                            {React.createElement(AVAILABLE_ICONS[icon], { size: 18 })}
+                                            <span className="text-sm">{icon}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-[150px]">
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('rateKey') || 'Rate Key (e.g. platinum_egp)'}</label>
+                        <input
+                            type="text"
+                            value={newRateKey}
+                            onChange={e => setNewRateKey(e.target.value)}
+                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                            placeholder="asset_currency"
+                            required
+                        />
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('rateValue') || 'Value'}</label>
+                        <input
+                            type="number"
+                            value={newRateValue}
+                            onChange={e => setNewRateValue(e.target.value)}
+                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                            placeholder="0.00"
+                            step="any"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={isSavingRates}
+                        className={`p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors ${isSavingRates ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <Plus size={24} />
+                    </button>
+                </form>
+
+                {msgRates && (
+                    <div className={`mt-4 text-sm ${msgRates.type === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {msgRates.text}
+                    </div>
+                )}
             </section>
 
             {/* Delete Confirmation */}
@@ -323,6 +507,6 @@ export const SettingsPage: React.FC = () => {
                 title={t('deleteAlertTitle')}
                 message={t('deleteAlertBody')}
             />
-        </div>
+        </div >
     );
 };

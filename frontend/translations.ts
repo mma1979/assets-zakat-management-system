@@ -147,6 +147,12 @@ export const translations = {
     delete: "Delete",
     noAlerts: "No alerts set for this asset.",
 
+    // Manage Rates
+    manageRates: "Manage Market Rates",
+    rateKey: "Rate Key (e.g. platinum_egp)",
+    rateValue: "Value",
+    icon: "Icon",
+
     // Asset Labels
     asset_GOLD: "Gold (24k)",
     asset_GOLD_21: "Gold (21k)",
@@ -317,6 +323,12 @@ export const translations = {
     alertHitBody: "أصبح الآن",
     delete: "حذف",
     noAlerts: "لا توجد تنبيهات لهذا الأصل.",
+
+    // Manage Rates
+    manageRates: "إدارة أسعار السوق",
+    rateKey: "رمز السعر (مثلاً platinum_egp)",
+    rateValue: "القيمة",
+    icon: "الأيقونة",
 
     // Asset Labels
     asset_GOLD: "ذهب (24)",

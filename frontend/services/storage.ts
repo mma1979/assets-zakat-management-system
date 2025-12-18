@@ -265,7 +265,7 @@ export const useStore = () => {
 
   // Rates operations
   const updateRates = useCallback((rates: MarketRates) => {
-    updateDataPart('rates', rates);
+    return updateDataPart('rates', rates);
   }, []);
 
   // Zakat config operations
