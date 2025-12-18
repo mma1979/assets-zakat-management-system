@@ -1,14 +1,21 @@
-﻿using FinanceAPI.Converters;
+﻿using FinanceAPI.Consts;
+using FinanceAPI.Converters;
 using FinanceAPI.Data;
 using FinanceAPI.Services;
+
+using Hangfire;
+using Hangfire.Dashboard.BasicAuthorization;
+using Hangfire.SqlServer;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 using Scalar.AspNetCore;
 
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,13 +25,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddRazorPages();
 
 // Configure OpenAPI
 builder.Services.AddOpenApi();
 
 // Database Context
 builder.Services.AddDbContext<FinanceDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("FinanceDbConnection")));
 
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -47,6 +55,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Add Hangfire services
+builder.Services.AddHangfire(configuration => configuration
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("FinanceDbConnection"),
+        new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.FromSeconds(5),
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true
+        })
+    .WithJobExpirationTimeout(TimeSpan.FromHours(1)));
+
+builder.Services.AddHangfireServer(con =>
+{
+    con.ServerName = $"zakatvault-{Environment.MachineName}-{Process.GetCurrentProcess().Id}";
+    con.Queues = [QueuesNames.DEFAULT,QueuesNames.NOTIFICATIONS,QueuesNames.OTHER];
+    con.ServerTimeout = TimeSpan.FromMinutes(1);
+    con.CancellationCheckInterval = TimeSpan.FromSeconds(30);
+    con.HeartbeatInterval = TimeSpan.FromSeconds(10);
+    con.WorkerCount = 5;
+});
+
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPriceAlertService, PriceAlertService>();
@@ -55,6 +86,11 @@ builder.Services.AddScoped<ILiabilityService, LiabilityService>();
 builder.Services.AddScoped<IRatesService, RatesService>();
 builder.Services.AddScoped<IZakatConfigService, ZakatConfigService>();
 builder.Services.AddScoped<IZakatCalcService, ZakatCalcService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IGeminiService, GeminiService>();
+builder.Services.AddSingleton<HangfireService>();
+builder.Services.AddScoped<RazorComponentCompiler>();
+builder.Services.AddScoped<ResendService>();
 builder.Services.AddHttpContextAccessor();
 
 // CORS
@@ -140,7 +176,7 @@ try
    // Log.Information($"Migration completed successfully. {newlyApplied.Count} new migration(s) applied.");
 
 }
-catch (Exception e)
+catch (Exception)
 {
     //Log.Error(e.Message, e);
 }
@@ -159,12 +195,40 @@ if (app.Environment.IsProduction())
 {
     app.UseHttpsRedirection(); 
 }
+app.UseStaticFiles();
+app.UseRouting();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapRazorPages();
 
 // Aspire defaults
 app.MapDefaultEndpoints();
+
+// Hangfire Dashboard
+
+app.UseHangfireDashboard(builder.Configuration["HangfireSettings:DashboardPath"] ?? "/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
+    {
+        SslRedirect = false,
+        RequireSsl = false,
+        LoginCaseSensitive = true,
+        Users =
+        [
+            new BasicAuthAuthorizationUser
+            {
+                Login = builder.Configuration["HangfireSettings:Username"] ?? "admin",
+                PasswordClear = builder.Configuration["HangfireSettings:Password"] ?? "admin"
+            }
+        ]
+    }) },
+    IgnoreAntiforgeryToken = true
+});
+
+// register Hangfire jobs
+var hangfireService = app.Services.GetRequiredService<HangfireService>();
+hangfireService.EnqueueJobs();
 
 app.Run();

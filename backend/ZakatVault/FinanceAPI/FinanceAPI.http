@@ -1,4 +1,4 @@
-﻿@Host = http://localhost:5259
+﻿@Host = http://localhost:5000
 # @Token = {{login.response.body.token}}
 @Token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiVGVzdCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InQxQHRlc3QuY29tIiwiZXhwIjoxNzY1NjI2NTQyLCJpc3MiOiJGaW5hbmNlQVBJIiwiYXVkIjoiRmluYW5jZUFQSVVzZXJzIn0.zby6vlxrYDN6dLZUN_6PiV16c_LI7wuENqsnDe1hcvU
 
@@ -23,4 +23,8 @@ Authorization: Bearer {{Token}}
 
 ###
 
+GET {{Host}}/api/Values
+Content-Type: application/json
+
+###
 

@@ -1,5 +1,8 @@
-﻿using FinanceAPI.Data;
+﻿using FinanceAPI.Consts;
+using FinanceAPI.Data;
 using FinanceAPI.Models;
+
+using Hangfire;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -9,8 +12,9 @@ public interface IRatesService
 {
     Task<RatesResponse> GetLatestRatesAsync();
     Task<RatesResponse> UpdateRatesAsync(RatesRequest rates);
+    void UpdateRates();
 }
-public class RatesService(FinanceDbContext context) : IRatesService
+public class RatesService(FinanceDbContext context, IGeminiService geminiService) : IRatesService
 {
     public async Task<RatesResponse> GetLatestRatesAsync()
     {
@@ -56,7 +60,47 @@ public class RatesService(FinanceDbContext context) : IRatesService
            .SetProperty(r => r.LastUpdated, lastUpdates)
        );
 
+        BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS, ns => ns.SendPriceAlert());
+
         return await GetLatestRatesAsync();
+    }
+
+    public void UpdateRates()
+    {
+        // use gemini api to get latest rates and update the database
+       
+        var rates = geminiService.FetchMarketRatesAsync().GetAwaiter().GetResult();
+        if (rates == null)
+        {
+            return;
+        }
+
+        var lastUpdates = DateTime.UtcNow;
+        context.Rates.Where(r => r.Name == "GOLD").ExecuteUpdate(r => r
+            .SetProperty(r => r.Value, rates.gold_egp)
+            .SetProperty(r => r.LastUpdated, lastUpdates)
+        );
+
+        context.Rates.Where(r => r.Name == "GOLD_21").ExecuteUpdate(r => r
+            .SetProperty(r => r.Value, rates.gold21_egp)
+            .SetProperty(r => r.LastUpdated, lastUpdates)
+        );
+
+        context.Rates.Where(r => r.Name == "SILVER").ExecuteUpdate(r => r
+            .SetProperty(r => r.Value, rates.silver_egp)
+            .SetProperty(r => r.LastUpdated, lastUpdates)
+        );
+
+        context.Rates.Where(r => r.Name == "USD").ExecuteUpdate(r => r
+            .SetProperty(r => r.Value, rates.usd_egp)
+            .SetProperty(r => r.LastUpdated, lastUpdates)
+        );
+
+        context.Rates.Where(r => r.Name == "EGP").ExecuteUpdate(r => r
+           .SetProperty(r => r.LastUpdated, lastUpdates)
+       );
+
+        BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS,ns => ns.SendPriceAlert());
     }
 }
 

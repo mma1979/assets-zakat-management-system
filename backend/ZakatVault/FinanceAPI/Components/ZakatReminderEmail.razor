@@ -1,0 +1,110 @@
+﻿@using FinanceAPI.Models;
+
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <title>Zakat Reminder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Arial, sans-serif !important; }
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+  <!-- Full width background -->
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f4;">
+    <tr>
+      <td align="center" style="padding:20px 10px;">
+
+        <!-- Container -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:4px; overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding:20px; background-color:#019665; color:#ffffff; font-family:Arial,Helvetica,sans-serif; font-size:22px; font-weight:bold;">
+              <!-- Replace with your logo if needed -->
+              <span style="display:block;">Zakat Due Date Reminder</span>
+            </td>
+          </tr>
+
+          <!-- Hero / Title -->
+          <tr>
+            <td style="padding:24px 24px 8px 24px; font-family:Arial,Helvetica,sans-serif; color:#111111;">
+              <h1 style="margin:0; font-size:22px; line-height:1.4; font-weight:bold;">
+                Your Zakat comes soon
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body text -->
+          <tr>
+            <td style="padding:0 24px 16px 24px; font-family:Arial,Helvetica,sans-serif; color:#444444; font-size:14px; line-height:1.6;">
+              <p style="margin:0 0 8px 0;">
+                Hi @Model.UserName,
+              </p>
+              <p style="margin:0 0 8px 0;">
+                This is a friendly reminder that your <strong>Zakat</strong> payment will
+                comes on <strong>@Model.ZakatDueDate</strong>. The Zakat amount will be
+                <strong>@Model.TotalZakatDue</strong>, billed to your current payment method.
+              </p>
+              <p style="margin:0 0 8px 0;">
+                If you want to review or change your plan, update payment details, or cancel before
+                renewal, please use the button below.
+              </p>
+            </td>
+          </tr>
+
+         
+          <tr>
+            <td style="padding:0 24px 16px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e0e0e0; border-radius:4px;">
+                <tr>
+                  <td style="padding:12px 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#333333;">
+                    <p style="margin:0 0 6px 0;"><strong>Zakat details</strong></p>
+                    <p style="margin:0;">Total Assets: @Model.TotalAssets</p>
+                    <p style="margin:0;">Next Due: @Model.ZakatDueDate</p>
+                    <p style="margin:0;">Amount: @Model.TotalZakatDue</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+         
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 24px;">
+              <hr style="border:0; border-top:1px solid #e0e0e0; margin:0;">
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:16px 24px 24px 24px; font-family:Arial,Helvetica,sans-serif; color:#999999; font-size:11px; line-height:1.5;">
+              <p style="margin:0 0 4px 0;">
+                ZakatVault · Cairo · Egypt
+              </p>
+              <p style="margin:0 0 4px 0;">
+                You are receiving this email because you have an active vault on ZakatVault.
+              </p>
+              
+            </td>
+          </tr>
+        </table>
+        <!-- End container -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+
+
+@code {
+    [Parameter]
+    public ZakatReminderEmailModel Model { get; set; } = new();
+}

@@ -19,22 +19,25 @@ export const fetchMarketRates = async (currentRates: MarketRates): Promise<Marke
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
+
     // We use search grounding to get real-time data
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Search for the current market prices in Egypt today. 
-      I need:
-      1. Gold price per gram for 24k in EGP.
-      2. Gold price per gram for 21k in EGP.
-      3. Silver price per gram in EGP.
-      4. USD to EGP official bank exchange rate.
-      
-      Return ONLY a text block with these exact labels and values:
-      GOLD_EGP: <value>
-      GOLD21_EGP: <value>
-      SILVER_EGP: <value>
-      USD_EGP: <value>
+      contents: `Search for the current market prices in Egypt today. 
+I need:
+1. Gold Buy price per gram for 24k in EGP.
+2. Gold Buy price per gram for 21k in EGP.
+3. Silver Buy price per gram in EGP.
+4. USD to EGP official bank Buy exchange rate.
+
+for gold use prices from https://egypt.gold-era.com/gold-price/
+for silver use prices from https://www.sabika.app/#Calculator
+
+Return ONLY a text block with these exact labels and values:
+GOLD_EGP: <value>
+GOLD21_EGP: <value>
+SILVER_EGP: <value>
+USD_EGP: <value>
       `,
       config: {
         tools: [{ googleSearch: {} }],
@@ -80,14 +83,14 @@ export const getPortfolioAdvice = async (
   language: 'en' | 'ar'
 ): Promise<string> => {
   if (!process.env.API_KEY || process.env.API_KEY.includes('__APP_')) {
-    return language === 'ar' 
-      ? "عذراً، مفتاح API غير متوفر للحصول على النصيحة." 
+    return language === 'ar'
+      ? "عذراً، مفتاح API غير متوفر للحصول على النصيحة."
       : "API Key missing. Cannot generate advice.";
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
+
     const portfolioSummary = Object.entries(holdings)
       .map(([type, data]) => {
         if (data.quantity <= 0) return null;

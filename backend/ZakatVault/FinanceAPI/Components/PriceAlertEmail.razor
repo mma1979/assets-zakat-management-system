@@ -1,0 +1,147 @@
+﻿@using FinanceAPI.Models;
+
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <title>ZakatVault Assets Price Alert</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Arial, sans-serif !important; }
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#0b1120; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+  <!-- Background -->
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0b1120;">
+    <tr>
+      <td align="center" style="padding:20px 10px;">
+
+        <!-- Container -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:640px; background-color:#020617; border-radius:6px; overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="padding:16px 24px; background:linear-gradient(90deg,#22c55e,#22c55e); font-family:Arial,Helvetica,sans-serif; color:#ffffff;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:18px; font-weight:bold;">
+                    Assets Price Alert
+                  </td>
+                  <td align="right" style="font-size:12px; color:#e5e7eb;">
+                    @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td style="padding:20px 24px 8px 24px; font-family:Arial,Helvetica,sans-serif; color:#f9fafb;">
+              <h1 style="margin:0; font-size:20px; line-height:1.4; font-weight:bold;">
+                @Model.AssetType has hit your Price threshold
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Intro -->
+          <tr>
+            <td style="padding:0 24px 16px 24px; font-family:Arial,Helvetica,sans-serif; color:#e5e7eb; font-size:13px; line-height:1.6;">
+              <p style="margin:0 0 8px 0;">
+                Hi @Model.UserName,
+              </p>
+              <p style="margin:0 0 8px 0;">
+                Your price alert for <strong>@Model.AssetType</strong> has been triggered.
+                The latest price is <strong>@Model.CurrentPrice</strong>, which is
+                @Model.Condition your alert level of <strong>@Model.TargetPrice</strong>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Snapshot -->
+          <tr>
+            <td style="padding:0 24px 16px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #1f2937; border-radius:4px; background-color:#020617;">
+                <tr>
+                  <td style="padding:12px 16px; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#e5e7eb;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td style="padding-bottom:8px; font-size:13px; font-weight:bold; color:#f9fafb;">
+                          @Model.AssetType
+                        </td>
+                        
+                      </tr>
+                      <tr>
+                        <td valign="top" style="padding-right:8px;">
+                          <p style="margin:0; font-size:22px; font-weight:bold; color:#22c55e;">
+                           @Model.CurrentPrice
+                          </p>
+                          <p style="margin:2px 0 0 0; font-size:12px; color:@Model.Color;">
+                            @Model.Change · <span>(@Model.ChangePercent)</span> · @Model.DirectionLabel
+                          </p>
+                        </td>
+                        
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Alert context -->
+          <tr>
+            <td style="padding:0 24px 20px 24px; font-family:Arial,Helvetica,sans-serif; color:#9ca3af; font-size:11px; line-height:1.6;">
+              <p style="margin:0 0 6px 0;">
+                This alert was created for <strong>@Model.AssetType</strong> when price
+                @Model.Condition <strong>@Model.TargetPrice</strong> in @Model.Currency.
+              </p>
+              <p style="margin:0 0 6px 0;">
+                To edit or disable this alert, go to your alerts page:
+                <a href="#" style="color:#22c55e; text-decoration:underline;">
+                  Manage alerts
+                </a>.
+              </p>
+              <p style="margin:0;">
+                Market data may be delayed. This message is for informational purposes only and does not constitute investment advice.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 24px;">
+              <hr style="border:0; border-top:1px solid #1f2937; margin:0;">
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:14px 24px 20px 24px; font-family:Arial,Helvetica,sans-serif; color:#6b7280; font-size:10px; line-height:1.6;">
+              <p style="margin:0 0 4px 0;">
+                ZakatVault ·Cairo · Egypt
+              </p>
+              <p style="margin:0 0 4px 0;">
+                You receive these messages because you enabled price alerts for this symbol.
+              </p>
+              
+            </td>
+          </tr>
+        </table>
+        <!-- /Container -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+
+
+@code {
+    [Parameter]
+    public PriceAlertEmailModel Model { get; set; } = new PriceAlertEmailModel();
+}
