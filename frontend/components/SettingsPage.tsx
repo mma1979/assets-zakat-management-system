@@ -33,6 +33,15 @@ export const SettingsPage: React.FC = () => {
     const [zakatMsg, setZakatMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isSubmittingZakat, setIsSubmittingZakat] = useState(false);
 
+    // Sync state when data loads
+    React.useEffect(() => {
+        if (data.zakatConfig) {
+            setZakatDate(data.zakatConfig.zakatDate || '');
+            setReminderEnabled(data.zakatConfig.reminderEnabled || false);
+            setEmail(data.zakatConfig.email || '');
+        }
+    }, [data.zakatConfig]);
+
     // Price Alert State
     const [newAlertAsset, setNewAlertAsset] = useState<AssetType>('GOLD');
     const [newAlertCondition, setNewAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');

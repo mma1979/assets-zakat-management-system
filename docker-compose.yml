@@ -39,7 +39,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: zakatvault-frontend:2.0.0
+    image: zakatvault-frontend:2.0.5
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
