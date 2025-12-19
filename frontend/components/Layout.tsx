@@ -42,10 +42,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <aside className="fixed start-0 top-0 h-screen w-64 bg-white border-e border-slate-200 hidden md:flex flex-col z-20">
         <div className="p-6">
           <div className="flex items-center gap-2 text-emerald-700">
-            <div className="bg-emerald-100 p-2 rounded-lg">
-              <Coins size={24} className="text-emerald-600" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">{t('appTitle')}</h1>
+            <img src="/logo.png" alt={t('appTitle')} />
           </div>
         </div>
 
@@ -87,20 +84,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             v2.0.5 &bull; {t('footer')}
           </div>
         </div>
-      </aside>
+      </aside >
 
       {/* Mobile Nav Placeholder */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-3 z-50">
+      < div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-3 z-50" >
         <Link to="/" className="p-2 text-slate-600"><LayoutDashboard /></Link>
         <Link to="/assets" className="p-2 text-slate-600"><Coins /></Link>
         <Link to="/liabilities" className="p-2 text-slate-600"><FileText /></Link>
         <Link to="/zakat" className="p-2 text-slate-600"><Calculator /></Link>
         <Link to="/settings" className="p-2 text-slate-600"><Settings /></Link>
         <button onClick={logout} className="p-2 text-rose-500"><LogOut /></button>
-      </div>
+      </div >
 
       {/* Main Content */}
-      <main className="flex-1 md:ms-64 p-4 md:p-8 overflow-y-auto mb-16 md:mb-0 relative">
+      < main className="flex-1 md:ms-64 p-4 md:p-8 overflow-y-auto mb-16 md:mb-0 relative" >
         <div className="max-w-6xl mx-auto space-y-6">
           {syncError && (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
@@ -115,7 +112,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
           {children}
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
