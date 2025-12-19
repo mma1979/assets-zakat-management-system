@@ -24,7 +24,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -59,28 +60,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Add Hangfire services
-builder.Services.AddHangfire(configuration => configuration
-    .UseSqlServerStorage(builder.Configuration.GetConnectionString("FinanceDbConnection"),
-        new SqlServerStorageOptions
-        {
-            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-            QueuePollInterval = TimeSpan.FromSeconds(5),
-            UseRecommendedIsolationLevel = true,
-            DisableGlobalLocks = true
-        })
-    .WithJobExpirationTimeout(TimeSpan.FromHours(1)));
+//Add Hangfire services
+try
+{
+    builder.Services.AddHangfire(configuration => configuration
+.UseSqlServerStorage(builder.Configuration.GetConnectionString("FinanceDbConnection"),
+    new SqlServerStorageOptions
+    {
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.FromSeconds(5),
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true,
+        TryAutoDetectSchemaDependentOptions = true
+
+    })
+.WithJobExpirationTimeout(TimeSpan.FromHours(1)));
 
 builder.Services.AddHangfireServer(con =>
 {
     con.ServerName = $"zakatvault-{Environment.MachineName}-{Process.GetCurrentProcess().Id}";
-    con.Queues = [QueuesNames.DEFAULT,QueuesNames.NOTIFICATIONS,QueuesNames.OTHER];
+    con.Queues = [QueuesNames.DEFAULT, QueuesNames.NOTIFICATIONS, QueuesNames.OTHER];
     con.ServerTimeout = TimeSpan.FromMinutes(1);
     con.CancellationCheckInterval = TimeSpan.FromSeconds(30);
     con.HeartbeatInterval = TimeSpan.FromSeconds(10);
     con.WorkerCount = 5;
 });
+}
+catch (Exception ex)
+{
+
+    Console.WriteLine(ex.ToString());
+}
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -92,7 +103,7 @@ builder.Services.AddScoped<IZakatConfigService, ZakatConfigService>();
 builder.Services.AddScoped<IZakatCalcService, ZakatCalcService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IGeminiService, GeminiService>();
-builder.Services.AddSingleton<HangfireService>();
+builder.Services.AddScoped<HangfireService>();
 builder.Services.AddScoped<RazorComponentCompiler>();
 builder.Services.AddScoped<ResendService>();
 builder.Services.AddHttpContextAccessor();
@@ -212,9 +223,11 @@ app.MapDefaultEndpoints();
 
 // Hangfire Dashboard
 
-app.UseHangfireDashboard(builder.Configuration["HangfireSettings:DashboardPath"] ?? "/hangfire", new DashboardOptions
+try
 {
-    Authorization = new[] { new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
+    app.UseHangfireDashboard(builder.Configuration["HangfireSettings:DashboardPath"] ?? "/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
     {
         SslRedirect = false,
         RequireSsl = false,
@@ -228,11 +241,18 @@ app.UseHangfireDashboard(builder.Configuration["HangfireSettings:DashboardPath"]
             }
         ]
     }) },
-    IgnoreAntiforgeryToken = true
-});
+        IgnoreAntiforgeryToken = true
+    });
 
-// register Hangfire jobs
-var hangfireService = app.Services.GetRequiredService<HangfireService>();
-hangfireService.EnqueueJobs();
+    // register Hangfire jobs
+    var scope = app.Services.CreateScope();
+    var hangfireService = scope.ServiceProvider.GetRequiredService<HangfireService>();
+    hangfireService.EnqueueJobs();
+}
+catch (Exception ex)
+{
+
+    Console.WriteLine(ex.ToString());
+}
 
 app.Run();

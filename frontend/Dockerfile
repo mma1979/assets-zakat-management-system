@@ -11,7 +11,7 @@ FROM nginx:1.27-alpine AS runner
 RUN apk add --no-cache bash gettext
 
 # Default value, can be overridden
-ENV API_ORIGIN=http://api:8080
+ENV API_ORIGIN=http://zakatvault-backend:8080
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
