@@ -14,7 +14,7 @@ services:
     build:
       context: ./backend/ZakatVault
       dockerfile: FinanceAPI/Dockerfile
-    image: zakatvault-backend:1.0.6
+    image: zakatvault-backend:2.0.0
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
@@ -39,7 +39,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: zakatvault-frontend:1.0.6
+    image: zakatvault-frontend:2.0.0
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
