@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { StoreData, ZakatCalculationResult } from '../types';
 import { NISAB_GOLD_GRAMS, NISAB_SILVER_GRAMS, ZAKAT_RATE } from '../constants';
-import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, BellRing, Mail } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, BellRing, Mail, Coins, ArrowDown, Gem } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { addDays, format, isBefore, isAfter, isSameDay, differenceInDays } from 'date-fns';
 import { useStore } from '../services/storage';
@@ -331,15 +331,68 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       {/* Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
             <Info size={18} className="text-blue-500" /> {t('calcDetails')}
           </h4>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between p-2 rounded hover:bg-slate-50">
-              <span className="text-slate-500">{t('totalAssets')}</span>
-              <span className="font-semibold">{formatNum(calculation.assetValue)} EGP</span>
-              <span className="font-bold text-slate-700">{t('netZakatBase')}</span>
-              <span className="font-bold text-slate-900">{formatNum(calculation.zakatBase)} EGP</span>
+
+          <div className="flex flex-col gap-4">
+            {/* 1. Total Assets */}
+            <div className="relative p-4 rounded-xl bg-emerald-50 border border-emerald-100 flex justify-between items-center group hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                  <Coins size={20} />
+                </div>
+                <span className="text-sm font-medium text-slate-600">{t('totalAssets')}</span>
+              </div>
+              <span className="font-bold text-lg text-emerald-700">{formatNum(calculation.assetValue)} <span className="text-xs">EGP</span></span>
+            </div>
+
+            {/* Operator: Minus */}
+            <div className="flex justify-center -my-2 z-10">
+              <div className="bg-white border border-slate-200 p-1.5 rounded-full shadow-sm text-slate-400">
+                <ArrowDown size={16} strokeWidth={3} />
+              </div>
+            </div>
+
+            {/* 2. Liabilities */}
+            <div className="relative p-4 rounded-xl bg-rose-50 border border-rose-100 flex justify-between items-center group hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-100 rounded-lg text-rose-600">
+                  <ArrowDown size={20} />
+                </div>
+                <span className="text-sm font-medium text-slate-600">{t('lessDebts')}</span>
+              </div>
+              <span className="font-bold text-lg text-rose-700">
+                {calculation.deductibleLiabilities > 0 ? '-' : ''}{formatNum(calculation.deductibleLiabilities)} <span className="text-xs">EGP</span>
+              </span>
+            </div>
+
+            {/* Operator: Equals */}
+            <div className="flex justify-center -my-2 z-10">
+              <div className="bg-white border border-slate-200 p-1.5 rounded-full shadow-sm text-slate-400">
+                <ArrowDown size={16} strokeWidth={3} />
+              </div>
+            </div>
+
+            {/* 3. Net Base */}
+            <div className="relative p-4 rounded-xl bg-blue-50 border border-blue-100 flex justify-between items-center shadow-sm group hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                  <Gem size={20} />
+                </div>
+                <span className="text-sm font-bold text-slate-700">{t('netZakatBase')}</span>
+              </div>
+              <span className="font-bold text-xl text-blue-700">{formatNum(calculation.zakatBase)} <span className="text-xs">EGP</span></span>
+            </div>
+
+            {/* 4. Result Explanation */}
+            <div className="mt-2 text-center">
+              <p className="text-xs text-slate-400">
+                {calculation.isEligible
+                  ? `${t('zakatDueBody')} (${formatNum(ZAKAT_RATE * 100)}%)`
+                  : t('notEligibleMsg')
+                }
+              </p>
             </div>
           </div>
         </div>
