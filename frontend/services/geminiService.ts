@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { MarketRates, Transaction, AssetType } from "../types";
+import { Rate, Transaction, AssetType } from "../types";
 
 // Helper to extract numbers from text if the model returns conversational text
 const extractNumber = (text: string, key: string): number | null => {
@@ -11,7 +11,7 @@ const extractNumber = (text: string, key: string): number | null => {
   return null;
 };
 
-export const fetchMarketRates = async (currentRates: MarketRates): Promise<MarketRates> => {
+export const fetchMarketRates = async (currentRates: Rate[]): Promise<Rate[]> => {
   if (!process.env.API_KEY || process.env.API_KEY.includes('__APP_')) {
     console.warn("API_KEY not found or invalid in environment variables");
     return currentRates;
@@ -34,10 +34,10 @@ for gold use prices from https://egypt.gold-era.com/gold-price/
 for silver use prices from https://www.sabika.app/#Calculator
 
 Return ONLY a text block with these exact labels and values:
-GOLD_EGP: <value>
-GOLD21_EGP: <value>
-SILVER_EGP: <value>
-USD_EGP: <value>
+GOLD: <value>
+GOLD_21: <value>
+SILVER: <value>
+USD: <value>
       `,
       config: {
         tools: [{ googleSearch: {} }],
@@ -47,30 +47,24 @@ USD_EGP: <value>
     const text = response.text || "";
     console.log("Gemini Market Data Response:", text);
 
-    const gold = extractNumber(text, 'GOLD_EGP');
-    const gold21 = extractNumber(text, 'GOLD21_EGP');
-    const silver = extractNumber(text, 'SILVER_EGP');
-    const usd = extractNumber(text, 'USD_EGP');
-
-    const dataSources: { title?: string; uri?: string }[] = [];
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks) {
-      chunks.forEach((chunk: any) => {
-        if (chunk.web) {
-          dataSources.push({ title: chunk.web.title, uri: chunk.web.uri });
-        }
-      });
-    }
-
-    // Return new rates, falling back to old ones if fetch failed for specific item
-    return {
-      gold_egp: gold || currentRates.gold_egp,
-      gold21_egp: gold21 || currentRates.gold21_egp,
-      silver_egp: silver || currentRates.silver_egp,
-      usd_egp: usd || currentRates.usd_egp,
-      lastUpdated: Date.now(),
-      dataSources
+    // Map keys to the prompt labels
+    const updates: Record<string, number | null> = {
+      'GOLD': extractNumber(text, 'GOLD'),
+      'GOLD_21': extractNumber(text, 'GOLD_21'),
+      'SILVER': extractNumber(text, 'SILVER'),
+      'USD': extractNumber(text, 'USD')
     };
+
+    const timestamp = new Date().toISOString();
+
+    // Update existing rates
+    return currentRates.map(rate => {
+      const newVal = updates[rate.key];
+      if (newVal !== null && newVal !== undefined && !isNaN(newVal)) {
+        return { ...rate, value: newVal, lastUpdated: timestamp };
+      }
+      return rate;
+    });
 
   } catch (error) {
     console.error("Failed to fetch market rates via Gemini:", error);

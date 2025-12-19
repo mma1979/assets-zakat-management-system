@@ -148,11 +148,13 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       else holdings[tx.assetType] -= tx.amount;
     });
 
+    const getRate = (k: string) => data.rates.find(r => r.key === k)?.value || 0;
+
     const assetValue =
-      (holdings.GOLD * data.rates.gold_egp) +
-      (holdings.GOLD_21 * (data.rates.gold21_egp || 0)) +
-      (holdings.SILVER * data.rates.silver_egp) +
-      (holdings.USD * data.rates.usd_egp) +
+      (holdings.GOLD * getRate('GOLD')) +
+      (holdings.GOLD_21 * getRate('GOLD_21')) +
+      (holdings.SILVER * getRate('SILVER')) +
+      (holdings.USD * getRate('USD')) +
       holdings.EGP;
 
     // 2. Deduct Liabilities (Within Lunar Year Window)
@@ -178,8 +180,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     const zakatBase = Math.max(0, assetValue - deductibleLiabilities);
 
     // 3. Nisab Thresholds
-    const nisabGoldValue = NISAB_GOLD_GRAMS * data.rates.gold_egp;
-    const nisabSilverValue = NISAB_SILVER_GRAMS * data.rates.silver_egp;
+
+
+    const nisabGoldValue = NISAB_GOLD_GRAMS * getRate('GOLD');
+    const nisabSilverValue = NISAB_SILVER_GRAMS * getRate('SILVER');
 
     const isEligible = zakatBase >= nisabGoldValue;
 
@@ -405,12 +409,12 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
               <div className="text-amber-800 font-semibold mb-1">{t('goldNisab')}</div>
               <div className="text-2xl font-bold text-amber-900">{formatNum(calculation.nisabGoldValue)} EGP</div>
-              <div className="text-xs text-amber-700 mt-1">@ {formatNum(data.rates.gold_egp)} EGP/g</div>
+              <div className="text-xs text-amber-700 mt-1">@ {formatNum(data.rates.find(r => r.key === 'GOLD')?.value || 0)} EGP/g</div>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 opacity-75">
               <div className="text-slate-600 font-semibold mb-1">{t('silverNisab')}</div>
               <div className="text-xl font-bold text-slate-700">{formatNum(calculation.nisabSilverValue)} EGP</div>
-              <div className="text-xs text-slate-500 mt-1">@ {formatNum(data.rates.silver_egp)} EGP/g</div>
+              <div className="text-xs text-slate-500 mt-1">@ {formatNum(data.rates.find(r => r.key === 'SILVER')?.value || 0)} EGP/g</div>
             </div>
           </div>
         </div>

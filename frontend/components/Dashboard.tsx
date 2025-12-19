@@ -1,19 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { StoreData, MarketRates, Transaction } from '../types';
+import { StoreData, Rate, Transaction } from '../types';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend,
   LineChart, Line, XAxis, YAxis, CartesianGrid
 } from 'recharts';
-import { TrendingUp, DollarSign, Scale, RefreshCw, AlertCircle, Edit2, X, Download, FileSpreadsheet } from 'lucide-react';
+import { TrendingUp, DollarSign, Scale, RefreshCw, AlertCircle, Edit2, X, Download, FileSpreadsheet, Coins } from 'lucide-react';
 import { fetchMarketRates } from '../services/geminiService';
 import { exportTransactionsToCSV, exportLiabilitiesToCSV, exportPortfolioSummaryToCSV } from '../services/exportService';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { FinancialAdvisor } from './FinancialAdvisor';
 
+
 interface DashboardProps {
   data: StoreData;
-  onUpdateRates: (rates: MarketRates) => void;
+  onUpdateRates: (rates: Rate[]) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => {
@@ -24,7 +25,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
   const [showExportModal, setShowExportModal] = useState(false);
 
   // Rate Editing State
-  const [editRates, setEditRates] = useState<MarketRates>(data.rates);
+  // Rate Editing State
+  // Flattening not needed as much now, but we can keep local state for array
+  // Actually the modal was for manually setting rates. We should probably use the new Settings Modal or similar?
+  // For now, let's just make it edit the array, or better yet, redirect to settings?
+  // The 'UpdateRates' modal old logic:
+  // const [editRates, setEditRates] = useState<MarketRates>(data.rates);
+  // Replaced with:
+  const [editRates, setEditRates] = useState<Rate[]>([]); // We'll just load data.rates into it when opening
 
   // Calculate Net Worth & Breakdown
   const summary = useMemo(() => {
@@ -37,10 +45,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     });
 
     const values = {
-      GOLD: holdings.GOLD * data.rates.gold_egp,
-      GOLD_21: holdings.GOLD_21 * (data.rates.gold21_egp || 0),
-      SILVER: holdings.SILVER * data.rates.silver_egp,
-      USD: holdings.USD * data.rates.usd_egp,
+      GOLD: holdings.GOLD * (data.rates.find(r => r.key === 'GOLD')?.value || 0),
+      GOLD_21: holdings.GOLD_21 * (data.rates.find(r => r.key === 'GOLD_21')?.value || 0),
+      SILVER: holdings.SILVER * (data.rates.find(r => r.key === 'SILVER')?.value || 0),
+      USD: holdings.USD * (data.rates.find(r => r.key === 'USD')?.value || 0),
       EGP: holdings.EGP
     };
 
@@ -101,10 +109,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     if (result.length === 0 || result[result.length - 1].date !== today) {
       result.push({
         date: today,
-        GOLD: qty.GOLD * data.rates.gold_egp,
-        GOLD_21: qty.GOLD_21 * (data.rates.gold21_egp || 0),
-        SILVER: qty.SILVER * data.rates.silver_egp,
-        USD: qty.USD * data.rates.usd_egp,
+        GOLD: qty.GOLD * (data.rates.find(r => r.key === 'GOLD')?.value || 0),
+        GOLD_21: qty.GOLD_21 * (data.rates.find(r => r.key === 'GOLD_21')?.value || 0),
+        SILVER: qty.SILVER * (data.rates.find(r => r.key === 'SILVER')?.value || 0),
+        USD: qty.USD * (data.rates.find(r => r.key === 'USD')?.value || 0),
         EGP: qty.EGP
       });
     }
@@ -125,12 +133,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     }
   };
 
+  /* Manual Edit Removed/Refactored to match new API structure.
+     If we want manual edit here, we'd need to iterate the array.
+     For now, let's assume 'Update Rates' just refreshes or we redirect to settings.
+     Or we implement a simple implementation for the old modal.
+  */
   const handleManualRateSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateRates({
-      ...editRates,
-      lastUpdated: Date.now()
-    });
+    // Simplified: Just pass back the edited rates array
+    // Ensure lastUpdated is updated
+    const timestamp = new Date().toISOString();
+    const updated = editRates.map(r => ({ ...r, lastUpdated: timestamp }));
+    onUpdateRates(updated);
     setShowRateModal(false);
   };
 
@@ -156,7 +170,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
           <div className="text-xs text-end hidden sm:block">
             <div className="text-slate-500">{t('ratesUpdated')}</div>
             <div className="font-mono font-medium text-slate-700" dir="ltr">
-              {format(data.rates.lastUpdated, 'MMM dd, HH:mm')}
+              {/* Take distinct lastUpdated from first rate or just show now?
+                  Assuming all rates update together usually. */}
+              {data.rates.length > 0 ? format(new Date(data.rates[0].lastUpdated), 'MMM dd, HH:mm') : '-'}
             </div>
           </div>
 
@@ -170,7 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
           <button
             onClick={() => {
-              setEditRates(data.rates);
+              setEditRates([...data.rates]);
               setShowRateModal(true);
             }}
             className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-md transition-colors"
@@ -288,51 +304,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
             <button onClick={() => { setEditRates(data.rates); setShowRateModal(true); }} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">{t('edit')}</button>
           </div>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                <span className="font-medium text-slate-700">{t('asset_GOLD')}</span>
-              </div>
-              <span className="font-bold text-slate-900">{formatNum(data.rates.gold_egp)} EGP/g</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-yellow-600"></div>
-                <span className="font-medium text-slate-700">{t('asset_GOLD_21')}</span>
-              </div>
-              <span className="font-bold text-slate-900">{formatNum(data.rates.gold21_egp || 0)} EGP/g</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-slate-400"></div>
-                <span className="font-medium text-slate-700">{t('asset_SILVER')}</span>
-              </div>
-              <span className="font-bold text-slate-900">{formatNum(data.rates.silver_egp)} EGP/g</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="font-medium text-slate-700">{t('asset_USD')}</span>
-              </div>
-              <span className="font-bold text-slate-900">{formatNum(data.rates.usd_egp)} EGP/$</span>
-            </div>
+            {data.rates.map(rate => {
+              const getIcon = (iconName: string) => {
+                // Simple mapping or use lucide dynamic if possible, but safe fallback
+                if (iconName === 'Gem') return <TrendingUp size={18} className="text-amber-500" />; // Fallback/Gem
+                if (iconName === 'DollarSign') return <DollarSign size={18} className="text-emerald-500" />;
+                return <Coins size={18} className="text-slate-500" />;
+              };
+
+              return (
+                <div key={rate.key} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1 bg-white rounded-md shadow-sm">
+                      {/* Just using generic icon for now or map similarly to Settings */}
+                      {getIcon(rate.icon)}
+                    </div>
+                    <span className="font-medium text-slate-700">{rate.title || rate.key}</span>
+                  </div>
+                  <span className="font-bold text-slate-900">{formatNum(rate.value)} {rate.key === 'USD' ? 'EGP/$' : 'EGP'}</span>
+                </div>
+              );
+            })}
           </div>
           <div className="mt-6 p-4 bg-indigo-50 rounded-xl text-sm text-indigo-800">
             {t('rateInfo')}
-            {data.rates.dataSources && data.rates.dataSources.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-indigo-200">
-                <p className="font-semibold mb-1">Sources:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  {data.rates.dataSources.map((source, idx) => (
-                    <li key={idx} className="truncate">
-                      <a href={source.uri} target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-900">
-                        {source.title || source.uri}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* Metadata like dataSources removed from basic Rate type, can be added back if API provides it separately or in Rate object */}
           </div>
         </div>
       </div>
@@ -389,22 +385,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
               <button onClick={() => setShowRateModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             <form onSubmit={handleManualRateSave} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_GOLD')} (EGP/g)</label>
-                <input type="number" required value={editRates.gold_egp} onChange={e => setEditRates({ ...editRates, gold_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_GOLD_21')} (EGP/g)</label>
-                <input type="number" required value={editRates.gold21_egp || 0} onChange={e => setEditRates({ ...editRates, gold21_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_SILVER')} (EGP/g)</label>
-                <input type="number" required value={editRates.silver_egp} onChange={e => setEditRates({ ...editRates, silver_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('asset_USD')} (EGP/$)</label>
-                <input type="number" required value={editRates.usd_egp} onChange={e => setEditRates({ ...editRates, usd_egp: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" />
-              </div>
+              {editRates.map((rate, idx) => (
+                <div key={rate.key}>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">{rate.title} ({rate.key})</label>
+                  <input
+                    type="number"
+                    required
+                    value={rate.value}
+                    onChange={e => {
+                      const newArr = [...editRates];
+                      newArr[idx] = { ...newArr[idx], value: parseFloat(e.target.value) };
+                      setEditRates(newArr);
+                    }}
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                    dir="ltr"
+                    step="any"
+                  />
+                </div>
+              ))}
               <button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">{t('saveRates')}</button>
             </form>
           </div>

@@ -26,6 +26,7 @@ const AuthenticatedApp: React.FC = () => {
     removeTransaction,
     addLiability,
     removeLiability,
+    addRate,
     updateRates
   } = useStore();
 
@@ -33,16 +34,20 @@ const AuthenticatedApp: React.FC = () => {
 
   // Auto-update rates if older than 24 hours
   useEffect(() => {
-    if (isLoaded && data.rates) {
+    // Check if we have rates and if the first one is old (assuming sync)
+    // Actually we probably need a smarter way or just check any.
+    if (isLoaded && data.rates.length > 0) {
+      const lastUpdatedStr = data.rates[0].lastUpdated;
+      const lastUpdated = lastUpdatedStr ? new Date(lastUpdatedStr).getTime() : 0;
       const now = Date.now();
       const oneDay = 24 * 60 * 60 * 1000;
-      const elapsed = now - data.rates.lastUpdated;
+      const elapsed = now - lastUpdated;
 
       if (elapsed > oneDay) {
         console.log("Market rates expired (>24h). Fetching updates...");
         fetchMarketRates(data.rates)
           .then(newRates => {
-            console.log("Rates auto-updated successfully.");
+            // We need to save these rates back to the server/store
             updateRates(newRates);
           })
           .catch(err => {
@@ -50,7 +55,7 @@ const AuthenticatedApp: React.FC = () => {
           });
       }
     }
-  }, [isLoaded, data.rates.lastUpdated, updateRates]);
+  }, [isLoaded, data.rates]);
 
   // Check Price Alerts
   useEffect(() => {
@@ -58,14 +63,9 @@ const AuthenticatedApp: React.FC = () => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
       const triggeredAlerts = data.priceAlerts.filter(alert => {
-        let currentPrice = 0;
-        switch (alert.assetType) {
-          case 'GOLD': currentPrice = data.rates.gold_egp; break;
-          case 'GOLD_21': currentPrice = data.rates.gold21_egp; break;
-          case 'SILVER': currentPrice = data.rates.silver_egp; break;
-          case 'USD': currentPrice = data.rates.usd_egp; break;
-          default: return false;
-        }
+        const rate = data.rates.find(r => r.key === alert.assetType);
+        if (!rate) return false;
+        const currentPrice = rate.value;
 
         if (currentPrice <= 0) return false;
 
@@ -83,7 +83,9 @@ const AuthenticatedApp: React.FC = () => {
 
         if (!hasNotified) {
           const assetName = t(`asset_${alert.assetType}` as any);
-          const body = `${assetName} ${t('alertHitBody')} ${data.rates[alert.assetType === 'GOLD_21' ? 'gold21_egp' : alert.assetType === 'GOLD' ? 'gold_egp' : alert.assetType === 'SILVER' ? 'silver_egp' : 'usd_egp']} EGP`;
+          // Find rate for body
+          const rateVal = data.rates.find(r => r.key === alert.assetType)?.value || 0;
+          const body = `${assetName} ${t('alertHitBody')} ${rateVal} EGP`;
 
           new Notification(t('alertHitTitle'), { body, icon: '/favicon.ico' });
           sessionStorage.setItem(alertKey, 'true');

@@ -1,13 +1,11 @@
-import { MarketRates } from './types';
+import { Rate } from './types';
 
-export const DEFAULT_RATES: MarketRates = {
-  gold_egp: 3500, // Fallback default 24k
-  gold21_egp: 3000, // Fallback default 21k
-  silver_egp: 40,
-  usd_egp: 48,
-  lastUpdated: Date.now(),
-  dataSources: [],
-};
+export const DEFAULT_RATES: Rate[] = [
+  { id: 1, key: 'GOLD', value: 3500, lastUpdated: new Date().toISOString(), icon: 'Gem', title: 'Gold (24k)' },
+  { id: 2, key: 'GOLD_21', value: 3000, lastUpdated: new Date().toISOString(), icon: 'Coins', title: 'Gold (21k)' },
+  { id: 3, key: 'SILVER', value: 40, lastUpdated: new Date().toISOString(), icon: 'Coins', title: 'Silver' },
+  { id: 4, key: 'USD', value: 48, lastUpdated: new Date().toISOString(), icon: 'DollarSign', title: 'US Dollar' },
+];
 
 export const NISAB_GOLD_GRAMS = 85;
 export const NISAB_SILVER_GRAMS = 595;

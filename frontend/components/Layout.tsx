@@ -4,6 +4,8 @@ import { LayoutDashboard, Coins, FileText, Calculator, Languages, LogOut, UserCi
 import { clsx } from 'clsx';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useStore } from '../services/storage';
+import { AlertTriangle } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,6 +30,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { user, logout } = useAuth();
+  const { syncError, isSyncing } = useStore();
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'ar' : 'en');
@@ -97,8 +100,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 md:ms-64 p-4 md:p-8 overflow-y-auto mb-16 md:mb-0">
+      <main className="flex-1 md:ms-64 p-4 md:p-8 overflow-y-auto mb-16 md:mb-0 relative">
         <div className="max-w-6xl mx-auto space-y-6">
+          {syncError && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertTriangle size={20} />
+              <p className="font-medium text-sm">{syncError}</p>
+            </div>
+          )}
+          {isSyncing && (
+            <div className="fixed top-0 left-0 w-full h-1 bg-emerald-100 z-50">
+              <div className="h-full bg-emerald-500 animate-pulse w-full origin-left"></div>
+            </div>
+          )}
           {children}
         </div>
       </main>

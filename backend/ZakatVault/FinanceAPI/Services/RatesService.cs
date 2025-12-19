@@ -10,56 +10,40 @@ namespace FinanceAPI.Services;
 
 public interface IRatesService
 {
-    Task<RatesResponse> GetLatestRatesAsync();
-    Task<RatesResponse> UpdateRatesAsync(RatesRequest rates);
+    Task<List<RateResponse>> GetLatestRatesAsync();
+    Task<List<RateResponse>> UpdateRatesAsync(List<RateRequest> rates);
     void UpdateRates();
-    Task<RatesResponse> AddRateAsync(RateItem rate);
+    Task<List<RateResponse>> AddRateAsync(RateItem rate);
 }
 public class RatesService(FinanceDbContext context, IGeminiService geminiService) : IRatesService
 {
-    public async Task<RatesResponse> GetLatestRatesAsync()
+    public async Task<List<RateResponse>> GetLatestRatesAsync()
     {
-        var rates = await context.ViewRates
-            .Select(r => new RatesResponse
+        var rates = await context.Rates
+            .Select(r => new RateResponse
             {
-                gold_egp = r.gold_egp,
-                gold21_egp = r.gold21_egp,
-                silver_egp = r.silver_egp,
-                usd_egp = r.usd_egp,
-                egp = r.egp,
+                id = r.Id,
+                key = r.Name,
+                value = r.Value,
                 lastUpdated = r.LastUpdated,
-                dataSources = Array.Empty<object>()
-            }).FirstOrDefaultAsync();
+                icon = r.Icon,
+                title = r.Title
+            }).ToListAsync();
 
-        return rates ?? new RatesResponse() ;
+        return rates ?? [] ;
     }
 
-    public async Task<RatesResponse> UpdateRatesAsync(RatesRequest rates)
+    public async Task<List<RateResponse>> UpdateRatesAsync(List<RateRequest> rates)
     {
         var lastUpdates = DateTime.UtcNow;
-        context.Rates.Where(r => r.Name == "GOLD").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.gold_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
 
-        context.Rates.Where(r => r.Name == "GOLD_21").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.gold21_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
-
-        context.Rates.Where(r => r.Name == "SILVER").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.silver_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
-
-        context.Rates.Where(r => r.Name == "USD").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.usd_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
-
-        context.Rates.Where(r => r.Name == "EGP").ExecuteUpdate(r => r
-           .SetProperty(r => r.LastUpdated, lastUpdates)
-       );
+        rates.ForEach(rate =>
+        {
+            context.Rates.Where(e => e.Id == rate.id).ExecuteUpdate(r => r
+                .SetProperty(rr => rr.Value, rate.value)
+                .SetProperty(rr => rr.LastUpdated, lastUpdates)
+            );
+        });
 
         BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS, ns => ns.SendPriceAlert());
 
@@ -104,7 +88,7 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
         BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS,ns => ns.SendPriceAlert());
     }
 
-    public async Task<RatesResponse> AddRateAsync(RateItem rate)
+    public async Task<List<RateResponse>> AddRateAsync(RateItem rate)
     {
         var newRate = new Rate
         {

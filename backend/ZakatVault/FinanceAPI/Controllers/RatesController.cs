@@ -26,7 +26,7 @@ public class RatesController(IRatesService service) : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateRates(RatesRequest rates)
+    public async Task<IActionResult> UpdateRates(List<RateRequest> rates)
     {
         var newRates = await service.UpdateRatesAsync(rates);
         return Ok(newRates);

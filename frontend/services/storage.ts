@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StoreData, Transaction, Liability, MarketRates, ZakatConfig, PriceAlert, ZakatCalculationResult } from '../types';
-import { DEFAULT_RATES } from '../constants';
+import { StoreData, Transaction, Liability, Rate, ZakatConfig, PriceAlert, ZakatCalculationResult } from '../types';
+// import { DEFAULT_RATES } from '../constants'; // Removed usage
 import { format } from 'date-fns';
 import { getStoredToken } from './auth';
 import http from './http';
@@ -18,7 +18,7 @@ const API_ENDPOINTS = {
 const INITIAL_DATA: StoreData = {
   transactions: [],
   liabilities: [],
-  rates: DEFAULT_RATES,
+  rates: [],
   zakatConfig: {
     zakatDate: format(new Date(), 'yyyy-MM-dd'),
     reminderEnabled: false,
@@ -30,15 +30,6 @@ const INITIAL_DATA: StoreData = {
 };
 
 type DataKey = keyof typeof API_ENDPOINTS;
-
-// Helper to safely persist to local storage
-const persistLocal = (newData: StoreData) => {
-  try {
-    localStorage.setItem('zakat_vault_offline_cache', JSON.stringify(newData));
-  } catch (e) {
-    console.error("Local persistence failed", e);
-  }
-};
 
 // Helper to get Auth headers dynamically
 const getAuthHeaders = () => {
@@ -91,15 +82,7 @@ const saveDataPart = async <T,>(key: DataKey, value: T, method: 'POST' | 'PUT' |
 };
 
 export const useStore = () => {
-  const [data, setData] = useState<StoreData>(() => {
-    try {
-      const cached = localStorage.getItem('zakat_vault_offline_cache');
-      if (cached) return JSON.parse(cached);
-    } catch (e) {
-      console.error("Cache read error", e);
-    }
-    return INITIAL_DATA;
-  });
+  const [data, setData] = useState<StoreData>(INITIAL_DATA);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -134,7 +117,7 @@ export const useStore = () => {
       const mergedData: StoreData = {
         transactions: Array.isArray(transactions) ? transactions : [],
         liabilities: Array.isArray(liabilities) ? liabilities : [],
-        rates: rates || DEFAULT_RATES,
+        rates: Array.isArray(rates) ? rates : [],
         zakatConfig: {
           ...INITIAL_DATA.zakatConfig,
           ...(zakatConfig || {})
@@ -143,11 +126,11 @@ export const useStore = () => {
       };
 
       setData(mergedData);
-      persistLocal(mergedData);
+      setData(mergedData);
       setSyncError(null);
     } catch (e) {
       console.error("Failed to load data:", e);
-      setSyncError("Cannot connect to cloud. Working offline (changes saved locally).");
+      setSyncError("Failed to load data from server.");
     } finally {
       setIsLoaded(true);
     }
@@ -165,14 +148,8 @@ export const useStore = () => {
     remotePayload?: any,
     method: 'POST' | 'PUT' | 'DELETE' = 'POST'
   ) => {
-    // 1. Optimistic Update (Local)
-    const newData = { ...data, [key]: value };
-    setData(newData);
-    persistLocal(newData);
-
-    // 2. Background Sync (Remote)
     const token = getStoredToken();
-    if (!token) return;
+    if (!token) return false;
 
     setIsSyncing(true);
     setLoadingStates(prev => ({ ...prev, [key]: true }));
@@ -180,8 +157,10 @@ export const useStore = () => {
 
     const success = await saveDataPart(key, remotePayload !== undefined ? remotePayload : value, method);
 
-    if (!success) {
-      setSyncError(`Cloud sync failed for ${key}. Data saved locally.`);
+    if (success) {
+      setData(prev => ({ ...prev, [key]: value }));
+    } else {
+      setSyncError(`Failed to save ${key}.`);
     }
 
     setIsSyncing(false);
@@ -196,17 +175,9 @@ export const useStore = () => {
   }, [data.transactions]);
 
   const removeTransaction = useCallback(async (id: string) => {
-    // Optimistic remove? Maybe better to wait for server since we reload?
     // User requested: "call Delete ... then reload data again"
-    // So we will trigger delete then reload.
-
     const token = getStoredToken();
-    if (!token) {
-      // Offline / No Auth fallback: just remove locally
-      const newTransactions = data.transactions.filter(t => t.id !== id);
-      updateDataPart('transactions', newTransactions);
-      return;
-    }
+    if (!token) return;
 
     setIsSyncing(true);
     setLoadingStates(prev => ({ ...prev, transactions: true }));
@@ -238,12 +209,7 @@ export const useStore = () => {
 
   const removeLiability = useCallback(async (id: string) => {
     const token = getStoredToken();
-    if (!token) {
-      // Offline / No Auth fallback
-      const newLiabilities = data.liabilities.filter(l => l.id !== id);
-      updateDataPart('liabilities', newLiabilities);
-      return;
-    }
+    if (!token) return;
 
     setIsSyncing(true);
     setLoadingStates(prev => ({ ...prev, liabilities: true }));
@@ -265,23 +231,58 @@ export const useStore = () => {
   }, [data.liabilities, loadAllData]);
 
   // Rates operations
-  const updateRates = useCallback((rates: MarketRates) => {
-    return updateDataPart('rates', rates, undefined, 'PUT');
-  }, []);
+  // Rates operations
+  const updateRates = useCallback(async (rates: Rate[]) => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, rates: true }));
+
+    try {
+      // API expects array of { id: number, value: number }
+      // We map the incoming Rate[] to this structure
+      const payload = rates.map(r => ({ id: r.id, value: r.value }));
+
+      const response = await http.put(API_ENDPOINTS.rates, payload, { headers: getAuthHeaders() });
+
+      if (response.status >= 200 && response.status < 300) {
+        // Optimistic update
+        // We update our local state with the new values.
+        // We should merge these updates into the existing rates to preserve other fields if needed,
+        // although here we assume the passed 'rates' have the correct updated values.
+        // Since 'rates' might be a subset or full set, we should handle carefully.
+        // If the backend returns the updated full objects, we should use them.
+        // Let's assume backend returns void or status, so we use our optimistic data.
+
+        setData(prev => {
+          const currentRates = [...prev.rates];
+          rates.forEach(updatedRate => {
+            const index = currentRates.findIndex(r => r.id === updatedRate.id);
+            if (index !== -1) {
+              currentRates[index] = { ...currentRates[index], ...updatedRate };
+            } else {
+              // Rate doesn't exist? Ideally shouldn't happen in updateRates for existing IDs.
+              // We could add it, but addRate is for that.
+            }
+          });
+          return { ...prev, rates: currentRates };
+        });
+      } else {
+        throw new Error(`Update rates failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Failed to update rates:", error);
+      setSyncError("Failed to update rates");
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, rates: false }));
+    }
+  }, [data.rates]);
 
   const addRate = useCallback(async (key: string, value: number, icon?: string, title?: string) => {
     const token = getStoredToken();
-    if (!token) {
-      // Offline: Update local
-      const newRates = { ...data.rates, [key]: value };
-      if (icon) {
-        newRates.rateIcons = { ...newRates.rateIcons, [key]: icon };
-      }
-      if (title) {
-        newRates.rateTitles = { ...newRates.rateTitles, [key]: title };
-      }
-      return updateDataPart('rates', newRates);
-    }
+    if (!token) return false;
 
     setIsSyncing(true);
     setLoadingStates(prev => ({ ...prev, rates: true }));
@@ -293,15 +294,23 @@ export const useStore = () => {
 
       if (response.status >= 200 && response.status < 300) {
         // Optimistic update
-        const newRates = { ...data.rates, [key]: value };
-        if (icon) {
-          newRates.rateIcons = { ...newRates.rateIcons, [key]: icon };
-        }
-        if (title) {
-          newRates.rateTitles = { ...newRates.rateTitles, [key]: title };
-        }
+        // If server returns the created rate, use it. Otherwise construct it.
+        const returnedRate = response.data as Rate;
+        const newRate: Rate = returnedRate?.id ? returnedRate : {
+          id: Date.now(), // Temp ID if not returned
+          key,
+          value,
+          icon: icon || 'Coins',
+          title: title || key,
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Remove existing with same key if any to avoid duplicates logic or just add?
+        // Let's assume distinct keys.
+        const filtered = data.rates.filter(r => r.key !== key);
+        const newRates = [...filtered, newRate];
+
         setData(prev => ({ ...prev, rates: newRates }));
-        persistLocal({ ...data, rates: newRates });
         return true;
       } else {
         throw new Error(`Add rate failed: ${response.status}`);
@@ -316,34 +325,18 @@ export const useStore = () => {
     }
   }, [data.rates]);
 
-  const removeRate = useCallback(async (key: string) => {
+  const removeRate = useCallback(async (id: number) => {
     const token = getStoredToken();
-    if (!token) {
-      const { [key]: deleted, ...rest } = data.rates as any;
-      updateDataPart('rates', rest);
-      return true;
-    }
+    if (!token) return true;
 
     setIsSyncing(true);
     setLoadingStates(prev => ({ ...prev, rates: true }));
 
     try {
-      const response = await http.delete(`${API_ENDPOINTS.rates}/${key}`, { headers: getAuthHeaders() });
+      const response = await http.delete(`${API_ENDPOINTS.rates}/${id}`, { headers: getAuthHeaders() });
       if (response.status >= 200 && response.status < 300) {
-        const { [key]: deleted, ...rest } = data.rates as any;
-        // Also remove icon if exists
-        if (rest.rateIcons && rest.rateIcons[key]) {
-          const { [key]: delIcon, ...restIcons } = rest.rateIcons;
-          rest.rateIcons = restIcons;
-        }
-        // Also remove title if exists
-        if (rest.rateTitles && rest.rateTitles[key]) {
-          const { [key]: delTitle, ...restTitles } = rest.rateTitles;
-          rest.rateTitles = restTitles;
-        }
-
-        setData(prev => ({ ...prev, rates: rest }));
-        persistLocal({ ...data, rates: rest });
+        const newRates = data.rates.filter(r => r.id !== id);
+        setData(prev => ({ ...prev, rates: newRates }));
         return true;
       } else {
         throw new Error(`Delete rate failed: ${response.status}`);
@@ -371,11 +364,7 @@ export const useStore = () => {
 
   const removePriceAlert = useCallback(async (id: string) => {
     const token = getStoredToken();
-    if (!token) {
-      // Offline fallback
-      const newAlerts = data.priceAlerts.filter(a => a.id !== id);
-      return updateDataPart('priceAlerts', newAlerts);
-    }
+    if (!token) return false;
 
     setIsSyncing(true);
     setLoadingStates(prev => ({ ...prev, priceAlerts: true }));
@@ -386,8 +375,6 @@ export const useStore = () => {
         // Reload or filter locally
         const newAlerts = data.priceAlerts.filter(a => a.id !== id);
         setData(prev => ({ ...prev, priceAlerts: newAlerts }));
-        // Also persist local to stay in sync
-        persistLocal({ ...data, priceAlerts: newAlerts });
         return true;
       } else {
         throw new Error(`Delete failed with status ${response.status}`);
@@ -416,11 +403,10 @@ export const useStore = () => {
     removeTransaction,
     addLiability,
     removeLiability,
-    updateRates,
     addRate,
     removeRate,
+    updateRates,
     updateZakatConfig,
-
     addPriceAlert,
     removePriceAlert,
     fetchZakatCalculation

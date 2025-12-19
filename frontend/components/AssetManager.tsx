@@ -46,14 +46,18 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   const [calcAmount, setCalcAmount] = useState<string>('1');
 
   const getCurrentRate = (type: AssetType) => {
-    switch (type) {
-      case 'GOLD': return data.rates.gold_egp;
-      case 'GOLD_21': return data.rates.gold21_egp || 0;
-      case 'SILVER': return data.rates.silver_egp;
-      case 'USD': return data.rates.usd_egp;
-      case 'EGP': return 1;
-      default: return 0;
-    }
+    const keyMap: Record<AssetType, string> = {
+      'GOLD': 'GOLD',
+      'GOLD_21': 'GOLD_21',
+      'SILVER': 'SILVER',
+      'USD': 'USD',
+      'EGP': 'EGP'
+    };
+    const key = keyMap[type];
+    if (key === 'EGP') return 1;
+
+    // Find rate in array
+    return data.rates.find(r => r.key === key)?.value || 0;
   };
 
   const getAssetIcon = (type: AssetType) => {

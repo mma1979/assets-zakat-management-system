@@ -30,16 +30,13 @@ export interface Liability {
   isDeductible: boolean; // Is this a short-term debt deductible from Zakat?
 }
 
-export interface MarketRates {
-  gold_egp: number; // Price per gram 24k
-  gold21_egp: number; // Price per gram 21k
-  silver_egp: number; // Price per gram
-  usd_egp: number; // Exchange rate
-  lastUpdated: number; // Timestamp
-  dataSources?: { title?: string; uri?: string }[];
-  rateIcons?: Record<string, string>;
-  rateTitles?: Record<string, string>;
-  [key: string]: number | { title?: string; uri?: string }[] | Record<string, string> | undefined;
+export interface Rate {
+  id: number;
+  key: string;
+  value: number;
+  lastUpdated: string;
+  icon: string;
+  title: string;
 }
 
 export interface AssetSummary {
@@ -67,7 +64,7 @@ export interface PriceAlert {
 export interface StoreData {
   transactions: Transaction[];
   liabilities: Liability[];
-  rates: MarketRates;
+  rates: Rate[];
   zakatConfig?: ZakatConfig;
   priceAlerts: PriceAlert[];
 }
