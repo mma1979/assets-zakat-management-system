@@ -190,7 +190,13 @@ export const translations = {
     conversionResult: "Result",
     swap: "Swap",
     confirm: "Confirm",
-    cancel: "Cancel"
+    cancel: "Cancel",
+    rateAdded: "Rate added successfully",
+    rateRemoved: "Rate removed successfully",
+    rateAddError: "Failed to add rate",
+    rateRemoveError: "Failed to remove rate",
+    configSaveError: "Failed to save configuration",
+    pwdUpdateError: "Failed to update password"
   },
   ar: {
     appTitle: "زكاة فولت",
@@ -379,6 +385,12 @@ export const translations = {
     conversionResult: "النتيجة",
     swap: "تبديل",
     confirm: "تأكيد",
-    cancel: "إلغاء"
+    cancel: "إلغاء",
+    rateAdded: "تم إضافة السعر بنجاح",
+    rateRemoved: "تم حذف السعر بنجاح",
+    rateAddError: "فشل إضافة السعر",
+    rateRemoveError: "فشل حذف السعر",
+    configSaveError: "فشل حفظ الإعدادات",
+    pwdUpdateError: "فشل تحديث كلمة المرور"
   }
 };

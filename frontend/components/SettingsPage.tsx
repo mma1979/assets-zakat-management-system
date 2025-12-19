@@ -80,10 +80,10 @@ export const SettingsPage: React.FC = () => {
                 setNewPassword('');
                 setConfirmPassword('');
             } else {
-                setPwdMessage({ type: 'error', text: 'Failed to update password' });
+                setPwdMessage({ type: 'error', text: t('pwdUpdateError') });
             }
         } catch (error: any) {
-            setPwdMessage({ type: 'error', text: error.message || 'Failed to update password' });
+            setPwdMessage({ type: 'error', text: error.message || t('pwdUpdateError') });
         } finally {
             setIsSubmittingPwd(false);
         }
@@ -95,9 +95,9 @@ export const SettingsPage: React.FC = () => {
         try {
             // Since updateZakatConfig now returns promise
             await updateZakatConfig({ zakatDate, reminderEnabled, email });
-            setZakatMsg({ type: 'success', text: t('saveSuccess') || 'Configuration saved successfully' });
+            setZakatMsg({ type: 'success', text: t('saveSuccess') });
         } catch (e: any) {
-            setZakatMsg({ type: 'error', text: 'Failed to save configuration' });
+            setZakatMsg({ type: 'error', text: t('configSaveError') });
         } finally {
             setIsSubmittingZakat(false);
         }
@@ -178,17 +178,17 @@ export const SettingsPage: React.FC = () => {
         addRate(newRateKey, val, newRateIcon, newRateTitle)
             .then(success => {
                 if (success) {
-                    setMsgRates({ type: 'success', text: t('saveSuccess') || 'Rate added' });
+                    setMsgRates({ type: 'success', text: t('rateAdded') });
                     setNewRateKey('');
                     setNewRateValue('');
                     setNewRateTitle('');
                     setNewRateIcon('Coins');
                     setShowRateModal(false);
                 } else {
-                    setMsgRates({ type: 'error', text: 'Failed to add rate' });
+                    setMsgRates({ type: 'error', text: t('rateAddError') });
                 }
             })
-            .catch(() => setMsgRates({ type: 'error', text: 'Error adding rate' }))
+            .catch(() => setMsgRates({ type: 'error', text: t('rateAddError') }))
             .finally(() => setIsSavingRates(false));
     };
 
@@ -198,12 +198,12 @@ export const SettingsPage: React.FC = () => {
         removeRate(id)
             .then(success => {
                 if (success) {
-                    setMsgRates({ type: 'success', text: 'Rate removed' });
+                    setMsgRates({ type: 'success', text: t('rateRemoved') });
                 } else {
-                    setMsgRates({ type: 'error', text: 'Failed to remove rate' });
+                    setMsgRates({ type: 'error', text: t('rateRemoveError') });
                 }
             })
-            .catch(() => setMsgRates({ type: 'error', text: 'Error removing rate' }))
+            .catch(() => setMsgRates({ type: 'error', text: t('rateRemoveError') }))
             .finally(() => setIsSavingRates(false));
     };
 
@@ -261,7 +261,7 @@ export const SettingsPage: React.FC = () => {
                         rates: Coins
                     };
                     const Icon = icons[tab];
-                    const labelKey = `tab${tab.charAt(0).toUpperCase() + tab.slice(1)} `;
+                    const labelKey = `tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
                     const isActive = activeTab === tab;
 
                     return (
@@ -408,7 +408,7 @@ export const SettingsPage: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                         <AlertTriangle size={18} className="text-amber-500" />
                                         <div>
-                                            <span className="font-semibold text-slate-700">{t(`asset_${alert.assetType} ` as any)}</span>
+                                            <span className="font-semibold text-slate-700">{t(`asset_${alert.assetType}` as any)}</span>
                                             <span className="mx-2 text-slate-400 text-sm">
                                                 {alert.condition === 'ABOVE' ? '>' : '<'}
                                             </span>
@@ -435,7 +435,7 @@ export const SettingsPage: React.FC = () => {
                                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                                 >
                                     {Object.keys(ASSET_LABELS).map(key => (
-                                        <option key={key} value={key}>{t(`asset_${key} ` as any)}</option>
+                                        <option key={key} value={key}>{t(`asset_${key}` as any)}</option>
                                     ))}
                                 </select>
                             </div>

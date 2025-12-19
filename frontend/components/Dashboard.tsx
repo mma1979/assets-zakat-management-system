@@ -34,23 +34,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
   // Replaced with:
   const [editRates, setEditRates] = useState<Rate[]>([]); // We'll just load data.rates into it when opening
 
+  // Helper for dynamic colors
+  const getAssetColor = (assetType: string) => {
+    const colors: Record<string, string> = {
+      GOLD: '#fbbf24',
+      GOLD_21: '#f59e0b',
+      SILVER: '#94a3b8',
+      USD: '#10b981',
+      EGP: '#3b82f6',
+      // Fallbacks
+    };
+    if (colors[assetType]) return colors[assetType];
+    // Generate a consistent color from string if not known
+    let hash = 0;
+    for (let i = 0; i < assetType.length; i++) {
+      hash = assetType.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return '#' + '00000'.substring(0, 6 - c.length) + c;
+  };
+
   // Calculate Net Worth & Breakdown
   const summary = useMemo(() => {
-    // 1. Calculate holdings using FIFO logic for quantities
-    const holdings: Record<string, number> = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 0 };
+    // 1. Initialize holdings dynamically
+    const holdings: Record<string, number> = { EGP: 0 };
+    data.rates.forEach(r => holdings[r.key] = 0);
 
     data.transactions.forEach(tx => {
+      // Ensure key exists
+      if (holdings[tx.assetType] === undefined) holdings[tx.assetType] = 0;
+
       if (tx.type === 'BUY') holdings[tx.assetType] += tx.amount;
       else holdings[tx.assetType] -= tx.amount;
     });
 
-    const values = {
-      GOLD: holdings.GOLD * (data.rates.find(r => r.key === 'GOLD')?.value || 0),
-      GOLD_21: holdings.GOLD_21 * (data.rates.find(r => r.key === 'GOLD_21')?.value || 0),
-      SILVER: holdings.SILVER * (data.rates.find(r => r.key === 'SILVER')?.value || 0),
-      USD: holdings.USD * (data.rates.find(r => r.key === 'USD')?.value || 0),
-      EGP: holdings.EGP
-    };
+    // 2. Calculate values
+    const values: Record<string, number> = { EGP: holdings.EGP };
+    data.rates.forEach(r => {
+      values[r.key] = (holdings[r.key] || 0) * r.value;
+    });
 
     const totalAssets = Object.values(values).reduce((a, b) => a + b, 0);
     const totalLiabilities = data.liabilities.reduce((acc, l) => acc + l.amount, 0);
@@ -64,7 +86,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     // 1. Group transactions by date
     const txsByDate = new Map<string, Transaction[]>();
     data.transactions.forEach(tx => {
-      // Normalize to date string YYYY-MM-DD
       const date = tx.date.split('T')[0];
       if (!txsByDate.has(date)) txsByDate.set(date, []);
       txsByDate.get(date)?.push(tx);
@@ -72,10 +93,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
     const sortedDates = Array.from(txsByDate.keys()).sort();
 
-    // 2. Initialize cumulative quantities and last known prices
-    const qty = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 0 };
-    // Start prices at 0 or base. For history, we use the transaction price as the "market rate" at that time.
-    const prices = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 1 };
+    // 2. Initialize cumulative quantities and prices
+    const qty: Record<string, number> = { EGP: 0 };
+    const prices: Record<string, number> = { EGP: 1 };
+
+    data.rates.forEach(r => {
+      qty[r.key] = 0;
+      prices[r.key] = 0;
+    });
 
     const result: any[] = [];
 
@@ -83,42 +108,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     sortedDates.forEach(date => {
       const dayTxs = txsByDate.get(date) || [];
       dayTxs.forEach(tx => {
-        // Update cumulative quantity
+        if (qty[tx.assetType] === undefined) qty[tx.assetType] = 0;
+
         if (tx.type === 'BUY') qty[tx.assetType] += tx.amount;
         else qty[tx.assetType] -= tx.amount;
 
-        // Update price if meaningful (assume transaction reflects market rate)
         if (tx.pricePerUnit > 0) {
           prices[tx.assetType] = tx.pricePerUnit;
         }
       });
 
       // Calculate total value at this snapshot
-      result.push({
-        date,
-        GOLD: qty.GOLD * prices.GOLD,
-        GOLD_21: qty.GOLD_21 * prices.GOLD_21,
-        SILVER: qty.SILVER * prices.SILVER,
-        USD: qty.USD * prices.USD,
-        EGP: qty.EGP // EGP is base, value = amount
+      const snapshot: any = { date, EGP: qty.EGP };
+      data.rates.forEach(r => {
+        // Use historical price if available (from tx updates), otherwise 0? 
+        // Issue: if no tx for this asset yet, price is 0. 
+        // Ideally we'd need historical rates. For now we rely on last known tx price.
+        snapshot[r.key] = (qty[r.key] || 0) * (prices[r.key] || 0);
       });
+      result.push(snapshot);
     });
 
     // 4. Add "Today" data point with current market rates
     const today = format(new Date(), 'yyyy-MM-dd');
     if (result.length === 0 || result[result.length - 1].date !== today) {
-      result.push({
-        date: today,
-        GOLD: qty.GOLD * (data.rates.find(r => r.key === 'GOLD')?.value || 0),
-        GOLD_21: qty.GOLD_21 * (data.rates.find(r => r.key === 'GOLD_21')?.value || 0),
-        SILVER: qty.SILVER * (data.rates.find(r => r.key === 'SILVER')?.value || 0),
-        USD: qty.USD * (data.rates.find(r => r.key === 'USD')?.value || 0),
-        EGP: qty.EGP
+      const todaySnapshot: any = { date: today, EGP: qty.EGP };
+      data.rates.forEach(r => {
+        todaySnapshot[r.key] = (qty[r.key] || 0) * r.value;
       });
+      result.push(todaySnapshot);
     }
 
     return result;
   }, [data.transactions, data.rates]);
+
+  // Dynamic Pie Chart Data
+  const pieChartData = useMemo(() => {
+    const pData = [
+      { name: t('asset_EGP'), value: summary.values.EGP, color: getAssetColor('EGP') }
+    ];
+    data.rates.forEach(r => {
+      if (summary.values[r.key] > 0) {
+        pData.push({
+          name: r.title || r.key, // Or translate? t(`asset_${r.key}`) might fail
+          value: summary.values[r.key],
+          color: getAssetColor(r.key)
+        });
+      }
+    });
+    return pData.filter(d => d.value > 0);
+  }, [summary, data.rates, t]);
 
   const handleRefreshRates = async () => {
     setUpdating(true);
@@ -148,13 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     setShowRateModal(false);
   };
 
-  const pieChartData = [
-    { name: t('asset_GOLD'), value: summary.values.GOLD, color: '#fbbf24' },
-    { name: t('asset_GOLD_21'), value: summary.values.GOLD_21, color: '#f59e0b' },
-    { name: t('asset_SILVER'), value: summary.values.SILVER, color: '#94a3b8' },
-    { name: t('asset_USD'), value: summary.values.USD, color: '#10b981' },
-    { name: t('asset_EGP'), value: summary.values.EGP, color: '#3b82f6' },
-  ].filter(d => d.value > 0);
+  // Pie chart data handled in useMemo above now
 
   const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
   const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
@@ -366,11 +399,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
               <Legend verticalAlign="top" height={36} />
-              <Line type="monotone" dataKey="GOLD" name={t('asset_GOLD')} stroke="#fbbf24" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="GOLD_21" name={t('asset_GOLD_21')} stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="SILVER" name={t('asset_SILVER')} stroke="#94a3b8" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="USD" name={t('asset_USD')} stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="EGP" name={t('asset_EGP')} stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="EGP" name={t('asset_EGP')} stroke={getAssetColor('EGP')} strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              {data.rates.map(r => (
+                <Line
+                  key={r.key}
+                  type="monotone"
+                  dataKey={r.key}
+                  name={r.title || r.key}
+                  stroke={getAssetColor(r.key)}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 6 }}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
