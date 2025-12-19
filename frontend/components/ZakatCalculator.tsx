@@ -142,20 +142,31 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     const lunarEndDate = addDays(startDate, lunarYearDays);
 
     // 1. Calculate Total Assets Value (Market Value)
-    const holdings: Record<string, number> = { GOLD: 0, GOLD_21: 0, SILVER: 0, USD: 0, EGP: 0 };
+    const holdings: Record<string, number> = {};
+
+    // Initialize for all known rates + EGP
+    data.rates.forEach(r => holdings[r.key] = 0);
+    holdings['EGP'] = 0;
+
     data.transactions.forEach(tx => {
+      if (holdings[tx.assetType] === undefined) holdings[tx.assetType] = 0;
       if (tx.type === 'BUY') holdings[tx.assetType] += tx.amount;
       else holdings[tx.assetType] -= tx.amount;
     });
 
     const getRate = (k: string) => data.rates.find(r => r.key === k)?.value || 0;
 
-    const assetValue =
-      (holdings.GOLD * getRate('GOLD')) +
-      (holdings.GOLD_21 * getRate('GOLD_21')) +
-      (holdings.SILVER * getRate('SILVER')) +
-      (holdings.USD * getRate('USD')) +
-      holdings.EGP;
+    // Sum value of all assets (excluding EGP handled separately or as rate=1)
+    let assetValue = 0;
+
+    // 1. Add Value of all Rated Assets
+    data.rates.forEach(rate => {
+      const qty = holdings[rate.key] || 0;
+      assetValue += qty * rate.value;
+    });
+
+    // 2. Add EGP (Base Currency)
+    assetValue += holdings['EGP'] || 0;
 
     // 2. Deduct Liabilities (Within Lunar Year Window)
     const deductibleLiabilities = data.liabilities
@@ -199,7 +210,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       zakatDue,
       lunarEndDate
     };
-  }, [data, zakatDate]);
+  }, [data.transactions, data.liabilities, data.rates, zakatDate]);
 
   const calculation = useMemo(() => {
     return {

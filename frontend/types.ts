@@ -1,5 +1,5 @@
 
-export type AssetType = 'GOLD' | 'GOLD_21' | 'SILVER' | 'USD' | 'EGP';
+export type AssetType = string;
 
 export interface UserProfile {
   id: string;

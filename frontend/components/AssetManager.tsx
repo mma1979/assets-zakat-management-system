@@ -45,22 +45,25 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   const [calcTo, setCalcTo] = useState<AssetType>('EGP');
   const [calcAmount, setCalcAmount] = useState<string>('1');
 
-  const getCurrentRate = (type: AssetType) => {
-    const keyMap: Record<AssetType, string> = {
-      'GOLD': 'GOLD',
-      'GOLD_21': 'GOLD_21',
-      'SILVER': 'SILVER',
-      'USD': 'USD',
-      'EGP': 'EGP'
-    };
-    const key = keyMap[type];
-    if (key === 'EGP') return 1;
+  // Determine active tab availability
+  useEffect(() => {
+    // If activeTab is not in rates (and not EGP/USD special cases if any), default to first
+    // assuming 'EGP' is base currency and not usually a holding tab unless specified
+    const exists = data.rates.find(r => r.key === activeTab);
+    if (!exists && data.rates.length > 0 && activeTab !== 'EGP') {
+      setActiveTab(data.rates[0].key);
+    }
+  }, [data.rates, activeTab]);
 
+  const getCurrentRate = (type: AssetType) => {
+    if (type === 'EGP') return 1;
     // Find rate in array
-    return data.rates.find(r => r.key === key)?.value || 0;
+    return data.rates.find(r => r.key === type)?.value || 0;
   };
 
   const getAssetIcon = (type: AssetType) => {
+    // Try to find icon in rates if stored there (Rate interface has icon string?)
+    // For now, keep hardcoded map for known types, default to Coins
     switch (type) {
       case 'GOLD': return <Gem size={18} className="text-amber-500" />;
       case 'GOLD_21': return <Coins size={18} className="text-amber-600" />;
@@ -143,11 +146,13 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
 
   const assetMetrics = useMemo(() => {
     const metrics: Record<string, { quantity: number, avgCost: number }> = {};
-    (Object.keys(ASSET_LABELS) as AssetType[]).forEach((type) => {
+    // Calculate for all RATES + EGP
+    const allTypes = [...data.rates.map(r => r.key), 'EGP'];
+    allTypes.forEach((type) => {
       metrics[type] = calculateAssetMetrics(data.transactions, type);
     });
     return metrics;
-  }, [data.transactions]);
+  }, [data.transactions, data.rates]);
 
   const currentTxs = data.transactions
     .filter(t => t.assetType === activeTab)
@@ -197,17 +202,17 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
 
       {/* Asset Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 border-b border-slate-200">
-        {(Object.keys(ASSET_LABELS) as AssetType[]).map(type => (
+        {data.rates.map(rate => (
           <button
-            key={type}
-            onClick={() => setActiveTab(type)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors border ${activeTab === type
+            key={rate.key}
+            onClick={() => setActiveTab(rate.key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors border ${activeTab === rate.key
               ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
               : 'text-slate-500 hover:bg-slate-100 border-transparent'
               }`}
           >
-            {getAssetIcon(type)}
-            {t(`asset_${type}` as any)}
+            {getAssetIcon(rate.key)}
+            {rate.title || t(`asset_${rate.key}` as any) || rate.key}
           </button>
         ))}
       </div>
@@ -217,7 +222,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('currentHoldings')}</p>
           <div className="text-3xl font-bold text-slate-800 mt-1 flex items-baseline gap-2">
-            {formatNum(assetMetrics[activeTab]?.quantity ?? 0)} <span className="text-lg text-slate-400 font-normal">{ASSET_UNITS[activeTab]}</span>
+            {formatNum(assetMetrics[activeTab]?.quantity ?? 0)} <span className="text-lg text-slate-400 font-normal">{ASSET_UNITS[activeTab] || 'Units'}</span>
           </div>
         </div>
         <div>
@@ -257,7 +262,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
               {currentTxs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
-                    {t('noTx')} {t(`asset_${activeTab}` as any)}.
+                    {t('noTx')} {data.rates.find(r => r.key === activeTab)?.title || activeTab}.
                   </td>
                 </tr>
               ) : (
@@ -277,7 +282,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     <td className="px-6 py-4 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         {getAssetIcon(tx.assetType)}
-                        <span>{formatNum(tx.amount)} {ASSET_UNITS[tx.assetType]}</span>
+                        <span>{formatNum(tx.amount)} {ASSET_UNITS[tx.assetType] || 'Units'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-600">{formatNum(tx.pricePerUnit)} EGP</td>
@@ -314,7 +319,9 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     value={formAsset} onChange={(e) => setFormAsset(e.target.value as AssetType)}
                     className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
+                    {data.rates.map(r => (
+                      <option key={r.key} value={r.key}>{r.title || r.key}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -351,7 +358,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">
-                    {t('amount')} ({ASSET_UNITS[formAsset]})
+                    {t('amount')} ({ASSET_UNITS[formAsset] || 'Units'})
                   </label>
                   <input
                     type="number" step="0.01" min="0"
@@ -474,7 +481,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     onChange={(e) => setCalcFrom(e.target.value as AssetType)}
                     className="w-1/3 p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                   >
-                    {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
+                    {data.rates.map(r => <option key={r.key} value={r.key}>{r.title || r.key}</option>)}
                   </select>
                   <input
                     type="number"
@@ -507,7 +514,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                   onChange={(e) => setCalcTo(e.target.value as AssetType)}
                   className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                 >
-                  {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
+                  {data.rates.map(r => <option key={r.key} value={r.key}>{r.title || r.key}</option>)}
                 </select>
               </div>
 
@@ -523,10 +530,10 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     const result = (amount * rateFrom) / rateTo;
                     return formatNum(result);
                   })()}
-                  <span className="text-sm font-normal text-emerald-600 ml-1">{ASSET_UNITS[calcTo]}</span>
+                  <span className="text-sm font-normal text-emerald-600 ml-1">{ASSET_UNITS[calcTo] || 'Units'}</span>
                 </p>
                 <p className="text-xs text-emerald-500 mt-1">
-                  1 {ASSET_UNITS[calcFrom]} = {formatNum(getCurrentRate(calcFrom) / getCurrentRate(calcTo))} {ASSET_UNITS[calcTo]}
+                  1 {ASSET_UNITS[calcFrom] || 'Unit'} = {formatNum(getCurrentRate(calcFrom) / getCurrentRate(calcTo))} {ASSET_UNITS[calcTo] || 'Units'}
                 </p>
               </div>
 
