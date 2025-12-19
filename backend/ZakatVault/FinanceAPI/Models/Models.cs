@@ -67,6 +67,8 @@ public class Rate
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty; // "Gold", "Silver", "USD_EGP"
+    public string Icon { get; set; } = string.Empty; 
+    public string Title { get; set; } = string.Empty; 
     public decimal Value { get; set; }
     public DateTime LastUpdated { get; set; }
 }

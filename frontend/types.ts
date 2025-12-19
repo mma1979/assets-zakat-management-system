@@ -38,6 +38,7 @@ export interface MarketRates {
   lastUpdated: number; // Timestamp
   dataSources?: { title?: string; uri?: string }[];
   rateIcons?: Record<string, string>;
+  rateTitles?: Record<string, string>;
   [key: string]: number | { title?: string; uri?: string }[] | Record<string, string> | undefined;
 }
 

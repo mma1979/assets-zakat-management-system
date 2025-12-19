@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useStore } from '../services/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword } from '../services/auth';
-import { Lock, Bell, Calculator, Save, Plus, Trash2, ArrowRight, AlertTriangle, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor, User, Settings as SettingsIcon } from 'lucide-react';
+import { Lock, Bell, Calculator, Save, Plus, Trash2, ArrowRight, AlertTriangle, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor, User, Settings as SettingsIcon, X } from 'lucide-react';
 import { AssetType } from '../types';
 import { ASSET_LABELS } from '../constants';
 import { CustomDatePicker } from './DatePicker';
@@ -11,7 +11,7 @@ import { ConfirmModal } from './ConfirmModal';
 
 export const SettingsPage: React.FC = () => {
     const { t, dir } = useLanguage();
-    const { data, updateZakatConfig, addPriceAlert, removePriceAlert, updateRates } = useStore();
+    const { data, updateZakatConfig, addPriceAlert, removePriceAlert, updateRates, addRate, removeRate } = useStore();
     const { user } = useAuth();
 
     // UI State
@@ -45,8 +45,10 @@ export const SettingsPage: React.FC = () => {
     // For rates we only edit EGP fields for now unless dynamic
     const [newRateKey, setNewRateKey] = useState('');
     const [newRateValue, setNewRateValue] = useState('');
+    const [newRateTitle, setNewRateTitle] = useState('');
     const [newRateIcon, setNewRateIcon] = useState('Coins');
     const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
+    const [showRateModal, setShowRateModal] = useState(false);
     const [isSavingRates, setIsSavingRates] = useState(false);
     const [msgRates, setMsgRates] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -156,42 +158,39 @@ export const SettingsPage: React.FC = () => {
         const val = parseFloat(newRateValue);
         if (isNaN(val)) return;
 
-        // prepare updates
-        const updates: any = { [newRateKey]: val };
-
-        // Handle Icon updates if supported
-        if (newRateIcon) {
-            const currentIcons = data.rates.rateIcons || {};
-            updates.rateIcons = { ...currentIcons, [newRateKey]: newRateIcon };
-        }
-
-        handleSaveRates(updates);
-        setNewRateKey('');
-        setNewRateValue('');
-        setNewRateIcon('Coins');
+        // Use new addRate function
+        setIsSavingRates(true);
+        setMsgRates(null);
+        addRate(newRateKey, val, newRateIcon, newRateTitle)
+            .then(success => {
+                if (success) {
+                    setMsgRates({ type: 'success', text: t('saveSuccess') || 'Rate added' });
+                    setNewRateKey('');
+                    setNewRateValue('');
+                    setNewRateTitle('');
+                    setNewRateIcon('Coins');
+                    setShowRateModal(false);
+                } else {
+                    setMsgRates({ type: 'error', text: 'Failed to add rate' });
+                }
+            })
+            .catch(() => setMsgRates({ type: 'error', text: 'Error adding rate' }))
+            .finally(() => setIsSavingRates(false));
     };
 
     const handleDeleteRate = (key: string) => {
-        // Technically we can't delete from fixed interface, but for dynamic keys we can.
-        // For fixed keys, we might just set to 0 or ignore.
-        // To truly delete, we need to send the object without that key, but TS interface might complain if mandatory.
-        // We will assume dynamic keys can be deleted. Standard keys shouldn't be deleted structurally.
-        // For now, let's just create a new object without the key.
-        const { [key]: deleted, ...rest } = data.rates as any;
-        // We need to call updateRates with the new object
-        // updateDataPart merges? No, it replaces.
-        // So we need to pass the full object minus the key.
         setIsSavingRates(true);
         setMsgRates(null);
-        try {
-            // For strict keys in interface, this might be tricky, but we cast to any.
-            updateRates({ ...rest, lastUpdated: Date.now() });
-            setMsgRates({ type: 'success', text: 'Rate removed' });
-        } catch (e) {
-            setMsgRates({ type: 'error', text: 'Failed to remove rate' });
-        } finally {
-            setIsSavingRates(false);
-        }
+        removeRate(key)
+            .then(success => {
+                if (success) {
+                    setMsgRates({ type: 'success', text: 'Rate removed' });
+                } else {
+                    setMsgRates({ type: 'error', text: 'Failed to remove rate' });
+                }
+            })
+            .catch(() => setMsgRates({ type: 'error', text: 'Error removing rate' }))
+            .finally(() => setIsSavingRates(false));
     };
 
     return (
@@ -219,8 +218,8 @@ export const SettingsPage: React.FC = () => {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap ${isActive
-                                    ? 'border-emerald-500 text-emerald-700'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                ? 'border-emerald-500 text-emerald-700'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                                 }`}
                         >
                             <Icon size={18} />
@@ -429,18 +428,28 @@ export const SettingsPage: React.FC = () => {
 
                 {activeTab === 'rates' && (
                     <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <Coins size={20} className="text-emerald-600" />
-                            {t('manageRates') || 'Manage Market Rates'}
-                        </h3>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Coins size={20} className="text-emerald-600" />
+                                {t('manageRates') || 'Manage Market Rates'}
+                            </h3>
+                            <button
+                                onClick={() => setShowRateModal(true)}
+                                className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 text-sm"
+                            >
+                                <Plus size={16} />
+                                {t('addRate') || 'Add Rate'}
+                            </button>
+                        </div>
 
                         <div className="space-y-4 mb-6">
                             {/* List current rates (exclude metadata) */}
                             {Object.entries(data.rates)
-                                .filter(([k]) => k !== 'lastUpdated' && k !== 'dataSources' && k !== 'rateIcons')
+                                .filter(([k]) => k !== 'lastUpdated' && k !== 'dataSources' && k !== 'rateIcons' && k !== 'rateTitles')
                                 .map(([key, value]) => {
                                     const iconName = data.rates.rateIcons?.[key] || 'Coins';
                                     const IconComp = AVAILABLE_ICONS[iconName] || Coins;
+                                    const title = data.rates.rateTitles?.[key];
 
                                     return (
                                         <div key={key} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -448,7 +457,10 @@ export const SettingsPage: React.FC = () => {
                                                 <div className="p-2 bg-white rounded-full border border-slate-100 text-emerald-600">
                                                     <IconComp size={18} />
                                                 </div>
-                                                <span className="font-mono text-slate-700 font-semibold">{key.replace('_egp', '').toUpperCase()}</span>
+                                                <div className="flex flex-col">
+                                                    {title && <span className="font-semibold text-slate-800 text-sm">{title}</span>}
+                                                    <span className={`font-mono text-slate-500 ${title ? 'text-xs' : 'font-semibold text-slate-700'}`}>{key.replace('_egp', '').toUpperCase()}</span>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <span className="font-bold text-slate-900">{typeof value === 'number' ? value.toLocaleString() : String(value)}</span>
@@ -461,9 +473,66 @@ export const SettingsPage: React.FC = () => {
                                 })}
                         </div>
 
-                        <form onSubmit={handleAddRate} className="flex flex-wrap gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
-                            <div className="flex-1 min-w-[120px] relative">
-                                <label className="block text-xs font-medium text-slate-500 mb-1">{t('icon') || 'Icon'}</label>
+                        {msgRates && (
+                            <div className={`mt-4 text-sm ${msgRates.type === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {msgRates.text}
+                            </div>
+                        )}
+                    </section>
+                )}
+            </div>
+
+            {/* Rate Modal */}
+            {showRateModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 className="font-bold text-lg text-slate-800">{t('addRate') || 'Add Market Rate'}</h3>
+                            <button onClick={() => setShowRateModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddRate} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('rateTitle') || 'Title (Optional)'}</label>
+                                <input
+                                    type="text"
+                                    value={newRateTitle}
+                                    onChange={e => setNewRateTitle(e.target.value)}
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    placeholder="e.g. Platinum 950"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('rateKey') || 'Rate Key'}</label>
+                                <input
+                                    type="text"
+                                    value={newRateKey}
+                                    onChange={e => setNewRateKey(e.target.value)}
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm"
+                                    placeholder="e.g. platinum_egp"
+                                    required
+                                />
+                                <p className="text-xs text-slate-400 mt-1">Unique identifier (e.g. platinum_egp)</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('rateValue') || 'Value'}</label>
+                                <input
+                                    type="number"
+                                    value={newRateValue}
+                                    onChange={e => setNewRateValue(e.target.value)}
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    placeholder="0.00"
+                                    step="any"
+                                    required
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('icon') || 'Icon'}</label>
                                 <button
                                     type="button"
                                     onClick={() => setIsIconDropdownOpen(!isIconDropdownOpen)}
@@ -497,46 +566,27 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex-1 min-w-[150px]">
-                                <label className="block text-xs font-medium text-slate-500 mb-1">{t('rateKey') || 'Rate Key (e.g. platinum_egp)'}</label>
-                                <input
-                                    type="text"
-                                    value={newRateKey}
-                                    onChange={e => setNewRateKey(e.target.value)}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                                    placeholder="asset_currency"
-                                    required
-                                />
-                            </div>
-                            <div className="flex-1 min-w-[120px]">
-                                <label className="block text-xs font-medium text-slate-500 mb-1">{t('rateValue') || 'Value'}</label>
-                                <input
-                                    type="number"
-                                    value={newRateValue}
-                                    onChange={e => setNewRateValue(e.target.value)}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                                    placeholder="0.00"
-                                    step="any"
-                                    required
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={isSavingRates}
-                                className={`p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors ${isSavingRates ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                <Plus size={24} />
-                            </button>
-                        </form>
 
-                        {msgRates && (
-                            <div className={`mt-4 text-sm ${msgRates.type === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {msgRates.text}
+                            <div className="pt-2 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRateModal(false)}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingRates}
+                                    className={`px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 ${isSavingRates ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    {isSavingRates ? 'Saving...' : (t('addRate') || 'Add Rate')}
+                                </button>
                             </div>
-                        )}
-                    </section>
-                )}
-            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation */}
             <ConfirmModal

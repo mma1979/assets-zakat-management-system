@@ -155,6 +155,9 @@ export const translations = {
     manageRates: "Manage Market Rates",
     rateKey: "Rate Key (e.g. platinum_egp)",
     rateValue: "Value",
+    rateTitle: "Title (Optional)",
+    addRate: "Add Market Rate",
+    editRate: "Edit Rate",
     icon: "Icon",
 
     // Asset Labels
@@ -341,6 +344,9 @@ export const translations = {
     manageRates: "إدارة أسعار السوق",
     rateKey: "رمز السعر (مثلاً platinum_egp)",
     rateValue: "القيمة",
+    rateTitle: "العنوان (اختياري)",
+    addRate: "إضافة سعر سوق",
+    editRate: "تعديل السعر",
     icon: "الأيقونة",
 
     // Asset Labels

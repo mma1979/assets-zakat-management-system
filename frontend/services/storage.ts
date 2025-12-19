@@ -77,12 +77,12 @@ const fetchData = async <T,>(key: DataKey, defaultValue: T): Promise<T> => {
 };
 
 // Generic save function for any data type
-const saveDataPart = async <T,>(key: DataKey, value: T): Promise<boolean> => {
+const saveDataPart = async <T,>(key: DataKey, value: T, method: 'POST' | 'PUT' | 'DELETE' = 'POST'): Promise<boolean> => {
   const token = getStoredToken();
   if (!token) return false;
 
   try {
-    const response = await http.post(API_ENDPOINTS[key], value, { headers: getAuthHeaders() });
+    const response = await (http as any)[method.toLowerCase()](API_ENDPOINTS[key], value, { headers: getAuthHeaders() });
     return response.status >= 200 && response.status < 300;
   } catch (e) {
     console.error(`Save failed for ${key}:`, e);
@@ -162,7 +162,8 @@ export const useStore = () => {
   const updateDataPart = async <K extends keyof StoreData>(
     key: K,
     value: StoreData[K],
-    remotePayload?: any
+    remotePayload?: any,
+    method: 'POST' | 'PUT' | 'DELETE' = 'POST'
   ) => {
     // 1. Optimistic Update (Local)
     const newData = { ...data, [key]: value };
@@ -177,7 +178,7 @@ export const useStore = () => {
     setLoadingStates(prev => ({ ...prev, [key]: true }));
     setSyncError(null);
 
-    const success = await saveDataPart(key, remotePayload !== undefined ? remotePayload : value);
+    const success = await saveDataPart(key, remotePayload !== undefined ? remotePayload : value, method);
 
     if (!success) {
       setSyncError(`Cloud sync failed for ${key}. Data saved locally.`);
@@ -265,8 +266,97 @@ export const useStore = () => {
 
   // Rates operations
   const updateRates = useCallback((rates: MarketRates) => {
-    return updateDataPart('rates', rates);
+    return updateDataPart('rates', rates, undefined, 'PUT');
   }, []);
+
+  const addRate = useCallback(async (key: string, value: number, icon?: string, title?: string) => {
+    const token = getStoredToken();
+    if (!token) {
+      // Offline: Update local
+      const newRates = { ...data.rates, [key]: value };
+      if (icon) {
+        newRates.rateIcons = { ...newRates.rateIcons, [key]: icon };
+      }
+      if (title) {
+        newRates.rateTitles = { ...newRates.rateTitles, [key]: title };
+      }
+      return updateDataPart('rates', newRates);
+    }
+
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, rates: true }));
+
+    try {
+      const payload = { key, value, icon, title }; // Adjust payload structure as needed by backend
+      // Assuming backend expects { key: string, value: number, icon?: string, title?: string }
+      const response = await http.post(API_ENDPOINTS.rates, payload, { headers: getAuthHeaders() });
+
+      if (response.status >= 200 && response.status < 300) {
+        // Optimistic update
+        const newRates = { ...data.rates, [key]: value };
+        if (icon) {
+          newRates.rateIcons = { ...newRates.rateIcons, [key]: icon };
+        }
+        if (title) {
+          newRates.rateTitles = { ...newRates.rateTitles, [key]: title };
+        }
+        setData(prev => ({ ...prev, rates: newRates }));
+        persistLocal({ ...data, rates: newRates });
+        return true;
+      } else {
+        throw new Error(`Add rate failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Failed to add rate:", error);
+      setSyncError("Failed to add rate");
+      return false;
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, rates: false }));
+    }
+  }, [data.rates]);
+
+  const removeRate = useCallback(async (key: string) => {
+    const token = getStoredToken();
+    if (!token) {
+      const { [key]: deleted, ...rest } = data.rates as any;
+      updateDataPart('rates', rest);
+      return true;
+    }
+
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, rates: true }));
+
+    try {
+      const response = await http.delete(`${API_ENDPOINTS.rates}/${key}`, { headers: getAuthHeaders() });
+      if (response.status >= 200 && response.status < 300) {
+        const { [key]: deleted, ...rest } = data.rates as any;
+        // Also remove icon if exists
+        if (rest.rateIcons && rest.rateIcons[key]) {
+          const { [key]: delIcon, ...restIcons } = rest.rateIcons;
+          rest.rateIcons = restIcons;
+        }
+        // Also remove title if exists
+        if (rest.rateTitles && rest.rateTitles[key]) {
+          const { [key]: delTitle, ...restTitles } = rest.rateTitles;
+          rest.rateTitles = restTitles;
+        }
+
+        setData(prev => ({ ...prev, rates: rest }));
+        persistLocal({ ...data, rates: rest });
+        return true;
+      } else {
+        throw new Error(`Delete rate failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Failed to delete rate:", error);
+      setSyncError("Failed to delete rate");
+      return false;
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, rates: false }));
+    }
+  }, [data.rates]);
 
   // Zakat config operations
   const updateZakatConfig = useCallback((zakatConfig: ZakatConfig) => {
@@ -327,6 +417,8 @@ export const useStore = () => {
     addLiability,
     removeLiability,
     updateRates,
+    addRate,
+    removeRate,
     updateZakatConfig,
 
     addPriceAlert,

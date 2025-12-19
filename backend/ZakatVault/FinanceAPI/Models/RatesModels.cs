@@ -19,7 +19,7 @@ public class RatesRequest
     public decimal silver_egp { get; set; } = 0m;
     public decimal usd_egp { get; set; } = 0m;
     public decimal egp { get; set; } = 1m;
-   
+
 }
 
 public class RatesResponse
@@ -32,3 +32,13 @@ public class RatesResponse
     public DateTime lastUpdated { get; set; } = DateTime.UtcNow;
     public object[] dataSources { get; set; } = [];
 }
+
+
+public class RateItem
+{
+    public string key { get; set; } = string.Empty;
+    public decimal value { get; set; } = 0m;
+    public string icon { get; set; } = string.Empty;
+    public string title { get; set; } = string.Empty;
+}
+

@@ -19,9 +19,22 @@ public class RatesController(IRatesService service) : ControllerBase
     }
 
     [HttpPost]
+    public async Task<IActionResult> AddRate([FromBody]RateItem rate)
+    {
+        var newRates = await service.AddRateAsync(rate);
+        return Ok(newRates);
+    }
+
+    [HttpPut]
     public async Task<IActionResult> UpdateRates(RatesRequest rates)
     {
         var newRates = await service.UpdateRatesAsync(rates);
         return Ok(newRates);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteRate([FromRoute] int id)
+    {
+        return Ok();
     }
 }

@@ -13,6 +13,7 @@ public interface IRatesService
     Task<RatesResponse> GetLatestRatesAsync();
     Task<RatesResponse> UpdateRatesAsync(RatesRequest rates);
     void UpdateRates();
+    Task<RatesResponse> AddRateAsync(RateItem rate);
 }
 public class RatesService(FinanceDbContext context, IGeminiService geminiService) : IRatesService
 {
@@ -101,6 +102,22 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
        );
 
         BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS,ns => ns.SendPriceAlert());
+    }
+
+    public async Task<RatesResponse> AddRateAsync(RateItem rate)
+    {
+        var newRate = new Rate
+        {
+            Name = rate.key,
+            Value = rate.value,
+            Icon = rate.icon,
+            Title = rate.title,
+            LastUpdated = DateTime.UtcNow
+        };
+
+        await context.Rates.AddAsync(newRate);
+        await context.SaveChangesAsync();
+        return await GetLatestRatesAsync();
     }
 }
 
