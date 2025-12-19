@@ -434,8 +434,10 @@ export const SettingsPage: React.FC = () => {
                                     onChange={e => setNewAlertAsset(e.target.value as AssetType)}
                                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                                 >
-                                    {Object.keys(ASSET_LABELS).map(key => (
-                                        <option key={key} value={key}>{t(`asset_${key}` as any)}</option>
+                                    {data.rates.map(rate => (
+                                        <option key={rate.key} value={rate.key}>
+                                            {rate.title || t(`asset_${rate.key}` as any)}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
