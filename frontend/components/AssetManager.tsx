@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StoreData, Transaction, AssetType, PriceAlert } from '../types';
 import { ASSET_LABELS, ASSET_UNITS } from '../constants';
-import { Plus, Trash2, ArrowDown, ArrowUp, History, Coins, DollarSign, Banknote, Gem, Bell, BellRing, X } from 'lucide-react';
+import { Plus, Trash2, ArrowDown, ArrowUp, History, Coins, DollarSign, Banknote, Gem, Bell, BellRing, X, Calculator, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { calculateAssetMetrics } from '../utils/calculations';
@@ -38,6 +38,12 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
 
   // Delete Confirmation State
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'TRANSACTION' | 'ALERT' } | null>(null);
+
+  // Calculator State
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcFrom, setCalcFrom] = useState<AssetType>('USD');
+  const [calcTo, setCalcTo] = useState<AssetType>('EGP');
+  const [calcAmount, setCalcAmount] = useState<string>('1');
 
   const getCurrentRate = (type: AssetType) => {
     switch (type) {
@@ -163,6 +169,14 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
           >
             <Bell size={20} />
             <span className="hidden sm:inline">{t('priceAlerts')}</span>
+          </button>
+          <button
+            onClick={() => setShowCalculator(true)}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg transition-colors font-medium"
+            title={t('assetCalculator')}
+          >
+            <Calculator size={20} />
+            <span className="hidden sm:inline">{t('assetCalculator')}</span>
           </button>
           <button
             onClick={() => {
@@ -429,6 +443,89 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Calculator Modal */}
+      {showCalculator && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Calculator size={20} className="text-emerald-600" />
+                <h3 className="font-bold text-slate-800">{t('assetCalculator')}</h3>
+              </div>
+              <button onClick={() => setShowCalculator(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* From */}
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('convertFrom')}</label>
+                <div className="flex gap-2">
+                  <select
+                    value={calcFrom}
+                    onChange={(e) => setCalcFrom(e.target.value as AssetType)}
+                    className="w-1/3 p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  >
+                    {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    value={calcAmount}
+                    onChange={(e) => setCalcAmount(e.target.value)}
+                    className="flex-1 p-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    placeholder="Amount"
+                  />
+                </div>
+              </div>
+
+              {/* Swap Button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    setCalcFrom(calcTo);
+                    setCalcTo(calcFrom);
+                  }}
+                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                >
+                  <ArrowRightLeft size={16} />
+                </button>
+              </div>
+
+              {/* To */}
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('convertTo')}</label>
+                <select
+                  value={calcTo}
+                  onChange={(e) => setCalcTo(e.target.value as AssetType)}
+                  className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                >
+                  {Object.keys(ASSET_LABELS).map(k => <option key={k} value={k}>{t(`asset_${k}` as any)}</option>)}
+                </select>
+              </div>
+
+              {/* Result */}
+              <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-center">
+                <p className="text-sm text-emerald-600 font-medium mb-1">{t('conversionResult')}</p>
+                <p className="text-2xl font-bold text-emerald-800">
+                  {(() => {
+                    const amount = parseFloat(calcAmount) || 0;
+                    const rateFrom = getCurrentRate(calcFrom);
+                    const rateTo = getCurrentRate(calcTo);
+                    if (rateTo === 0) return '0.00';
+                    const result = (amount * rateFrom) / rateTo;
+                    return formatNum(result);
+                  })()}
+                  <span className="text-sm font-normal text-emerald-600 ml-1">{ASSET_UNITS[calcTo]}</span>
+                </p>
+                <p className="text-xs text-emerald-500 mt-1">
+                  1 {ASSET_UNITS[calcFrom]} = {formatNum(getCurrentRate(calcFrom) / getCurrentRate(calcTo))} {ASSET_UNITS[calcTo]}
+                </p>
+              </div>
+
             </div>
           </div>
         </div>

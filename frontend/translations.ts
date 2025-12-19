@@ -181,6 +181,11 @@ export const translations = {
     deleteLiabBody: "Are you sure you want to delete this liability?",
     deleteAlertTitle: "Delete Alert?",
     deleteAlertBody: "Are you sure you want to delete this price alert?",
+    assetCalculator: "Asset Converter",
+    convertFrom: "Convert From",
+    convertTo: "Convert To",
+    conversionResult: "Result",
+    swap: "Swap",
     confirm: "Confirm",
     cancel: "Cancel"
   },
@@ -361,7 +366,12 @@ export const translations = {
     deleteLiabTitle: "حذف الالتزام؟",
     deleteLiabBody: "هل أنت متأكد من رغبتك في حذف هذا الالتزام؟",
     deleteAlertTitle: "حذف التنبيه؟",
-    deleteAlertBody: "هل أنت متأكد من رغبتك في حذف هذا التنبيه؟",
+    deleteAlertBody: "هل أنت متأكد من حذف هذا التنبيه؟",
+    assetCalculator: "محول العملات والأصول",
+    convertFrom: "تحويل من",
+    convertTo: "تحويل إلى",
+    conversionResult: "النتيجة",
+    swap: "تبديل",
     confirm: "تأكيد",
     cancel: "إلغاء"
   }
