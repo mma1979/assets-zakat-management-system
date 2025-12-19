@@ -35,6 +35,7 @@ public class RatesController(IRatesService service) : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRate([FromRoute] int id)
     {
+        var newRates = await service.DeleteRateAsync(id);
         return Ok();
     }
 }

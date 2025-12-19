@@ -14,6 +14,7 @@ public interface IRatesService
     Task<List<RateResponse>> UpdateRatesAsync(List<RateRequest> rates);
     void UpdateRates();
     Task<List<RateResponse>> AddRateAsync(RateItem rate);
+    Task<List<RateResponse>> DeleteRateAsync(int id);
 }
 public class RatesService(FinanceDbContext context, IGeminiService geminiService) : IRatesService
 {
@@ -30,7 +31,7 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
                 title = r.Title
             }).ToListAsync();
 
-        return rates ?? [] ;
+        return rates ?? [];
     }
 
     public async Task<List<RateResponse>> UpdateRatesAsync(List<RateRequest> rates)
@@ -53,7 +54,7 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
     public void UpdateRates()
     {
         // use gemini api to get latest rates and update the database
-       
+
         var rates = geminiService.FetchMarketRatesAsync().GetAwaiter().GetResult();
         if (rates == null)
         {
@@ -85,7 +86,7 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
            .SetProperty(r => r.LastUpdated, lastUpdates)
        );
 
-        BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS,ns => ns.SendPriceAlert());
+        BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS, ns => ns.SendPriceAlert());
     }
 
     public async Task<List<RateResponse>> AddRateAsync(RateItem rate)
@@ -101,6 +102,22 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
 
         await context.Rates.AddAsync(newRate);
         await context.SaveChangesAsync();
+        return await GetLatestRatesAsync();
+    }
+
+    public async Task<List<RateResponse>> DeleteRateAsync(int id)
+    {
+        var txs = await context.Transactions
+            .Where(t => context.Rates.Any(r => r.Id == id && r.Name == t.AssetType))
+            .ToListAsync();
+
+        context.Transactions.RemoveRange(txs);
+        await context.SaveChangesAsync();
+
+        await context.Rates
+            .Where(r => r.Id == id)
+            .ExecuteDeleteAsync();
+
         return await GetLatestRatesAsync();
     }
 }
