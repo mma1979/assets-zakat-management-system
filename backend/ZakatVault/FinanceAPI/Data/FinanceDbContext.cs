@@ -14,16 +14,12 @@ public class FinanceDbContext : DbContext
     public DbSet<Liability> Liabilities { get; set; }
     public DbSet<Rate> Rates { get; set; }
 
-    public DbSet<ViewRatesModel> ViewRates { get; set; }
+   
     public DbSet<VwZakatCalc> VwZakatCalc { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Entity<ViewRatesModel>()
-            .ToView("VW_Rates", "dbo")
-            .HasNoKey();
 
         modelBuilder.Entity<VwZakatCalc>()
           .ToView("VW_ZakatCalc", "dbo")

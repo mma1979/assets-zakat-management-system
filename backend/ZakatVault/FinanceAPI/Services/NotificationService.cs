@@ -25,6 +25,7 @@ public class NotificationService(FinanceDbContext context, RazorComponentCompile
     public void SendZakatReminder()
     {
         var users = context.Users
+            .AsNoTracking()
              .Select(u => u.Id)
              .ToList();
 

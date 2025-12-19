@@ -32,6 +32,13 @@ public class RatesController(IRatesService service) : ControllerBase
         return Ok(newRates);
     }
 
+    [HttpPut("reorder")]
+    public async Task<IActionResult> ReorderRates(List<RateReorderRequest> rates)
+    {
+        var newRates = await service.ReorderRatesAsync(rates);
+        return Ok(newRates);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRate([FromRoute] int id)
     {

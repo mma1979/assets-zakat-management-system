@@ -14,7 +14,7 @@ public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
 {
     public async Task<ZakatConfig> GetZakatConfigAsync(int? userId)
     {
-        var config = await context.ZakatConfigs
+        var config = await context.ZakatConfigs.AsNoTracking()
             .FirstOrDefaultAsync(z => z.UserId == userId);
         return config ?? new();
     }

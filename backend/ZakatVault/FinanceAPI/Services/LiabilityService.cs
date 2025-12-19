@@ -25,6 +25,7 @@ public class LiabilityService : ILiabilityService
     public async Task<IEnumerable<Liability>> GetUserLiabilitiesAsync(int userId)
     {
         return await _context.Liabilities
+            .AsNoTracking()
             .Where(l => l.UserId == userId)
             .OrderBy(l => l.DueDate)
             .ToListAsync();

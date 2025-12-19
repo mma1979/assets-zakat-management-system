@@ -2,42 +2,18 @@
 
 
 
-public class ViewRatesModel
-{
-    public decimal gold_egp { get; set; }
-    public decimal gold21_egp { get; set; }
-    public decimal silver_egp { get; set; }
-    public decimal usd_egp { get; set; }
-    public decimal egp { get; set; }
-    public DateTime LastUpdated { get; set; }
-}
-
-public class RatesRequest
-{
-    public decimal gold_egp { get; set; } = 0m;
-    public decimal gold21_egp { get; set; } = 0m;
-    public decimal silver_egp { get; set; } = 0m;
-    public decimal usd_egp { get; set; } = 0m;
-    public decimal egp { get; set; } = 1m;
-
-}
-
-public class RatesResponse
-{
-    public decimal gold_egp { get; set; } = 0m;
-    public decimal gold21_egp { get; set; } = 0m;
-    public decimal silver_egp { get; set; } = 0m;
-    public decimal usd_egp { get; set; } = 0m;
-    public decimal egp { get; set; } = 1m;
-    public DateTime lastUpdated { get; set; } = DateTime.UtcNow;
-    public object[] dataSources { get; set; } = [];
-}
-
 public class RateRequest
 {
     public int id { get; set; }
     public decimal value { get; set; }
 }
+
+public class RateReorderRequest
+{
+    public int id { get; set; }
+    public int order { get; set; }
+}
+
 public class RateResponse
 {
     public int id { get; set; }
@@ -46,6 +22,7 @@ public class RateResponse
     public DateTime lastUpdated { get; set; }
     public string icon { get; set; }
     public string title { get; set; }
+    public int order { get; set; }
 }
 
 

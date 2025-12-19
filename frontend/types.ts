@@ -37,6 +37,7 @@ export interface Rate {
   lastUpdated: string;
   icon: string;
   title: string;
+  order?: number;
 }
 
 export interface AssetSummary {

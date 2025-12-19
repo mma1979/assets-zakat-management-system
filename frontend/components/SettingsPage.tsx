@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useStore } from '../services/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword } from '../services/auth';
-import { Lock, Bell, Calculator, Save, Plus, Trash2, ArrowRight, AlertTriangle, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor, User, Settings as SettingsIcon, X } from 'lucide-react';
+import { Lock, Bell, Calculator, Save, Plus, Trash2, ArrowRight, AlertTriangle, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor, User, Settings as SettingsIcon, X, GripVertical } from 'lucide-react';
 import { AssetType } from '../types';
 import { ASSET_LABELS } from '../constants';
 import { CustomDatePicker } from './DatePicker';
@@ -11,11 +11,12 @@ import { ConfirmModal } from './ConfirmModal';
 
 export const SettingsPage: React.FC = () => {
     const { t, dir } = useLanguage();
-    const { data, updateZakatConfig, addPriceAlert, removePriceAlert, addRate, removeRate } = useStore();
+    const { data, updateZakatConfig, addPriceAlert, removePriceAlert, addRate, removeRate, reorderRates } = useStore();
     const { user } = useAuth();
 
     // UI State
     const [activeTab, setActiveTab] = useState<'profile' | 'config' | 'alerts' | 'rates'>('profile');
+    const [draggedRateId, setDraggedRateId] = useState<number | null>(null);
 
     // Password State
     const [currentPassword, setCurrentPassword] = useState('');
@@ -206,6 +207,43 @@ export const SettingsPage: React.FC = () => {
             .finally(() => setIsSavingRates(false));
     };
 
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: number) => {
+        setDraggedRateId(id);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', id.toString());
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: number) => {
+        e.preventDefault();
+        const sourceId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (sourceId !== targetId) {
+            const currentRates = [...data.rates];
+            const sourceIndex = currentRates.findIndex(r => r.id === sourceId);
+            const targetIndex = currentRates.findIndex(r => r.id === targetId);
+
+            if (sourceIndex !== -1 && targetIndex !== -1) {
+                const [movedRate] = currentRates.splice(sourceIndex, 1);
+                currentRates.splice(targetIndex, 0, movedRate);
+
+                const newOrder = currentRates.map((r, index) => ({
+                    id: r.id,
+                    order: index + 1
+                }));
+
+                reorderRates(newOrder);
+            }
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDraggedRateId(null);
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div>
@@ -223,7 +261,7 @@ export const SettingsPage: React.FC = () => {
                         rates: Coins
                     };
                     const Icon = icons[tab];
-                    const labelKey = `tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
+                    const labelKey = `tab${tab.charAt(0).toUpperCase() + tab.slice(1)} `;
                     const isActive = activeTab === tab;
 
                     return (
@@ -370,7 +408,7 @@ export const SettingsPage: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                         <AlertTriangle size={18} className="text-amber-500" />
                                         <div>
-                                            <span className="font-semibold text-slate-700">{t(`asset_${alert.assetType}` as any)}</span>
+                                            <span className="font-semibold text-slate-700">{t(`asset_${alert.assetType} ` as any)}</span>
                                             <span className="mx-2 text-slate-400 text-sm">
                                                 {alert.condition === 'ABOVE' ? '>' : '<'}
                                             </span>
@@ -397,7 +435,7 @@ export const SettingsPage: React.FC = () => {
                                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                                 >
                                     {Object.keys(ASSET_LABELS).map(key => (
-                                        <option key={key} value={key}>{t(`asset_${key}` as any)}</option>
+                                        <option key={key} value={key}>{t(`asset_${key} ` as any)}</option>
                                     ))}
                                 </select>
                             </div>
@@ -462,14 +500,26 @@ export const SettingsPage: React.FC = () => {
                                 const IconComp = AVAILABLE_ICONS[rate.icon] || Coins;
 
                                 return (
-                                    <div key={rate.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                    <div
+                                        key={rate.id}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, rate.id)}
+                                        onDragOver={handleDragOver}
+                                        onDrop={(e) => handleDrop(e, rate.id)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`flex items-center justify-between p-4 bg-white border rounded-xl transition-all ${draggedRateId === rate.id ? 'opacity-50 border-emerald-300 bg-emerald-50' : 'border-slate-100 hover:border-emerald-200'
+                                            }`}
+                                    >
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-full border border-slate-100 text-emerald-600">
-                                                <IconComp size={18} />
+                                            <div className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500">
+                                                <GripVertical size={20} />
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-800 text-sm">{rate.title || rate.key}</span>
-                                                <span className="font-mono text-slate-500 text-xs">{rate.key}</span>
+                                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100">
+                                                {React.createElement(IconComp, { size: 20, className: "text-emerald-600" })}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-800">{rate.title || rate.key}</p>
+                                                <p className="text-sm text-slate-500">{rate.key}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
@@ -479,7 +529,7 @@ export const SettingsPage: React.FC = () => {
                                             </button>
                                         </div>
                                     </div>
-                                )
+                                );
                             })}
                         </div>
 
@@ -490,6 +540,8 @@ export const SettingsPage: React.FC = () => {
                         )}
                     </section>
                 )}
+
+
             </div>
 
             {/* Rate Modal */}

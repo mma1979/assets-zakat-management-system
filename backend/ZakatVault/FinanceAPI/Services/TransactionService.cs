@@ -24,7 +24,7 @@ public class TransactionService : ITransactionService
 
     public async Task<IEnumerable<Transaction>> GetUserTransactionsAsync(int userId)
     {
-        return await _context.Transactions
+        return await _context.Transactions.AsNoTracking()
             .Where(t => t.UserId == userId)
             .OrderByDescending(t => t.Date)
             .ToListAsync();

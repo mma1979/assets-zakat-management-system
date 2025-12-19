@@ -15,12 +15,15 @@ public interface IRatesService
     void UpdateRates();
     Task<List<RateResponse>> AddRateAsync(RateItem rate);
     Task<List<RateResponse>> DeleteRateAsync(int id);
+    Task<List<RateResponse>> ReorderRatesAsync(List<RateReorderRequest> rates);
 }
 public class RatesService(FinanceDbContext context, IGeminiService geminiService) : IRatesService
 {
     public async Task<List<RateResponse>> GetLatestRatesAsync()
     {
         var rates = await context.Rates
+            .AsNoTracking()
+            .OrderBy(r => r.Order)
             .Select(r => new RateResponse
             {
                 id = r.Id,
@@ -28,7 +31,8 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
                 value = r.Value,
                 lastUpdated = r.LastUpdated,
                 icon = r.Icon,
-                title = r.Title
+                title = r.Title,
+                order = r.Order
             }).ToListAsync();
 
         return rates ?? [];
@@ -103,6 +107,19 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
         await context.Rates
             .Where(r => r.Id == id)
             .ExecuteDeleteAsync();
+
+        return await GetLatestRatesAsync();
+    }
+
+    public async Task<List<RateResponse>> ReorderRatesAsync(List<RateReorderRequest> rates)
+    {
+        rates.ForEach(rate =>
+        {
+            context.Rates.Where(e => e.Id == rate.id).ExecuteUpdate(r => r
+                .SetProperty(rr => rr.Order, rate.order)
+            );
+        });
+
 
         return await GetLatestRatesAsync();
     }

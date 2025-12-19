@@ -24,7 +24,7 @@ public class PriceAlertService : IPriceAlertService
 
     public async Task<IEnumerable<PriceAlert>> GetUserAlertsAsync(int userId)
     {
-        return await _context.PriceAlerts
+        return await _context.PriceAlerts.AsNoTracking()
             .Where(pa => pa.UserId == userId)
             .OrderByDescending(pa => pa.Id)
             .ToListAsync();

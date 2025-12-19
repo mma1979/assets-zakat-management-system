@@ -70,6 +70,7 @@ public class Rate
     public string Icon { get; set; } = string.Empty; 
     public string Title { get; set; } = string.Empty; 
     public decimal Value { get; set; }
+    public int Order { get; set; } = 1;
     public DateTime LastUpdated { get; set; }
 }
 

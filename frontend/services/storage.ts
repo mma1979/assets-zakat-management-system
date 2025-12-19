@@ -280,6 +280,33 @@ export const useStore = () => {
     }
   }, [data.rates]);
 
+  const reorderRates = useCallback(async (newOrder: { id: number, order: number }[]) => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    // Optimistic update
+    setData(prev => {
+      const updatedRates = prev.rates.map(r => {
+        const orderItem = newOrder.find(item => item.id === r.id);
+        return orderItem ? { ...r, order: orderItem.order } : r;
+      }).sort((a, b) => (a.order || 0) - (b.order || 0));
+      return { ...prev, rates: updatedRates };
+    });
+
+    try {
+      const response = await http.put(`${API_ENDPOINTS.rates}/reorder`, newOrder, { headers: getAuthHeaders() });
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Reorder failed: ${response.status}`);
+      }
+      // If success, maybe reload or just stick with optimistic
+    } catch (error) {
+      console.error("Failed to reorder rates:", error);
+      setSyncError("Failed to reorder rates");
+      // Revert based on loadAllData or previous state if we had it
+      await loadAllData();
+    }
+  }, [loadAllData]);
+
   const addRate = useCallback(async (key: string, value: number, icon?: string, title?: string) => {
     const token = getStoredToken();
     if (!token) return false;
@@ -406,6 +433,7 @@ export const useStore = () => {
     addRate,
     removeRate,
     updateRates,
+    reorderRates,
     updateZakatConfig,
     addPriceAlert,
     removePriceAlert,
