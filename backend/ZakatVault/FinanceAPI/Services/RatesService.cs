@@ -62,30 +62,16 @@ public class RatesService(FinanceDbContext context, IGeminiService geminiService
         }
 
         var lastUpdates = DateTime.UtcNow;
-        context.Rates.Where(r => r.Name == "GOLD").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.gold_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
 
-        context.Rates.Where(r => r.Name == "GOLD_21").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.gold21_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
+        rates.ForEach(rate =>
+        {
+            context.Rates.Where(e => e.Id == rate.id).ExecuteUpdate(r => r
+                .SetProperty(rr => rr.Value, rate.value)
+                .SetProperty(rr => rr.LastUpdated, lastUpdates)
+            );
+        });
 
-        context.Rates.Where(r => r.Name == "SILVER").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.silver_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
-
-        context.Rates.Where(r => r.Name == "USD").ExecuteUpdate(r => r
-            .SetProperty(r => r.Value, rates.usd_egp)
-            .SetProperty(r => r.LastUpdated, lastUpdates)
-        );
-
-        context.Rates.Where(r => r.Name == "EGP").ExecuteUpdate(r => r
-           .SetProperty(r => r.LastUpdated, lastUpdates)
-       );
-
+        
         BackgroundJob.Enqueue<INotificationService>(QueuesNames.NOTIFICATIONS, ns => ns.SendPriceAlert());
     }
 

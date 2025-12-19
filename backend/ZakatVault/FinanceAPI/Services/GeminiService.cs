@@ -1,8 +1,10 @@
-﻿using FinanceAPI.Models;
+﻿using FinanceAPI.Data;
+using FinanceAPI.Models;
 
 using Google.GenAI;
 using Google.GenAI.Types;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 
 using OpenTelemetry.Resources;
@@ -10,49 +12,56 @@ using OpenTelemetry.Resources;
 using RestSharp;
 
 using System.Buffers.Text;
+using System.Collections.Immutable;
+using System.Text;
 
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 public interface IGeminiService
 {
-    Task<RatesRequest?> FetchMarketRatesAsync();
+    Task<List<RateRequest>?> FetchMarketRatesAsync();
 }
 
 public class GeminiService : IGeminiService
 {
+    private readonly FinanceDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly string _geminiApiKey;
 
-    public GeminiService(IConfiguration configuration)
+    public GeminiService(IConfiguration configuration, FinanceDbContext context)
     {
         _configuration = configuration;
         _geminiApiKey = _configuration["GeminiApiKey"] ?? throw new ArgumentNullException("GeminiApiKey is not configured");
+        _context = context;
     }
 
-    public async Task<RatesRequest?> FetchMarketRatesAsync()
+    public async Task<List<RateRequest>?> FetchMarketRatesAsync()
     {
-        var promptText = """
+        var rates = await _context.Rates
+            .AsNoTracking()
+            .ToListAsync();
+
+        StringBuilder sb = new("""
                         Search for the current market prices in Egypt today. 
             I need:
-            1. Gold Buy price per gram for 24k in EGP.
-            2. Gold Buy price per gram for 21k in EGP.
-            3. Silver Buy price per gram in EGP.
-            4. USD to EGP official bank Buy exchange rate.
-
+            """);
+        rates.ForEach(r => sb.AppendLine($"\"{r.Name}\": Price of {r.Name} in EGP`"));
+        sb.AppendLine("""
             for gold use prices from https://egypt.gold-era.com/gold-price/
             for silver use prices from https://www.sabika.app/#Calculator
+            Return ONLY a valid JSON object with the exact keys specified above and numeric values.
+            Example:
+            {
+              "GOLD": 3500.50,
+              "USD": 49.20
+            }
+            """);
 
-            Return ONLY a text block with these exact labels and values:
-            GOLD_EGP: <value>
-            GOLD21_EGP: <value>
-            SILVER_EGP: <value>
-            USD_EGP: <value>
-            """;
 
         var client = new Client(apiKey: _geminiApiKey);
         var response = await client.Models.GenerateContentAsync(
-            model: "gemini-2.5-flash", contents: promptText, config: new GenerateContentConfig
+            model: "gemini-2.5-flash", contents: sb.ToString(), config: new GenerateContentConfig
             {
                 Tools = [new Tool { GoogleSearch = new GoogleSearch() }]
             });
@@ -62,35 +71,30 @@ public class GeminiService : IGeminiService
             return null;
         }
 
-        var text = response!.Candidates![0].Content!.Parts![0].Text!;
+        var text = response!.Candidates![0].Content!.Parts![0].Text!
+            .Replace("\n", " ")
+            .Replace("\r", " ")
+            .Replace("```json", "")
+            .Replace("```", "");
 
-        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var rates = new Dictionary<string, decimal>();
-        foreach (var line in lines)
+        var result = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(text);
+        if (result == null)
         {
-            var parts = line.Split(':', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 2 && decimal.TryParse(parts[1].Trim(), out var value))
+            return null;
+        }
+        List<RateRequest> rateRequests = new();
+        foreach (var rate in rates)
+        {
+            if (result.ContainsKey(rate.Name))
             {
-                rates[parts[0].Trim()] = value;
+                rateRequests.Add(new RateRequest
+                {
+                    id = rate.Id,
+                    value = result[rate.Name]
+                });
             }
         }
-        // Here you can use the extracted rates as needed
-        // For example:
-        if (rates.TryGetValue("GOLD_EGP", out var goldEgP) &&
-            rates.TryGetValue("GOLD21_EGP", out var gold21EgP) &&
-            rates.TryGetValue("SILVER_EGP", out var silverEgP) &&
-            rates.TryGetValue("USD_EGP", out var usdEgP))
-        {
-            // Use the rates as needed
-            return new RatesRequest
-            {
-                gold_egp = goldEgP,
-                gold21_egp = gold21EgP,
-                silver_egp = silverEgP,
-                usd_egp = usdEgP
-            };
-        }
+        return rateRequests;
 
-        return null;
     }
 }

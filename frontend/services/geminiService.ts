@@ -1,14 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { Rate, Transaction, AssetType } from "../types";
 
-// Helper to extract numbers from text if the model returns conversational text
-const extractNumber = (text: string, key: string): number | null => {
-  const regex = new RegExp(`${key}[:\\s]*([\\d,.]+)`, 'i');
-  const match = text.match(regex);
-  if (match && match[1]) {
-    return parseFloat(match[1].replace(/,/g, ''));
+const extractJSON = (text: string): Record<string, number> | null => {
+  try {
+    // Remove code blocks if present
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    // Try to find JSON object in text
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    return JSON.parse(cleanText);
+  } catch (e) {
+    console.error("Failed to parse JSON from Gemini response", e);
+    return null;
   }
-  return null;
 };
 
 export const fetchMarketRates = async (currentRates: Rate[]): Promise<Rate[]> => {
@@ -17,52 +23,61 @@ export const fetchMarketRates = async (currentRates: Rate[]): Promise<Rate[]> =>
     return currentRates;
   }
 
+  const ratesToFetch = currentRates.filter(r => r.key !== 'EGP');
+  if (ratesToFetch.length === 0) return currentRates;
+
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const itemsList = ratesToFetch.map(r => `"${r.key}": Price of ${r.title || r.key} in EGP`).join('\n');
 
     // We use search grounding to get real-time data
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Search for the current market prices in Egypt today. 
-I need:
-1. Gold Buy price per gram for 24k in EGP.
-2. Gold Buy price per gram for 21k in EGP.
-3. Silver Buy price per gram in EGP.
-4. USD to EGP official bank Buy exchange rate.
+      contents: `Search for the current market prices in Egypt today.
+I need the current Buy prices in EGP for the following assets:
+${itemsList}
 
-for gold use prices from https://egypt.gold-era.com/gold-price/
-for silver use prices from https://www.sabika.app/#Calculator
+For Gold use prices from https://egypt.gold-era.com/gold-price/ if available.
+For Silver use prices from https://www.sabika.app/#Calculator if available.
 
-Return ONLY a text block with these exact labels and values:
-GOLD: <value>
-GOLD_21: <value>
-SILVER: <value>
-USD: <value>
-      `,
+Return ONLY a valid JSON object with the exact keys specified above and numeric values.
+Example:
+{
+  "GOLD": 3500.50,
+  "USD": 49.20
+}`,
       config: {
         tools: [{ googleSearch: {} }],
+        // responseMimeType: "application/json" // Unsupported with tools
       }
     });
 
     const text = response.text || "";
     console.log("Gemini Market Data Response:", text);
 
-    // Map keys to the prompt labels
-    const updates: Record<string, number | null> = {
-      'GOLD': extractNumber(text, 'GOLD'),
-      'GOLD_21': extractNumber(text, 'GOLD_21'),
-      'SILVER': extractNumber(text, 'SILVER'),
-      'USD': extractNumber(text, 'USD')
-    };
+    const updates = extractJSON(text);
+
+    if (!updates) {
+      console.warn("No valid JSON found in Gemini response");
+      return currentRates;
+    }
 
     const timestamp = new Date().toISOString();
 
     // Update existing rates
     return currentRates.map(rate => {
-      const newVal = updates[rate.key];
-      if (newVal !== null && newVal !== undefined && !isNaN(newVal)) {
-        return { ...rate, value: newVal, lastUpdated: timestamp };
+      // Skip EGP
+      if (rate.key === 'EGP') return rate;
+
+      // Check if we have an update
+      if (updates.hasOwnProperty(rate.key)) {
+        const newVal = updates[rate.key];
+        if (typeof newVal === 'number' && !isNaN(newVal)) {
+          return { ...rate, value: newVal, lastUpdated: timestamp };
+        }
       }
+
       return rate;
     });
 
