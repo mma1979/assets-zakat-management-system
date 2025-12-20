@@ -47,11 +47,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
-          <NavItem to="/" icon={LayoutDashboard} label={t('dashboard')} active={location.pathname === '/'} />
-          <NavItem to="/assets" icon={Coins} label={t('assets')} active={location.pathname === '/assets'} />
-          <NavItem to="/liabilities" icon={FileText} label={t('liabilities')} active={location.pathname === '/liabilities'} />
-          <NavItem to="/zakat" icon={Calculator} label={t('zakatCalc')} active={location.pathname === '/zakat'} />
-          <NavItem to="/settings" icon={Settings} label={t('settings')} active={location.pathname === '/settings'} />
+          <NavItem to="/app" icon={LayoutDashboard} label={t('dashboard')} active={location.pathname === '/app'} />
+          <NavItem to="/app/assets" icon={Coins} label={t('assets')} active={location.pathname === '/app/assets'} />
+          <NavItem to="/app/liabilities" icon={FileText} label={t('liabilities')} active={location.pathname === '/app/liabilities'} />
+          <NavItem to="/app/zakat" icon={Calculator} label={t('zakatCalc')} active={location.pathname === '/app/zakat'} />
+          <NavItem to="/app/settings" icon={Settings} label={t('settings')} active={location.pathname === '/app/settings'} />
         </nav>
 
         <div className="p-4 border-t border-slate-100 space-y-4">
@@ -88,11 +88,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Mobile Nav Placeholder */}
       < div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-3 z-50" >
-        <Link to="/" className="p-2 text-slate-600"><LayoutDashboard /></Link>
-        <Link to="/assets" className="p-2 text-slate-600"><Coins /></Link>
-        <Link to="/liabilities" className="p-2 text-slate-600"><FileText /></Link>
-        <Link to="/zakat" className="p-2 text-slate-600"><Calculator /></Link>
-        <Link to="/settings" className="p-2 text-slate-600"><Settings /></Link>
+        <Link to="/app" className="p-2 text-slate-600"><LayoutDashboard /></Link>
+        <Link to="/app/assets" className="p-2 text-slate-600"><Coins /></Link>
+        <Link to="/app/liabilities" className="p-2 text-slate-600"><FileText /></Link>
+        <Link to="/app/zakat" className="p-2 text-slate-600"><Calculator /></Link>
+        <Link to="/app/settings" className="p-2 text-slate-600"><Settings /></Link>
         <button onClick={logout} className="p-2 text-rose-500"><LogOut /></button>
       </div >
 

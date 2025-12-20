@@ -8,7 +8,7 @@ export const Login: React.FC = () => {
   const { login, isLoading, error } = useAuth();
   const { t, dir } = useLanguage();
   const navigate = useNavigate();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -16,7 +16,7 @@ export const Login: React.FC = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate('/');
+      navigate('/app');
     } catch (e) {
       // Error handled in context
     }
@@ -26,11 +26,11 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" dir={dir}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-100">
         <div className="text-center mb-8">
-           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mb-4">
-             <LogIn size={24} />
-           </div>
-           <h1 className="text-2xl font-bold text-slate-800">{t('loginTitle')}</h1>
-           <p className="text-slate-500 mt-2">{t('loginSubtitle')}</p>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mb-4">
+            <LogIn size={24} />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800">{t('loginTitle')}</h1>
+          <p className="text-slate-500 mt-2">{t('loginSubtitle')}</p>
         </div>
 
         {error && (
@@ -43,7 +43,7 @@ export const Login: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t('email')}</label>
-            <input 
+            <input
               type="text" // using text to allow username login if needed, or 'email'
               required
               value={email}
@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t('password')}</label>
-            <input 
+            <input
               type="password"
               required
               value={password}
@@ -64,12 +64,12 @@ export const Login: React.FC = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all disabled:opacity-70 flex items-center justify-center gap-2"
           >
-            {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> : t('loginButton')}
+            {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : t('loginButton')}
           </button>
         </form>
 

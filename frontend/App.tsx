@@ -150,15 +150,19 @@ const AuthenticatedApp: React.FC = () => {
   );
 };
 
+import { LandingPage } from './components/LandingPage';
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/zakat-setup" element={<ZakatSetup />} />
-        <Route path="/*" element={<AuthenticatedApp />} />
+        <Route path="/app/*" element={<AuthenticatedApp />} />
       </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

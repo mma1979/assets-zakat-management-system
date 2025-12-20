@@ -37,7 +37,7 @@ export const ZakatSetup: React.FC = () => {
         try {
             const success = await updateZakatConfig({ zakatDate, reminderEnabled, email }, 'POST');
             if (success) {
-                navigate('/');
+                navigate('/app');
             } else {
                 setError(t('configSaveError') || 'Failed to save configuration');
             }
@@ -115,7 +115,7 @@ export const ZakatSetup: React.FC = () => {
                     <div className="text-center">
                         <button
                             type="button"
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('/app')}
                             className="text-sm text-slate-400 hover:text-slate-600 underline"
                         >
                             {t('skipForNow') || 'Skip for now'}
