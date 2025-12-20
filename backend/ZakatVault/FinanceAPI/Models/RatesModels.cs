@@ -17,11 +17,11 @@ public class RateReorderRequest
 public class RateResponse
 {
     public int id { get; set; }
-    public string key { get; set; }
+    public string key { get; set; } = string.Empty;
     public decimal value { get; set; }
     public DateTime lastUpdated { get; set; }
-    public string icon { get; set; }
-    public string title { get; set; }
+    public string icon { get; set; } = string.Empty;
+    public string title { get; set; } = string.Empty;
     public int order { get; set; }
 }
 

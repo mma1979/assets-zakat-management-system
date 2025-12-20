@@ -9,6 +9,7 @@ import { ZakatCalculator } from './components/ZakatCalculator';
 import { SettingsPage } from './components/SettingsPage';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
+import { ZakatSetup } from './components/auth/ZakatSetup';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useStore } from './services/storage';
 import { fetchMarketRates } from './services/geminiService';
@@ -155,6 +156,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute />}>
+        <Route path="/zakat-setup" element={<ZakatSetup />} />
         <Route path="/*" element={<AuthenticatedApp />} />
       </Route>
     </Routes>

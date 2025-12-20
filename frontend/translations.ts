@@ -127,6 +127,10 @@ export const translations = {
     zakatConfig: "Zakat Configuration",
     saveConfig: "Save Configuration",
     saveSuccess: "Configuration saved successfully",
+    setupZakatMsg: "Please configure your Zakat preferences to continue.",
+    zakatDateHelp: "The date your Zakat is due (usually 1 year after reaching Nisab).",
+    saveAndContinue: "Save & Continue",
+    skipForNow: "Skip for now",
 
     // Reminder
     enableReminder: "Enable Reminder",
@@ -322,6 +326,10 @@ export const translations = {
     zakatConfig: "إعدادات الزكاة",
     saveConfig: "حفظ الإعدادات",
     saveSuccess: "تم حفظ الإعدادات بنجاح",
+    setupZakatMsg: "يرجى تكوين تفضيلات الزكاة للمتابعة.",
+    zakatDateHelp: "تاريخ استحقاق الزكاة (عادة بعد عام من بلوغ النصاب).",
+    saveAndContinue: "حفظ ومتابعة",
+    skipForNow: "تخطي الآن",
 
     // Reminder
     enableReminder: "تفعيل التذكير",

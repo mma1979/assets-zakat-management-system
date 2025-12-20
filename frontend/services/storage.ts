@@ -379,8 +379,8 @@ export const useStore = () => {
   }, [data.rates]);
 
   // Zakat config operations
-  const updateZakatConfig = useCallback((zakatConfig: ZakatConfig) => {
-    return updateDataPart('zakatConfig', zakatConfig);
+  const updateZakatConfig = useCallback((zakatConfig: ZakatConfig, method: 'POST' | 'PUT' = 'PUT') => {
+    return updateDataPart('zakatConfig', zakatConfig, undefined, method);
   }, []);
 
   // Price alerts operations

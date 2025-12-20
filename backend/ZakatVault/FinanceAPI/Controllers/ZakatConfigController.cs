@@ -25,6 +25,21 @@ public class ZakatConfigController(IZakatConfigService service) : ControllerBase
     }
 
     [HttpPost]
+    public async Task<IActionResult> AddZakatConfig([FromBody] ZakatConfigRequest configRequest)
+    {
+        var userIdValue = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId =  int.Parse(userIdValue!);
+        var updatedConfig = await service.AddZakatConfigAsync(userId, configRequest);
+
+        if (!updatedConfig)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpPut]
     public async Task<IActionResult> UpdateZakatConfig([FromBody] ZakatConfigRequest configRequest)
     {
         var userIdValue = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);

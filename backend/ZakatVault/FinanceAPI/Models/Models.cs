@@ -23,9 +23,9 @@ public class PriceAlert
 public class ZakatConfig
 {
     public int UserId { get; set; } = 1;
-    public DateTime ZakatDate { get; set; } = new DateTime(2026, 7, 23);
-    public bool ReminderEnabled { get; set; } = true;
-    public string? Email { get; set; } = "mamado2000@gmail.com";
+    public DateTime ZakatDate { get; set; } = DateTime.UtcNow;
+    public bool ReminderEnabled { get; set; }
+    public string? Email { get; set; } = string.Empty;
     public User? User { get; set; }
 }
 

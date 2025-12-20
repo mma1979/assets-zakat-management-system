@@ -25,13 +25,17 @@ public class NotificationService(FinanceDbContext context, RazorComponentCompile
     public void SendZakatReminder()
     {
         var users = context.Users
-            .AsNoTracking()
-             .Select(u => u.Id)
+            .LeftJoin( context.ZakatConfigs,
+                u => u.Id,
+                z => z.UserId,
+                (u, z) => new { User = u, Config = z })
+            .Where(u => u.Config == null || EF.Functions.DateDiffDay(u.Config.ZakatDate, DateTime.UtcNow) == 2)
+             .Select(u => new {u.User.Id, ZakatDate = u.Config == null? DateTime.UtcNow: u.Config.ZakatDate })
              .ToList();
 
-        foreach (var userId in users)
+        foreach (var user in users)
         {
-            BackgroundJob.Enqueue(QueuesNames.NOTIFICATIONS, () => SendReminder(userId));
+            BackgroundJob.Enqueue(QueuesNames.NOTIFICATIONS, () => SendReminder(user.Id));
         }
     }
 

@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Proxy API requests to avoid CORS errors during development
         '/api': {
-          target: 'http://localhost:8080/api',
+          target: 'http://localhost:5000/api',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
