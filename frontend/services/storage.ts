@@ -24,7 +24,8 @@ const INITIAL_DATA: StoreData = {
     reminderEnabled: false,
     email: process.env.NOTIFICATION_EMAIL && !process.env.NOTIFICATION_EMAIL.includes('__APP_')
       ? process.env.NOTIFICATION_EMAIL
-      : ''
+      : '',
+    geminiApiKey: ''
   },
   priceAlerts: []
 };

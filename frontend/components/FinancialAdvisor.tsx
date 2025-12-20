@@ -32,7 +32,7 @@ export const FinancialAdvisor: React.FC<FinancialAdvisorProps> = ({ data }) => {
   const handleGetAdvice = async () => {
     setLoading(true);
     try {
-      const result = await getPortfolioAdvice(holdings, language);
+      const result = await getPortfolioAdvice(holdings, language, data.zakatConfig?.geminiApiKey);
       setAdvice(result);
     } catch (e) {
       setAdvice(language === 'ar' ? 'حدث خطأ' : 'An error occurred');

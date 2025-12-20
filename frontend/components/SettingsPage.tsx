@@ -30,6 +30,7 @@ export const SettingsPage: React.FC = () => {
     const [zakatDate, setZakatDate] = useState(data.zakatConfig?.zakatDate || '');
     const [reminderEnabled, setReminderEnabled] = useState(data.zakatConfig?.reminderEnabled || false);
     const [email, setEmail] = useState(data.zakatConfig?.email || '');
+    const [geminiApiKey, setGeminiApiKey] = useState(data.zakatConfig?.geminiApiKey || '');
     const [zakatMsg, setZakatMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isSubmittingZakat, setIsSubmittingZakat] = useState(false);
 
@@ -39,6 +40,7 @@ export const SettingsPage: React.FC = () => {
             setZakatDate(data.zakatConfig.zakatDate || '');
             setReminderEnabled(data.zakatConfig.reminderEnabled || false);
             setEmail(data.zakatConfig.email || '');
+            setGeminiApiKey(data.zakatConfig.geminiApiKey || '');
         }
     }, [data.zakatConfig]);
 
@@ -103,7 +105,7 @@ export const SettingsPage: React.FC = () => {
         setIsSubmittingZakat(true);
         try {
             // Since updateZakatConfig now returns promise
-            await updateZakatConfig({ zakatDate, reminderEnabled, email });
+            await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey });
             setZakatMsg({ type: 'success', text: t('saveSuccess') });
         } catch (e: any) {
             setZakatMsg({ type: 'error', text: t('configSaveError') });
@@ -369,6 +371,19 @@ export const SettingsPage: React.FC = () => {
                                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                     dir="ltr"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Gemini API Key</label>
+                                <input
+                                    type="password"
+                                    value={geminiApiKey}
+                                    onChange={e => setGeminiApiKey(e.target.value)}
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    dir="ltr"
+                                    placeholder="AIzaSy..."
+                                />
+                                <p className="text-xs text-slate-400 mt-1">Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">Google AI Studio</a></p>
                             </div>
 
                             <div className="flex items-center gap-2">

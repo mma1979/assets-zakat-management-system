@@ -163,7 +163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     setUpdating(true);
     setError(null);
     try {
-      const newRates = await fetchMarketRates(data.rates);
+      const newRates = await fetchMarketRates(data.rates, data.zakatConfig?.geminiApiKey);
       onUpdateRates(newRates);
     } catch (e) {
       setError(t('checkNetwork'));

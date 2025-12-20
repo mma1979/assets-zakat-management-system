@@ -31,6 +31,7 @@ public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
         config.ZakatDate = configRequest.ZakatDate;
         config.ReminderEnabled = configRequest.ReminderEnabled;
         config.Email = configRequest.Email;
+        config.GeminiApiKey = configRequest.GeminiApiKey;
 
         await context.SaveChangesAsync();
 
@@ -44,7 +45,8 @@ public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
            UserId = userId,
            ZakatDate = configRequest.ZakatDate,
            ReminderEnabled = configRequest.ReminderEnabled,
-           Email = configRequest.Email
+           Email = configRequest.Email,
+           GeminiApiKey = configRequest.GeminiApiKey
        };
 
          await context.ZakatConfigs.AddAsync(zakatConfig);

@@ -17,9 +17,10 @@ const extractJSON = (text: string): Record<string, number> | null => {
   }
 };
 
-export const fetchMarketRates = async (currentRates: Rate[]): Promise<Rate[]> => {
-  if (!process.env.API_KEY || process.env.API_KEY.includes('__APP_')) {
-    console.warn("API_KEY not found or invalid in environment variables");
+export const fetchMarketRates = async (currentRates: Rate[], apiKey?: string): Promise<Rate[]> => {
+  const key = apiKey;
+  if (!key) {
+    console.warn("API Key not provided");
     return currentRates;
   }
 
@@ -27,7 +28,7 @@ export const fetchMarketRates = async (currentRates: Rate[]): Promise<Rate[]> =>
   if (ratesToFetch.length === 0) return currentRates;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: key });
 
     const itemsList = ratesToFetch.map(r => `"${r.key}": Price of ${r.title || r.key} in EGP`).join('\n');
 
@@ -89,16 +90,18 @@ Example:
 
 export const getPortfolioAdvice = async (
   holdings: Record<AssetType, { quantity: number; avgCost: number; currentPrice: number }>,
-  language: 'en' | 'ar'
+  language: 'en' | 'ar',
+  apiKey?: string
 ): Promise<string> => {
-  if (!process.env.API_KEY || process.env.API_KEY.includes('__APP_')) {
+  const key = apiKey;
+  if (!key) {
     return language === 'ar'
-      ? "عذراً، مفتاح API غير متوفر للحصول على النصيحة."
-      : "API Key missing. Cannot generate advice.";
+      ? "عذراً، مفتاح API غير متوفر للحصول على النصيحة. يرجى إضافته في الإعدادات."
+      : "API Key missing. Please add it in Settings.";
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: key });
 
     const portfolioSummary = Object.entries(holdings)
       .map(([type, data]) => {

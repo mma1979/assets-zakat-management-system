@@ -52,6 +52,7 @@ export interface ZakatConfig {
   zakatDate: string; // ISO Date preference
   reminderEnabled?: boolean;
   email?: string;
+  geminiApiKey?: string;
 }
 
 export interface PriceAlert {

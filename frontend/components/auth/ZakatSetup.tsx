@@ -17,6 +17,7 @@ export const ZakatSetup: React.FC = () => {
     const [zakatDate, setZakatDate] = useState(data.zakatConfig?.zakatDate || new Date().toISOString().split('T')[0]);
     const [reminderEnabled, setReminderEnabled] = useState(data.zakatConfig?.reminderEnabled || false);
     const [email, setEmail] = useState(data.zakatConfig?.email || user?.email || '');
+    const [geminiApiKey, setGeminiApiKey] = useState(data.zakatConfig?.geminiApiKey || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +27,7 @@ export const ZakatSetup: React.FC = () => {
             setZakatDate(data.zakatConfig.zakatDate || new Date().toISOString().split('T')[0]);
             setReminderEnabled(data.zakatConfig.reminderEnabled || false);
             setEmail(data.zakatConfig.email || user?.email || '');
+            setGeminiApiKey(data.zakatConfig.geminiApiKey || '');
         }
     }, [data.zakatConfig]);
 
@@ -35,7 +37,7 @@ export const ZakatSetup: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const success = await updateZakatConfig({ zakatDate, reminderEnabled, email }, 'POST');
+            const success = await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey }, 'POST');
             if (success) {
                 navigate('/app');
             } else {
@@ -76,6 +78,19 @@ export const ZakatSetup: React.FC = () => {
                             dir="ltr"
                             placeholder="your@email.com"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Gemini API Key (Optional)</label>
+                        <input
+                            type="password"
+                            value={geminiApiKey}
+                            onChange={e => setGeminiApiKey(e.target.value)}
+                            className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            dir="ltr"
+                            placeholder="AIzaSy..."
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Required for Market Rates & AI Advisor. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">Get key here</a></p>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
