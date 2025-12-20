@@ -29,14 +29,10 @@ public class ZakatConfigController(IZakatConfigService service) : ControllerBase
     {
         var userIdValue = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         var userId =  int.Parse(userIdValue!);
-        var updatedConfig = await service.AddZakatConfigAsync(userId, configRequest);
+        var newConfig = await service.AddZakatConfigAsync(userId, configRequest);
 
-        if (!updatedConfig)
-        {
-            return NotFound();
-        }
-
-        return NoContent();
+        
+        return Ok(newConfig);
     }
 
     [HttpPut]
@@ -46,11 +42,6 @@ public class ZakatConfigController(IZakatConfigService service) : ControllerBase
         var userId = userIdValue is not null ? int.Parse(userIdValue) : (int?)null;
         var updatedConfig = await service.UpdateZakatConfigAsync(userId, configRequest);
        
-        if (!updatedConfig)
-        {
-            return NotFound();
-        }
-
-        return NoContent();
+        return Ok(updatedConfig);
     }
 }   

@@ -5,7 +5,6 @@ import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, Bell
 import { useLanguage } from '../contexts/LanguageContext';
 import { addDays, format, isBefore, isAfter, isSameDay, differenceInDays } from 'date-fns';
 import { useStore } from '../services/storage';
-import { sendZakatReminderEmail } from '../services/notificationService';
 import { CustomDatePicker } from './DatePicker';
 
 interface ZakatCalculatorProps {
@@ -84,47 +83,6 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     }
   };
 
-  // Check for reminder on mount/update
-  useEffect(() => {
-    if (reminderEnabled && zakatDate) {
-      const today = new Date();
-      const due = parseLocal(zakatDate);
-
-      // Simple check: Is today the day?
-      if (isSameDay(today, due)) {
-        // Prevent spamming
-        const lastSent = sessionStorage.getItem('zakatNotificationSent');
-        const todayStr = format(today, 'yyyy-MM-dd');
-
-        if (lastSent !== todayStr) {
-          // 1. Browser Notification
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(t('zakatDueTitle'), {
-              body: t('zakatDueBody'),
-              icon: '/favicon.ico'
-            });
-          }
-
-          // 2. Email Notification
-          if (userEmail && emailStatus === 'idle') {
-            setEmailStatus('sending');
-            sendZakatReminderEmail(userEmail, zakatDate)
-              .then(result => {
-                if (result.success) {
-                  console.log("Email sent successfully");
-                  setEmailStatus('sent');
-                } else {
-                  console.error("Email failed", result.message);
-                  setEmailStatus('error');
-                }
-              });
-          }
-
-          sessionStorage.setItem('zakatNotificationSent', todayStr);
-        }
-      }
-    }
-  }, [reminderEnabled, zakatDate, userEmail, t, emailStatus]);
 
   useEffect(() => {
     if (!isSyncing) {

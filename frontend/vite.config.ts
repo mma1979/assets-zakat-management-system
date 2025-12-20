@@ -13,9 +13,6 @@ export default defineConfig(({ mode }) => {
     // If keys are not present at build time, use placeholders that will be replaced 
     // by the Docker entrypoint script at runtime.
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || "__APP_API_KEY__"),
-      'process.env.RESEND_API_KEY': JSON.stringify(env.RESEND_API_KEY || "__APP_RESEND_API_KEY__"),
-      'process.env.NOTIFICATION_EMAIL': JSON.stringify(env.NOTIFICATION_EMAIL || "__APP_NOTIFICATION_EMAIL__"),
       'process.env.BACKEND_URL': JSON.stringify(env.BACKEND_URL || "__APP_BACKEND_URL__")
     },
     server: {

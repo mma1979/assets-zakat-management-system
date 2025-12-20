@@ -14,7 +14,7 @@ services:
     build:
       context: ./backend/ZakatVault
       dockerfile: FinanceAPI/Dockerfile
-    image: zakatvault-backend:2.0.7
+    image: zakatvault-backend:2.0.8
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
@@ -39,16 +39,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: zakatvault-frontend:2.0.7
+    image: zakatvault-frontend:2.0.8
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
       # These variables are substituted into the static JS files at runtime by the entrypoint script
       - BACKEND_URL=${BACKEND_URL:-http://localhost:8080}
-      - API_KEY=${API_KEY}
-      - RESEND_API_KEY=${RESEND_API_KEY}
-      - RESEND_SENDER=${RESEND_SENDER}
-      - NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
       # This variable is used by Nginx configuration for proxying
       - API_ORIGIN=http://backend:8080
     ports:
