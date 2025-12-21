@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Windows.Input;
 
+using ZakatVault.Pages;
 using ZakatVault.Services;
 
 namespace ZakatVault.ViewModels;
@@ -84,7 +85,7 @@ public class RegisterViewModel : BindableObject
             Name = "";
             Email = "";
             Password = "";
-            await Shell.Current.GoToAsync("//Secure/DashboardPage");
+            await Shell.Current.GoToAsync(nameof(Pages.ZakatSetupPage));
         }
         else
         {

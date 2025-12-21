@@ -43,6 +43,8 @@
             Title="Dahsboard"
             Icon="icon_dashboard.png"
             ContentTemplate="{DataTemplate local:DashboardPage}" Route="DashboardPage" />
+        
+
 
         <ShellContent
             Title="Assets"

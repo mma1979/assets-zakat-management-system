@@ -7,6 +7,7 @@ public partial class AppShell : Shell
         InitializeComponent();
 
         Routing.RegisterRoute(nameof(Pages.RegisterPage), typeof(Pages.RegisterPage));
+        Routing.RegisterRoute(nameof(Pages.ZakatSetupPage), typeof(Pages.ZakatSetupPage));
         Routing.RegisterRoute("Secure/DashboardPage", typeof(Pages.DashboardPage));
     }
 

@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ZakatVault.ViewModels"
+             x:Class="ZakatVault.Pages.ZakatSetupPage"
+             Title=""
+             BackgroundColor="{StaticResource White}">
+   
+        <ScrollView>
+            
+                <Border BackgroundColor="White" 
+                       Padding="40"
+                       WidthRequest="500"
+                      StrokeShape="RoundRectangle 30">
+                    <VerticalStackLayout Spacing="0" VerticalOptions="Center" HorizontalOptions="Center" Padding="20">
+
+                        <!-- Header Section -->
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Border Stroke="Transparent" 
+                        StrokeShape="RoundRectangle 25"
+                        HeightRequest="50"
+                        WidthRequest="50"
+                        BackgroundColor="{StaticResource BrandGreenLight}"
+                        HorizontalOptions="Center">
+                                <Image Source="calculator_icon.png" 
+                           Aspect="AspectFit"
+                           HeightRequest="24"
+                           WidthRequest="24"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center" />
+                            </Border>
+
+                            <Label Text="Zakat Configuration" 
+                       Style="{StaticResource Headline}"
+                       TextColor="{StaticResource MidnightBlue}"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+
+                            <Label Text="Please configure your Zakat preferences to continue."
+                       TextColor="{StaticResource Gray500}"
+                       FontSize="16"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+
+                        <!-- Form Section -->
+                        <VerticalStackLayout Spacing="20">
+
+                            <!-- Due Date -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Zakat Due Date" TextColor="{StaticResource MidnightBlue}" FontAttributes="Bold" />
+
+                                <DatePicker  Date="{Binding DueDate}" Format="dd-MM-yyyy" TextColor="{StaticResource Gray900}" />
+
+                                <Label Text="The date your Zakat is due (usually 1 year after reaching Nisab)." FontSize="12" TextColor="{StaticResource Gray400}" />
+                            </VerticalStackLayout>
+
+                            <!-- Email Address -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Email Address" TextColor="{StaticResource MidnightBlue}" FontAttributes="Bold" />
+
+                                <Entry Text="{Binding Email}" Placeholder="ss@ss.ss" Keyboard="Email" TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+
+                            </VerticalStackLayout>
+
+                            <!-- Gemini API Key -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Gemini API Key (Optional)" TextColor="{StaticResource MidnightBlue}" FontAttributes="Bold" />
+
+                                <Entry Text="{Binding GeminiApiKey}" Placeholder="AlzaSy..." TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+
+                                <Label FontSize="12" TextColor="{StaticResource Gray400}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="Required for Market Rates &amp; AI Advisor. " />
+                                            <Span Text="Get key here" TextColor="{StaticResource BrandGreen}" TextDecorations="Underline">
+                                                <Span.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding OpenUrlCommand}" />
+                                                </Span.GestureRecognizers>
+                                            </Span>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </VerticalStackLayout>
+
+                            <!-- Reminder Checkbox -->
+                            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                <CheckBox IsChecked="{Binding EnableReminder}" Color="{StaticResource BrandGreen}" />
+                                <Label Text="Enable Reminder" VerticalOptions="Center" TextColor="{StaticResource MidnightBlue}" />
+                            </HorizontalStackLayout>
+
+                        </VerticalStackLayout>
+
+                        <!-- Action Buttons -->
+                        <VerticalStackLayout Spacing="15" Margin="0,20,0,0">
+                            <!-- Status Message -->
+                            <Label Text="{Binding StatusMessage}" 
+                       TextColor="Red" 
+                       HorizontalOptions="Center" 
+                       IsVisible="{Binding StatusMessage, Converter={StaticResource StringIsNotNullOrEmptyConverter}}" />
+
+                            <Button Text="Save &amp; Continue" 
+                        Command="{Binding SaveCommand}"
+                        BackgroundColor="{StaticResource BrandGreen}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="8"
+                        HeightRequest="50">
+                                <Button.ImageSource>
+                                    <FontImageSource Glyph="&#xE5C8;" FontFamily="MaterialIcons" Color="White" Size="20" />
+                                    <!-- Assuming MaterialIcons or similar is available, otherwise remove ImageSource or use png -->
+                                </Button.ImageSource>
+                            </Button>
+
+                            <Label Text="Skip for now" 
+                       TextColor="{StaticResource BrandGreen}" 
+                       TextDecorations="Underline"
+                       HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SkipCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </VerticalStackLayout>
+
+                        <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource BrandGreen}"
+                               HorizontalOptions="Center" />
+
+                    </VerticalStackLayout>
+                </Border>
+          
+        </ScrollView>
+   
+</ContentPage>

@@ -69,7 +69,7 @@
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="Password" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="14" />
                                
-                                    <Entry IsPassword="True" TextColor="{DynamicResource Black}" VerticalOptions="Center" Text="{Binding Passwor}" />
+                                    <Entry IsPassword="True" TextColor="{DynamicResource Black}" VerticalOptions="Center" Text="{Binding Password}" />
                              
                             </VerticalStackLayout>
 

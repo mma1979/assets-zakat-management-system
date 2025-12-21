@@ -32,6 +32,10 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ZakatCalcPage>();
 		builder.Services.AddSingleton<AuthService>();
 		builder.Services.AddSingleton<SecureStorageService>();
+		builder.Services.AddSingleton<ZakatService>();
+
+		builder.Services.AddSingleton<ZakatSetupPage>();
+		builder.Services.AddSingleton<ZakatSetupViewModel>();
 
 #if DEBUG
 		builder.Logging.AddDebug();

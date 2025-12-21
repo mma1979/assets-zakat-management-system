@@ -84,5 +84,6 @@ public class LoginViewModel : BindableObject
 
     private async void OnRegister() {
         await Shell.Current.GoToAsync(nameof(RegisterPage));
+        //await Shell.Current.GoToAsync(nameof(Pages.ZakatSetupPage));
     }
 }
