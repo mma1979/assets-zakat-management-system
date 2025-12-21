@@ -27,12 +27,17 @@ public static class MauiProgram
 		builder.Services.AddSingleton<RegisterViewModel>();
 
 		builder.Services.AddSingleton<AssetsPage>();
+
 		builder.Services.AddSingleton<DashboardPage>();
+		builder.Services.AddSingleton<DashboardViewModel>();
+
 		builder.Services.AddSingleton<LiabilitiesPage>();
 		builder.Services.AddSingleton<ZakatCalcPage>();
+
 		builder.Services.AddSingleton<AuthService>();
 		builder.Services.AddSingleton<SecureStorageService>();
 		builder.Services.AddSingleton<ZakatService>();
+		builder.Services.AddSingleton<DashboardService>();
 
 		builder.Services.AddSingleton<ZakatSetupPage>();
 		builder.Services.AddSingleton<ZakatSetupViewModel>();

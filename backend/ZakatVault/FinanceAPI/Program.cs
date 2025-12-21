@@ -103,6 +103,7 @@ builder.Services.AddScoped<IZakatConfigService, ZakatConfigService>();
 builder.Services.AddScoped<IZakatCalcService, ZakatCalcService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IGeminiService, GeminiService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<HangfireService>();
 builder.Services.AddScoped<RazorComponentCompiler>();
 builder.Services.AddScoped<ResendService>();

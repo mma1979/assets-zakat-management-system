@@ -1,39 +1,44 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http.Json;
+using System.Text;
+
 using ZakatVault.Models;
 
 namespace ZakatVault.Services;
 
-public class ZakatService
+public class DashboardService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthService _authService;
     private const string ApiBaseUrl = "http://localhost:5000";
-
-    public ZakatService(AuthService authService)
+    public DashboardService(AuthService authService)
     {
         _authService = authService;
         _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
     }
 
-    public async Task<bool> SaveConfigAsync(ZakatConfigRequest config)
+    public async Task<DashboardSummary?> GetDashboardSummaryAsync()
     {
         try
         {
             var token = await _authService.GetTokenAsync();
             if (string.IsNullOrEmpty(token))
-                return false;
+                return null;
 
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBaseUrl}/api/zakat-config");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBaseUrl}/api/dashboard/summary");
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            request.Content = JsonContent.Create(config);
 
             var response = await _httpClient.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode) {
+            return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync<DashboardSummary>();
         }
         catch (Exception)
         {
-            return false;
+            return null;
         }
     }
 }

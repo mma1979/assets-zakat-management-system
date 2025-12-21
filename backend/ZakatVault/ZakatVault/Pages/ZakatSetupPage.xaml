@@ -5,8 +5,9 @@
              x:Class="ZakatVault.Pages.ZakatSetupPage"
              Title=""
              BackgroundColor="{StaticResource White}">
-   
-        <ScrollView>
+    
+
+    <ScrollView>
             
                 <Border BackgroundColor="White" 
                        Padding="40"

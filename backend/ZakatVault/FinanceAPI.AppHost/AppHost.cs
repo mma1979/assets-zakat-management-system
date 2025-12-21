@@ -1,4 +1,6 @@
-// FinanceAPI.AppHost/Program.cs
+﻿// FinanceAPI.AppHost/Program.cs
+using Aspire.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Add SQL Server
@@ -7,12 +9,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 //    .AddDatabase("financedb");
 
 // Add the API with SQL Server dependency
-var api = builder.AddProject<Projects.FinanceAPI>("financeapi")
-    //.WithReference(sqlServer)
-    .WithEnvironment("JwtSettings__SecretKey", "YourSuperSecretKeyThatIsAtLeast32CharactersLong123456")
-    .WithEnvironment("JwtSettings__Issuer", "FinanceAPI")
-    .WithEnvironment("JwtSettings__Audience", "FinanceAPIUsers");
+var api = builder.AddProject<Projects.FinanceAPI>("financeapi");
 
-builder.AddProject<Projects.ZakatVault>("zakatvault");
+builder.AddProject<Projects.ZakatVault>("zakatvault")
+    .WaitFor(api);
 
 builder.Build().Run();

@@ -12,7 +12,7 @@ public class AuthService
 {
     private readonly HttpClient _httpClient;
     private readonly SecureStorageService _secureStorage;
-    private const string ApiBaseUrl = "http://207.180.204.185:9090"; // Change to your API URL
+    private const string ApiBaseUrl = "http://localhost:5000"; // Change to your API URL
 
     public AuthService(SecureStorageService secureStorage)
     {
