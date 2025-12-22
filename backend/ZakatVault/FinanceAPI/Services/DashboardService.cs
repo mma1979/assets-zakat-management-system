@@ -120,41 +120,72 @@ public class DashboardService(FinanceDbContext context) : IDashboardService
 
     public async Task<List<PortfolioValueGroup>> GetPortfolioValueHistoryAsync(int userId)
     {
-        var portfolio = (await context.Transactions
-            .Where(t => t.UserId == userId)
-            .Join(context.Rates,
-                 t => t.AssetType,
-                 r => r.Name,
-                 (t, r) => new
-                 {
-                     Amount = t.Amount,
-                     RateValue = r.Value,
-                     Type = t.Type,
-                     Date = t.Date, // Keep as DateTime
-                     Key = r.Name,
-                     Title = r.Title
-                 })
-            .ToListAsync()) // Materialize to memory first
-            .Select(t => new
-            {
-                Value = t.Amount * t.RateValue * (t.Type == TransactionType.BUY ? 1 : -1),
-                Date = t.Date.ToString("yyyy-MM-dd"), // Now do string conversion in memory
-                Key = t.Key,
-                Title = t.Title
-            })
+        var rawData = (await context.Transactions
+    .Where(t => t.UserId == userId)
+    .Join(context.Rates,
+         t => t.AssetType,
+         r => r.Name,
+         (t, r) => new
+         {
+             Amount = t.Amount,
+             RateValue = r.Value,
+             Type = t.Type,
+             Date = t.Date,
+             Key = r.Name,
+             Title = r.Title
+         })
+    .ToListAsync())
+    .Select(t => new
+    {
+        Value = t.Amount * t.RateValue * (t.Type == TransactionType.BUY ? 1 : -1),
+        Date = t.Date.ToString("yyyy-MM-dd"),
+        Key = t.Key,
+        Title = t.Title
+    })
+    .OrderBy(t => t.Date) // Important: order by date first
+    .ToList();
+
+        // Get min and max dates across all data
+        var allDates = rawData.Select(x => DateTime.Parse(x.Date)).ToList();
+        if (!allDates.Any())
+        {
+            return new List<PortfolioValueGroup>();
+        }
+
+        var minDate = allDates.Min();
+        var maxDate = allDates.Max();
+
+        // Generate all dates between min and max
+        var dateRange = Enumerable.Range(0, (maxDate - minDate).Days + 1)
+            .Select(offset => minDate.AddDays(offset).ToString("yyyy-MM-dd"))
+            .ToList();
+
+        var portfolio = rawData
             .GroupBy(t => new { t.Title, t.Key })
-            .Select(g => new PortfolioValueGroup
+            .Select(g =>
             {
-                Title = g.Key.Title,
-                Color = GetAssetColor(g.Key.Key),
-                History = g.GroupBy(x => x.Date)
-                            .Select(dg => new PortfolioValue
-                            {
-                                Date = dg.Key,
-                                Value = dg.Sum(x => x.Value)
-                            })
-                            .OrderBy(h => h.Date)
-                            .ToList()
+                var cumulativeValue = 0m;
+                var history = new List<PortfolioValue>();
+
+                foreach (var date in dateRange)
+                {
+                    // Add the transaction value for this date (if any)
+                    var dailyChange = g.Where(x => x.Date == date).Sum(x => x.Value);
+                    cumulativeValue += dailyChange;
+
+                    history.Add(new PortfolioValue
+                    {
+                        Date = date,
+                        Value = cumulativeValue
+                    });
+                }
+
+                return new PortfolioValueGroup
+                {
+                    Title = g.Key.Title,
+                    Color = GetAssetColor(g.Key.Key),
+                    History = history
+                };
             })
             .ToList();
 

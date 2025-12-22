@@ -89,26 +89,36 @@ public class LineChartDrawable : IDrawable
             canvas.StrokeSize = 2; // Thicker line for data
 
             PathF path = new PathF();
-            bool first = true;
-
+            
             // Sort points by date just in case
             var sortedPoints = serie.History.OrderBy(p => p.Date).ToList();
+            if (sortedPoints.Count == 0) continue;
 
+            // Convert to screen coordinates first for easier smoothing calculation
+            var screenPoints = new List<PointF>();
             foreach (var point in sortedPoints)
             {
                 float x = chartX + ((float)(point.Date.Ticks - minDate.Ticks) / totalTicks) * chartWidth;
                 float y = chartY + chartHeight - ((float)((point.Value - minValue) / (maxValue - minValue)) * chartHeight);
-
-                if (first)
-                {
-                    path.MoveTo(x, y);
-                    first = false;
-                }
-                else
-                {
-                    path.LineTo(x, y);
-                }
+                screenPoints.Add(new PointF(x, y));
             }
+
+            path.MoveTo(screenPoints[0]);
+
+            for (int i = 0; i < screenPoints.Count - 1; i++)
+            {
+                var p0 = i > 0 ? screenPoints[i - 1] : screenPoints[i];
+                var p1 = screenPoints[i];
+                var p2 = screenPoints[i + 1];
+                var p3 = i < screenPoints.Count - 2 ? screenPoints[i + 2] : screenPoints[i + 1];
+
+                // Catmull-Rom to Cubic Bezier conversion
+                var cp1 = new PointF(p1.X + (p2.X - p0.X) / 6f, p1.Y + (p2.Y - p0.Y) / 6f);
+                var cp2 = new PointF(p2.X - (p3.X - p1.X) / 6f, p2.Y - (p3.Y - p1.Y) / 6f);
+
+                path.CurveTo(cp1, cp2, p2);
+            }
+
             canvas.DrawPath(path);
         }
     }
