@@ -4,10 +4,147 @@
              x:Class="ZakatVault.Pages.ZakatCalcPage"
              Title="Calculator"
              BackgroundColor="#F5F7FA">
-    <VerticalStackLayout>
-        <Label 
-            Text="Zakat Calculator Page"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            
+            <!-- Due Date Card -->
+            <Border BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                <VerticalStackLayout Spacing="15">
+                    <HorizontalStackLayout Spacing="15">
+                        <Border BackgroundColor="#E0F2F1" Padding="10" StrokeShape="RoundRectangle 10" HeightRequest="40" WidthRequest="40" VerticalOptions="Start">
+                            <Label Text="📅" TextColor="{DynamicResource BrandGreen}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout>
+                            <Label Text="Zakat Due Date" FontAttributes="Bold" TextColor="{DynamicResource MidnightBlue}" FontSize="16"/>
+                            <Label Text="Deductible Liability Window (Lunar Year)" TextColor="{DynamicResource Gray500}" FontSize="12"/>
+                        </VerticalStackLayout>
+                        <Button Text="🔔" BackgroundColor="{DynamicResource BrandGreen}" TextColor="White" WidthRequest="40" HeightRequest="40" CornerRadius="10" Padding="0" HorizontalOptions="EndAndExpand"/>
+                    </HorizontalStackLayout>
+                    
+                    <Grid ColumnDefinitions="*, Auto, *">
+                        <Border Grid.Column="0" Stroke="{DynamicResource Gray200}" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="15,10">
+                            <HorizontalStackLayout Spacing="10">
+                                <Label Text="📅" TextColor="{DynamicResource Gray400}"/>
+                                <Label Text="{Binding Result.DueDate, StringFormat='{0:dd-MM-yyyy}'}" TextColor="{DynamicResource MidnightBlue}" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </Border>
+                        
+                        <Label Grid.Column="1" Text="➜" TextColor="{DynamicResource Gray400}" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0"/>
+
+                        <Border Grid.Column="2" BackgroundColor="#F5F7FA" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="10">
+                            <VerticalStackLayout HorizontalOptions="Center">
+                                <Label Text="{Binding Result.DaysRemaining, StringFormat='{0} DAYS REMAINING'}" TextColor="{DynamicResource BrandGreen}" FontAttributes="Bold" FontSize="10" HorizontalOptions="Center"/>
+                                <Label Text="{Binding Result.HijriDueDate}" TextColor="{DynamicResource MidnightBlue}" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+                    
+                     <Border Stroke="{DynamicResource Gray200}" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="15,10" BackgroundColor="#F5F7FA">
+                        <HorizontalStackLayout Spacing="10">
+                            <Label Text="✉" TextColor="{DynamicResource Gray400}"/>
+                            <Label Text="{Binding Result.Email, TargetNullValue='mamado2000@gmail.com'}" TextColor="{DynamicResource MidnightBlue}" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Total Zakat Due Card -->
+            <Border BackgroundColor="{DynamicResource BrandGreen}" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="30">
+                <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                    <Border BackgroundColor="#33FFFFFF" Padding="15" StrokeShape="RoundRectangle 30" HorizontalOptions="Center" HeightRequest="60" WidthRequest="60">
+                        <Label Text="✔" TextColor="White" FontSize="24" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    
+                    <Label Text="Total Zakat Due" TextColor="White" HorizontalOptions="Center"/>
+                    
+                    <Label Text="{Binding Result.TotalZakatDue, StringFormat='EGP {0:N2}'}" TextColor="White" FontAttributes="Bold" FontSize="32" HorizontalOptions="Center"/>
+                    
+                    <Label Text="Your net wealth exceeds the Nisab threshold. Please distribute this amount." TextColor="White" FontSize="12" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                <!-- Calculation Details -->
+                <Border Grid.Column="0" BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                       <HorizontalStackLayout Spacing="5">
+                           <Label Text="ℹ" TextColor="{DynamicResource BrandBlue}"/>
+                           <Label Text="Calculation Details" FontAttributes="Bold" TextColor="{DynamicResource MidnightBlue}"/>
+                       </HorizontalStackLayout>
+
+                        <!-- Total Assets -->
+                        <Border BackgroundColor="#E8F5E9" StrokeThickness="0" StrokeShape="RoundRectangle 10" Padding="15">
+                            <Grid>
+                                <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                    <Label Text="💰" TextColor="{DynamicResource BrandGreen}"/>
+                                    <Label Text="Total Assets" TextColor="{DynamicResource Gray600}" FontSize="12"/>
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding Result.TotalAssets, StringFormat='{0:N2} EGP'}" TextColor="{DynamicResource BrandGreen}" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center"/>
+                            </Grid>
+                        </Border>
+                        
+                        <Label Text="↓" HorizontalOptions="Center" TextColor="{DynamicResource Gray400}"/>
+
+                        <!-- Liabilities -->
+                        <Border BackgroundColor="#FFEBEE" StrokeThickness="0" StrokeShape="RoundRectangle 10" Padding="15">
+                            <Grid>
+                                <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                    <Label Text="↓" TextColor="#D32F2F"/>
+                                    <Label Text="Less: Deductible Debts" TextColor="{DynamicResource Gray600}" FontSize="12"/>
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding Result.DeductibleLiabilities, StringFormat='-{0:N0} EGP'}" TextColor="#D32F2F" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center"/>
+                            </Grid>
+                        </Border>
+
+                         <Label Text="↓" HorizontalOptions="Center" TextColor="{DynamicResource Gray400}"/>
+
+                        <!-- Net Zakat Base -->
+                        <Border BackgroundColor="#E3F2FD" StrokeThickness="0" StrokeShape="RoundRectangle 10" Padding="15">
+                            <Grid>
+                                <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                    <Label Text="💎" TextColor="#1976D2"/>
+                                    <Label Text="Net Zakat Base" TextColor="{DynamicResource Gray600}" FontSize="12"/>
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding Result.NetZakatBase, StringFormat='{0:N1} EGP'}" TextColor="#1565C0" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center"/>
+                            </Grid>
+                        </Border>
+                        
+                        <Label Text="Today is your selected Zakat calculation date. Please review your ZakatVault. (2.5%)" FontSize="10" TextColor="{DynamicResource Gray500}" HorizontalTextAlignment="Center"/>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Nisab Thresholds -->
+                <Border Grid.Column="1" BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 15" Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <HorizontalStackLayout Spacing="5">
+                           <Label Text="⚠" TextColor="#FFA000"/>
+                           <Label Text="Nisab Thresholds" FontAttributes="Bold" TextColor="{DynamicResource MidnightBlue}"/>
+                       </HorizontalStackLayout>
+
+                        <!-- Gold Nisab -->
+                        <Border BackgroundColor="#FFF8E1" Stroke="{DynamicResource ChartGold24k}" StrokeThickness="0.5" StrokeShape="RoundRectangle 10" Padding="15">
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="Gold Nisab (85g 24k)" TextColor="#EF6C00" FontSize="12" FontAttributes="Bold"/>
+                                <Label Text="{Binding Result.GoldNisab.ThresholdValue, StringFormat='{0:N1} EGP'}" TextColor="#3E2723" FontAttributes="Bold" FontSize="18"/>
+                                <Label Text="{Binding Result.GoldNisab.PricePerGram, StringFormat='@ {0:N2} EGP/g'}" TextColor="{DynamicResource Gray600}" FontSize="10"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Silver Nisab -->
+                        <Border BackgroundColor="#FAFAFA" StrokeThickness="0" StrokeShape="RoundRectangle 10" Padding="15">
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="Silver Nisab (595g)" TextColor="{DynamicResource Gray600}" FontSize="12" FontAttributes="Bold"/>
+                                <Label Text="{Binding Result.SilverNisab.ThresholdValue, StringFormat='{0:N2} EGP'}" TextColor="{DynamicResource Gray700}" FontAttributes="Bold" FontSize="18"/>
+                                <Label Text="{Binding Result.SilverNisab.PricePerGram, StringFormat='@ {0:N2} EGP/g'}" TextColor="{DynamicResource Gray500}" FontSize="10"/>
+                            </VerticalStackLayout>
+                        </Border>
+
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <BoxView HeightRequest="50"/>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

@@ -36,4 +36,34 @@ public class ZakatService
             return false;
         }
     }
+
+    public async Task<ZakatCalculationResult?> GetZakatCalculationAsync()
+    {
+        // Mock implementation for UI design
+        await Task.Delay(500); 
+
+        return new ZakatCalculationResult
+        {
+            DueDate = new DateTime(2026, 7, 23),
+            HijriDueDate = "09-02-1448",
+            DaysRemaining = 213,
+            TotalZakatDue = 16831.96m,
+            TotalAssets = 1096931.404m,
+            DeductibleLiabilities = 423653m,
+            NetZakatBase = 673278.4m,
+            IsNisabMet = true,
+            GoldNisab = new NisabInfo
+            {
+                ThresholdGrams = 85,
+                PricePerGram = 6644.77m,
+                ThresholdValue = 564401.7m
+            },
+            SilverNisab = new NisabInfo
+            {
+                ThresholdGrams = 595,
+                PricePerGram = 120.84m,
+                ThresholdValue = 61314.75m
+            }
+        };
+    }
 }
