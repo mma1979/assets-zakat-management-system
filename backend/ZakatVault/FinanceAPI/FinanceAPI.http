@@ -1,30 +1,36 @@
 ﻿@Host = http://localhost:5000
-# @Token = {{login.response.body.token}}
-@Token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiVGVzdCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InQxQHRlc3QuY29tIiwiZXhwIjoxNzY1NjI2NTQyLCJpc3MiOiJGaW5hbmNlQVBJIiwiYXVkIjoiRmluYW5jZUFQSVVzZXJzIn0.zby6vlxrYDN6dLZUN_6PiV16c_LI7wuENqsnDe1hcvU
-
-
-
+ 
 ### Login
 # @name login
 POST {{Host}}/api/auth/login
 Content-Type: application/json
-
+ 
 {
-  "email": "t1@test.com",
-  "password": "Abc@1234"
+  "email": "xxxx@gmail.com",
+  "password": "********"
 }
-
+ 
 ###
-
+ 
 ### Get Rates
 GET {{Host}}/api/rates
-Content-Type: application/json
-Authorization: Bearer {{Token}}
+Authorization: Bearer {{login.response.body.$.token}}
+ 
+###
+ 
+GET {{Host}}/api/Values
+ 
+###
+ 
+### Dashboard Summary
+GET {{Host}}/api/dashboard/summary
+Authorization: Bearer {{login.response.body.$.token}}
 
 ###
 
-GET {{Host}}/api/Values
-Content-Type: application/json
+### Dashboard Portfolio Metric
+GET {{Host}}/api/dashboard/portfolio-composition
+Authorization: Bearer {{login.response.body.$.token}}
 
 ###
 

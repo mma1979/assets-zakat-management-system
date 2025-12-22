@@ -59,7 +59,7 @@
                         </Border>
                         <VerticalStackLayout VerticalOptions="Center">
                             <Label Text="{x:Static strings:AppResources.NetWorth}" TextColor="{DynamicResource Gray500}" FontSize="12" />
-                            <Label Text="{Binding Summary.NetWorth}" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
+                            <Label Text="{Binding Summary.NetWorth, StringFormat='{0:N2}'}" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                 </Border>
@@ -72,7 +72,7 @@
                         </Border>
                         <VerticalStackLayout VerticalOptions="Center">
                             <Label Text="{x:Static strings:AppResources.TotalAssets}" TextColor="{DynamicResource Gray500}" FontSize="12" />
-                            <Label Text="{Binding Summary.TotalAssets}" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
+                            <Label Text="{Binding Summary.TotalAssets, StringFormat='{0:N2}'}" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                 </Border>
@@ -85,7 +85,7 @@
                         </Border>
                         <VerticalStackLayout VerticalOptions="Center">
                             <Label Text="{x:Static strings:AppResources.TotalLiabilities}" TextColor="{DynamicResource Gray500}" FontSize="12" />
-                            <Label Text="{Binding Summary.TotalLiabilities}" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
+                            <Label Text="{Binding Summary.TotalLiabilities, StringFormat='{0:N2}'}" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold" FontSize="20" />
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                 </Border>
@@ -96,15 +96,25 @@
                 <VerticalStackLayout Spacing="15">
                     <Label Text="{x:Static strings:AppResources.PortfolioComposition}" FontAttributes="Bold" FontSize="16" TextColor="{DynamicResource MidnightBlue}" />
 
-                    <!-- Placeholder for Donut Chart -->
-                    <BoxView HeightRequest="200" Color="Transparent" />
-                    <!-- We'll simulate the chart legend since we can't draw the donut easily without a library -->
-                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
-                        <Label Text="■ Gold (24k)" TextColor="{DynamicResource ChartGold24k}" FontSize="12" />
-                        <Label Text="■ Gold (21k)" TextColor="{DynamicResource ChartGold21k}" FontSize="12" />
-                        <Label Text="■ Silver" TextColor="{DynamicResource ChartSilver}" FontSize="12" />
-                        <Label Text="■ US Dollar" TextColor="{DynamicResource ChartUSD}" FontSize="12" />
-                    </HorizontalStackLayout>
+                    <!-- Donut Chart -->
+                    <GraphicsView x:Name="PortfolioChart" HeightRequest="250" WidthRequest="250" HorizontalOptions="Center" />
+                    
+                    <!-- Legend -->
+                    <FlexLayout BindableLayout.ItemsSource="{Binding PortfolioComposition}" 
+                                Wrap="Wrap" 
+                                JustifyContent="Center" 
+                                AlignItems="Center" 
+                                Direction="Row">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <HorizontalStackLayout Spacing="5" Margin="5">
+                                    <BoxView Color="{Binding Color}" HeightRequest="12" WidthRequest="12" CornerRadius="3" VerticalOptions="Center" />
+                                    <Label Text="{Binding Name}" TextColor="{DynamicResource MidnightBlue}" FontSize="12" VerticalOptions="Center" />
+                                    <Label Text="{Binding Percentage, StringFormat='({0:P1})'}" TextColor="{DynamicResource Gray500}" FontSize="12" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
                 </VerticalStackLayout>
             </Border>
 
@@ -116,32 +126,25 @@
                         <Label Text="{x:Static strings:AppResources.Edit}" TextColor="{DynamicResource BrandGreen}" FontSize="12" HorizontalOptions="End" VerticalOptions="Center" />
                     </Grid>
 
-                    <VerticalStackLayout Spacing="5">
-                        <!-- Rate Item -->
-                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
-                            <Grid>
-                                <Label Text="● Gold (24k)" TextColor="{DynamicResource ChartGold24k}" VerticalOptions="Center" />
-                                <Label Text="6,419.5 EGP/g" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
-                            </Grid>
-                        </Border>
-                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
-                            <Grid>
-                                <Label Text="● Gold (21k)" TextColor="{DynamicResource ChartGold21k}" VerticalOptions="Center" />
-                                <Label Text="5,607.77 EGP/g" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
-                            </Grid>
-                        </Border>
-                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
-                            <Grid>
-                                <Label Text="● Silver" TextColor="{DynamicResource ChartSilver}" VerticalOptions="Center" />
-                                <Label Text="89.49 EGP/g" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
-                            </Grid>
-                        </Border>
-                        <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
-                            <Grid>
-                                <Label Text="● US Dollar" TextColor="{DynamicResource ChartUSD}" VerticalOptions="Center" />
-                                <Label Text="47.55 EGP/$" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" />
-                            </Grid>
-                        </Border>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rates}" Spacing="5">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="{DynamicResource Gray100}" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="15,10">
+                                    <Grid>
+                                        <Label Text="{Binding Name, StringFormat='● {0}'}" TextColor="{DynamicResource MidnightBlue}" VerticalOptions="Center" />
+                                        <Label HorizontalOptions="End" VerticalOptions="Center" TextColor="{DynamicResource MidnightBlue}" FontAttributes="Bold">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Price, StringFormat='{0:N2}'}" />
+                                                    <Span Text=" " />
+                                                    <Span Text="{Binding Unit}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
 
                     <Label Text="{x:Static strings:AppResources.MarketDisclaimer}" FontSize="10" TextColor="{DynamicResource Gray500}" BackgroundColor="{DynamicResource AdvisorPurple}" Padding="10" />

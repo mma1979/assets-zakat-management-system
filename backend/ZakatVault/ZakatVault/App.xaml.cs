@@ -6,7 +6,8 @@ public partial class App : Application
 {
 	public App()
 	{
-		InitializeComponent();
+        //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("YOUR LICENSE KEY");
+        InitializeComponent();
 	}
 
 	protected override Window CreateWindow(IActivationState? activationState)

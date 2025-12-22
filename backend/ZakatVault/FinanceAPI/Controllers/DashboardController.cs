@@ -18,4 +18,12 @@ public class DashboardController(IDashboardService service) : ControllerBase
         var summary = await service.GetDashboardSummaryAsync(userId);
         return Ok(summary);
     }
+
+    [HttpGet("portfolio-composition")]
+    public async Task<IActionResult> GetPortfolioCompositionAsync()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var data = await service.GetPortfolioCompositionAsync(userId);
+        return Ok(data);
+    }
 }

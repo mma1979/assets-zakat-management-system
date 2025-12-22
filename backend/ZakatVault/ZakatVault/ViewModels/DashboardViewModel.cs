@@ -14,6 +14,8 @@ public class DashboardViewModel: INotifyPropertyChanged
 {
     private readonly DashboardService _dashboardService;
     private DashboardSummary? _summary;
+    private List<MarketRate>? _rates;
+    private List<PortfolioMetric>? _portfolioComposition;
     private string? _message;
 
 
@@ -31,6 +33,27 @@ public class DashboardViewModel: INotifyPropertyChanged
         _summary = value;
             OnPropertyChanged(nameof(Summary));
         } }
+
+    public List<MarketRate>? Rates
+    {
+        get => _rates;
+        set
+        {
+            _rates = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public List<PortfolioMetric>? PortfolioComposition
+    {
+        get => _portfolioComposition;
+        set
+        {
+            _portfolioComposition = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand LoadCommand { get; }
     public string? Message
     {
@@ -51,6 +74,8 @@ public class DashboardViewModel: INotifyPropertyChanged
         try
         {
             Summary = await _dashboardService.GetDashboardSummaryAsync();
+            Rates = await _dashboardService.GetMarketRatesAsync();
+            PortfolioComposition = await _dashboardService.GetPortfolioCompositionAsync();
         }
         catch (Exception)
         {
