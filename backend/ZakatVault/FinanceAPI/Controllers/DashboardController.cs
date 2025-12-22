@@ -26,4 +26,12 @@ public class DashboardController(IDashboardService service) : ControllerBase
         var data = await service.GetPortfolioCompositionAsync(userId);
         return Ok(data);
     }
+
+    [HttpGet("portfolio-value-history")]
+    public async Task<IActionResult> GetPortfolioValueHistoryAsync()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var data = await service.GetPortfolioValueHistoryAsync(userId);
+        return Ok(data);
+    }
 }

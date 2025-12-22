@@ -6,7 +6,7 @@ POST {{Host}}/api/auth/login
 Content-Type: application/json
  
 {
-  "email": "xxxx@gmail.com",
+  "email": "xxxxxxxx@gmail.com",
   "password": "********"
 }
  
@@ -30,6 +30,12 @@ Authorization: Bearer {{login.response.body.$.token}}
 
 ### Dashboard Portfolio Metric
 GET {{Host}}/api/dashboard/portfolio-composition
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Dashboard Portfolio Value Over Time
+GET {{Host}}/api/dashboard/portfolio-value-history
 Authorization: Bearer {{login.response.body.$.token}}
 
 ###

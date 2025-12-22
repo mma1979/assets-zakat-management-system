@@ -97,4 +97,29 @@ public class DashboardService
             return null;
         }
     }
+
+    public async Task<List<PortfolioHistorySeries>?> GetPortfolioHistoryAsync()
+    {
+        try
+        {
+            var token = await _authService.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBaseUrl}/api/dashboard/portfolio-value-history");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync<List<PortfolioHistorySeries>>();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }

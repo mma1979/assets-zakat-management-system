@@ -11,6 +11,20 @@ public class PortfolioMetric
 {
     public string Name { get; set; } = string.Empty;
     public decimal Value { get; set; }
-    public double Percentage { get; set; }
+    public decimal Percentage { get; set; }
     public string Color { get; set; } = string.Empty;
+}
+
+
+public class PortfolioValue
+{
+    public string? Date { get; set; }
+    public decimal Value { get; set; }
+}
+
+public class PortfolioValueGroup
+{
+    public string? Title { get; set; }
+    public string Color { get; set; } = string.Empty;
+    public List<PortfolioValue> History { get; set; } = [];
 }

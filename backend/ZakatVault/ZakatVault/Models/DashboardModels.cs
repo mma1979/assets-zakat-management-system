@@ -32,3 +32,16 @@ public class PortfolioMetric
     public double Percentage { get; set; }
     public string Color { get; set; } = string.Empty;
 }
+
+public class PortfolioHistoryDataPoint
+{
+    public DateTime Date { get; set; }
+    public decimal Value { get; set; }
+}
+
+public class PortfolioHistorySeries
+{
+    public string Title { get; set; } = string.Empty;
+    public string Color { get; set; } = string.Empty;
+    public List<PortfolioHistoryDataPoint> History { get; set; } = new();
+}
