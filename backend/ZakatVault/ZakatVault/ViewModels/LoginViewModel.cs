@@ -11,8 +11,8 @@ namespace ZakatVault.ViewModels;
 public class LoginViewModel : BindableObject
 {
     private readonly AuthService _authService;
-    private string _username;
-    private string _password;
+    private string _username = "mamado2000@gmail.com";
+    private string _password="M@ro2008AC";
     private string _message;
     private bool _isLoading;
 
