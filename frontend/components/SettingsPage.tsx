@@ -48,7 +48,7 @@ export const SettingsPage: React.FC = () => {
     const [newAlertAsset, setNewAlertAsset] = useState<AssetType>('GOLD');
     const [newAlertCondition, setNewAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
     const [newAlertPrice, setNewAlertPrice] = useState('');
-    const [deleteAlertId, setDeleteAlertId] = useState<string | null>(null);
+    const [deleteAlertId, setDeleteAlertId] = useState<number | null>(null);
 
     const [isSubmittingAlert, setIsSubmittingAlert] = useState(false);
     const [isDeletingAlert, setIsDeletingAlert] = useState(false);
@@ -121,7 +121,7 @@ export const SettingsPage: React.FC = () => {
         setIsSubmittingAlert(true);
         try {
             const newAlert = {
-                id: Date.now().toString(),
+                id: Date.now(),
                 assetType: newAlertAsset,
                 condition: newAlertCondition,
                 targetPrice: parseFloat(newAlertPrice),

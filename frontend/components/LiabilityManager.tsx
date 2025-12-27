@@ -9,7 +9,7 @@ import { ConfirmModal } from './ConfirmModal';
 interface LiabilityManagerProps {
   data: StoreData;
   onAddLiability: (l: Liability) => void;
-  onRemoveLiability: (id: string) => void;
+  onRemoveLiability: (id: number) => void;
 }
 
 export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddLiability, onRemoveLiability }) => {
@@ -18,12 +18,12 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isDeductible, setIsDeductible] = useState(true);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAddLiability({
-      id: crypto.randomUUID(),
+      id: Date.now(),
       title,
       amount: parseFloat(amount),
       dueDate,

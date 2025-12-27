@@ -13,7 +13,7 @@ import { ConfirmModal } from './ConfirmModal';
 interface AssetManagerProps {
   data: StoreData;
   onAddTransaction: (tx: Transaction) => void;
-  onRemoveTransaction: (id: string) => void;
+  onRemoveTransaction: (id: number) => void;
 }
 
 export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransaction, onRemoveTransaction }) => {
@@ -37,7 +37,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   const [alertCondition, setAlertCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
 
   // Delete Confirmation State
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'TRANSACTION' | 'ALERT' } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number, type: 'TRANSACTION' | 'ALERT' } | null>(null);
 
   // Calculator State
   const [showCalculator, setShowCalculator] = useState(false);
@@ -108,7 +108,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
     if (!validateForm()) return;
 
     const tx: Transaction = {
-      id: crypto.randomUUID(),
+      id: Date.now(),
       type: formType,
       assetType: formAsset,
       amount: parseFloat(formAmount),
@@ -129,7 +129,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
     if (!alertTargetPrice) return;
 
     const newAlert: PriceAlert = {
-      id: crypto.randomUUID(),
+      id: Date.now(),
       assetType: activeTab,
       targetPrice: parseFloat(alertTargetPrice),
       condition: alertCondition,
@@ -140,7 +140,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
     setAlertTargetPrice('');
   };
 
-  const handleDeleteAlert = (id: string) => {
+  const handleDeleteAlert = (id: number) => {
     removePriceAlert(id);
   };
 

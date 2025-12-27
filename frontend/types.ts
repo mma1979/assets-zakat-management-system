@@ -2,7 +2,7 @@
 export type AssetType = string;
 
 export interface UserProfile {
-  id: string;
+  id: number;
   name: string;
   email: string;
 }
@@ -13,7 +13,7 @@ export interface AuthResponse {
 }
 
 export interface Transaction {
-  id: string;
+  id: number;
   type: 'BUY' | 'SELL';
   assetType: AssetType;
   amount: number; // Weight in grams for metals, Value for currency
@@ -23,7 +23,7 @@ export interface Transaction {
 }
 
 export interface Liability {
-  id: string;
+  id: number;
   title: string;
   amount: number; // In EGP
   dueDate: string;
@@ -56,7 +56,7 @@ export interface ZakatConfig {
 }
 
 export interface PriceAlert {
-  id: string;
+  id: number;
   assetType: AssetType;
   targetPrice: number;
   condition: 'ABOVE' | 'BELOW';

@@ -69,16 +69,19 @@ const fetchData = async <T,>(key: DataKey, defaultValue: T): Promise<T> => {
 };
 
 // Generic save function for any data type
-const saveDataPart = async <T,>(key: DataKey, value: T, method: 'POST' | 'PUT' | 'DELETE' = 'POST'): Promise<boolean> => {
+const saveDataPart = async <T, R = any>(key: DataKey, value: T, method: 'POST' | 'PUT' | 'DELETE' = 'POST'): Promise<R | null> => {
   const token = getStoredToken();
-  if (!token) return false;
+  if (!token) return null;
 
   try {
     const response = await (http as any)[method.toLowerCase()](API_ENDPOINTS[key], value, { headers: getAuthHeaders() });
-    return response.status >= 200 && response.status < 300;
+    if (response.status >= 200 && response.status < 300) {
+      return response.data || (true as any);
+    }
+    return null;
   } catch (e) {
     console.error(`Save failed for ${key}:`, e);
-    return false;
+    return null;
   }
 };
 
@@ -170,12 +173,35 @@ export const useStore = () => {
   };
 
   // Transaction operations
-  const addTransaction = useCallback((tx: Transaction) => {
-    const newTransactions = [...data.transactions, tx];
-    updateDataPart('transactions', newTransactions, tx);
-  }, [data.transactions]);
+  const addTransaction = useCallback(async (tx: Transaction) => {
+    const tempId = tx.id;
+    // Optimistic update
+    setData(prev => ({ ...prev, transactions: [...prev.transactions, tx] }));
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, transactions: true }));
 
-  const removeTransaction = useCallback(async (id: string) => {
+    try {
+      const savedTx = await saveDataPart<Transaction, Transaction>('transactions', tx, 'POST');
+      if (savedTx) {
+        setData(prev => ({
+          ...prev,
+          transactions: prev.transactions.map(t => t.id === tempId ? savedTx : t)
+        }));
+      } else {
+        throw new Error("Failed to save transaction");
+      }
+    } catch (e) {
+      console.error(e);
+      setSyncError("Failed to save transaction.");
+      // Rollback
+      setData(prev => ({ ...prev, transactions: prev.transactions.filter(t => t.id !== tempId) }));
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, transactions: false }));
+    }
+  }, []);
+
+  const removeTransaction = useCallback(async (id: number) => {
     // User requested: "call Delete ... then reload data again"
     const token = getStoredToken();
     if (!token) return;
@@ -203,12 +229,35 @@ export const useStore = () => {
   }, [data.transactions, loadAllData]);
 
   // Liability operations
-  const addLiability = useCallback((l: Liability) => {
-    const newLiabilities = [...data.liabilities, l];
-    updateDataPart('liabilities', newLiabilities, l);
-  }, [data.liabilities]);
+  const addLiability = useCallback(async (l: Liability) => {
+    const tempId = l.id;
+    // Optimistic update
+    setData(prev => ({ ...prev, liabilities: [...prev.liabilities, l] }));
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, liabilities: true }));
 
-  const removeLiability = useCallback(async (id: string) => {
+    try {
+      const savedLiab = await saveDataPart<Liability, Liability>('liabilities', l, 'POST');
+      if (savedLiab) {
+        setData(prev => ({
+          ...prev,
+          liabilities: prev.liabilities.map(item => item.id === tempId ? savedLiab : item)
+        }));
+      } else {
+        throw new Error("Failed to save liability");
+      }
+    } catch (e) {
+      console.error(e);
+      setSyncError("Failed to save liability.");
+      // Rollback
+      setData(prev => ({ ...prev, liabilities: prev.liabilities.filter(item => item.id !== tempId) }));
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, liabilities: false }));
+    }
+  }, []);
+
+  const removeLiability = useCallback(async (id: number) => {
     const token = getStoredToken();
     if (!token) return;
 
@@ -385,12 +434,35 @@ export const useStore = () => {
   }, []);
 
   // Price alerts operations
-  const addPriceAlert = useCallback((alert: PriceAlert) => {
-    const newAlerts = [...data.priceAlerts, alert];
-    return updateDataPart('priceAlerts', newAlerts, alert);
-  }, [data.priceAlerts]);
+  const addPriceAlert = useCallback(async (alert: PriceAlert) => {
+    const tempId = alert.id;
+    // Optimistic update
+    setData(prev => ({ ...prev, priceAlerts: [...prev.priceAlerts, alert] }));
+    setIsSyncing(true);
+    setLoadingStates(prev => ({ ...prev, priceAlerts: true }));
 
-  const removePriceAlert = useCallback(async (id: string) => {
+    try {
+      const savedAlert = await saveDataPart<PriceAlert, PriceAlert>('priceAlerts', alert, 'POST');
+      if (savedAlert) {
+        setData(prev => ({
+          ...prev,
+          priceAlerts: prev.priceAlerts.map(a => a.id === tempId ? savedAlert : a)
+        }));
+      } else {
+        throw new Error("Failed to save alert");
+      }
+    } catch (e) {
+      console.error(e);
+      setSyncError("Failed to save alert.");
+      // Rollback
+      setData(prev => ({ ...prev, priceAlerts: prev.priceAlerts.filter(a => a.id !== tempId) }));
+    } finally {
+      setIsSyncing(false);
+      setLoadingStates(prev => ({ ...prev, priceAlerts: false }));
+    }
+  }, []);
+
+  const removePriceAlert = useCallback(async (id: number) => {
     const token = getStoredToken();
     if (!token) return false;
 

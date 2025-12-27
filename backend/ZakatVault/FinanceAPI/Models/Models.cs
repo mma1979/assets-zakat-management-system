@@ -115,7 +115,6 @@ public class CreatePriceAlertDto
 
 public class CreateTransactionDto
 {
-    public Guid Id { get; set; }
     public string Type { get; set; } = string.Empty;
     public string? AssetType { get; set; }
     public decimal Amount { get; set; }
