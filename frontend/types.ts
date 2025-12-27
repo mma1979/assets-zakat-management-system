@@ -5,11 +5,30 @@ export interface UserProfile {
   id: number;
   name: string;
   email: string;
+  isTwoFactorEnabled?: boolean;
 }
 
 export interface AuthResponse {
   user: UserProfile;
   token: string;
+  twoFactorRequired?: boolean;
+  challengeToken?: string;
+}
+
+export interface Verify2FaDto {
+  email: string;
+  code: string;
+  challengeToken: string;
+}
+
+export interface TwoFactorSetupDto {
+  secret: string;
+  qrCodeUri: string;
+}
+
+export interface TwoFactorVerifySetupDto {
+  code: string;
+  secret: string;
 }
 
 export interface Transaction {

@@ -7,6 +7,8 @@ public class User
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public string? TwoFactorSecret { get; set; }
+    public bool IsTwoFactorEnabled { get; set; }
 }
 
 public class PriceAlert
@@ -104,6 +106,28 @@ public class AuthResponseDto
     public int UserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public bool TwoFactorRequired { get; set; }
+    public string? ChallengeToken { get; set; }
+    public bool IsTwoFactorEnabled { get; set; }
+}
+
+public class Verify2FaDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
+}
+
+public class TwoFactorSetupDto
+{
+    public string Secret { get; set; } = string.Empty;
+    public string QrCodeUri { get; set; } = string.Empty;
+}
+
+public class TwoFactorVerifySetupDto
+{
+    public string Code { get; set; } = string.Empty;
+    public string Secret { get; set; } = string.Empty;
 }
 
 public class CreatePriceAlertDto

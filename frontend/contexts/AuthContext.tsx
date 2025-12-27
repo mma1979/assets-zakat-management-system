@@ -6,9 +6,11 @@ interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<AuthResponse>;
+  verify2Fa: (code: string, email: string, challengeToken: string) => Promise<void>;
   register: (name: string, email: string, pass: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updates: Partial<UserProfile>) => void;
   error: string | null;
 }
 
@@ -28,14 +30,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
   };
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string): Promise<AuthResponse> => {
     setIsLoading(true);
     setError(null);
     try {
       const data = await loginUser(email, pass);
-      handleAuthSuccess(data);
+      if (!data.twoFactorRequired) {
+        handleAuthSuccess(data);
+      }
+      return data;
     } catch (e: any) {
       setError(e.message || 'Login failed');
+      throw e;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verify2Fa = async (code: string, email: string, challengeToken: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { verify2Fa: performVerify } = await import('../services/auth');
+      const data = await performVerify({ code, email, challengeToken });
+      handleAuthSuccess(data);
+    } catch (e: any) {
+      setError(e.message || '2FA verification failed');
       throw e;
     } finally {
       setIsLoading(false);
@@ -62,14 +82,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(null);
   };
 
+  const updateUser = (updates: Partial<UserProfile>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
       isAuthenticated: !!token,
       isLoading,
       login,
+      verify2Fa,
       register,
       logout,
+      updateUser,
       error
     }}>
       {children}

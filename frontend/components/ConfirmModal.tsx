@@ -8,6 +8,7 @@ interface ConfirmModalProps {
     onConfirm: () => void;
     title: string;
     message: string;
+    icon?: React.ReactNode;
 }
 
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -15,7 +16,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onClose,
     onConfirm,
     title,
-    message
+    message,
+    icon
 }) => {
     const { t } = useLanguage();
 
@@ -26,7 +28,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div className="p-6 text-center">
                     <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Trash2 size={24} />
+                        {icon || <Trash2 size={24} />}
                     </div>
                     <h3 className="text-lg font-bold text-slate-800 mb-2">{title}</h3>
                     <p className="text-slate-500 text-sm mb-6">{message}</p>

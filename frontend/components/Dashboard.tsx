@@ -9,7 +9,9 @@ import { fetchMarketRates } from '../services/geminiService';
 import { exportTransactionsToCSV, exportLiabilitiesToCSV, exportPortfolioSummaryToCSV } from '../services/exportService';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { FinancialAdvisor } from './FinancialAdvisor';
+import { Shield, ShieldAlert, ArrowRight } from 'lucide-react';
 
 
 interface DashboardProps {
@@ -19,6 +21,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRateModal, setShowRateModal] = useState(false);
@@ -242,6 +245,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
         <div className="bg-red-50 text-red-700 p-3 rounded-lg flex items-center gap-2 text-sm">
           <AlertCircle size={16} />
           {error}
+        </div>
+      )}
+
+      {user && !user.isTwoFactorEnabled && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
+              <ShieldAlert size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800">{t('secureYourAccount') || 'Secure Your Account'}</h4>
+              <p className="text-sm text-slate-600">
+                {t('twoFactorRecommendation') || 'Two-Factor Authentication is currently disabled. We highly recommend enabling it to protect your Zakat data.'}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.location.hash = '#settings'} 
+            className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-700 transition-all whitespace-nowrap shadow-sm"
+          >
+            {t('enableNow') || 'Enable Now'}
+            <ArrowRight size={16} />
+          </button>
         </div>
       )}
 

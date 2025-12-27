@@ -1,5 +1,5 @@
 // services/auth.ts
-import { AuthResponse, UserProfile } from '../types';
+import { AuthResponse, UserProfile, Verify2FaDto, TwoFactorSetupDto, TwoFactorVerifySetupDto } from '../types';
 import http from './http';
 
 const API_URL = '/api/auth';
@@ -14,11 +14,14 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
     const response = await http.post(`${API_URL}/login`, { email, password });
     return {
       token: response.data.token,
-      user: {
+      user: response.data.userId ? {
         id: response.data.userId,
         name: response.data.name,
         email: response.data.email,
-      }
+        isTwoFactorEnabled: response.data.isTwoFactorEnabled
+      } : undefined as any,
+      twoFactorRequired: response.data.twoFactorRequired,
+      challengeToken: response.data.challengeToken
     };
   } catch (e) {
     console.warn("Real auth endpoint failed, falling back to mock for demo if allowed", e);
@@ -36,6 +39,7 @@ export const registerUser = async (name: string, email: string, password: string
         id: response.data.userId,
         name: response.data.name,
         email: response.data.email,
+        isTwoFactorEnabled: response.data.isTwoFactorEnabled
       }
     };
   } catch (e) {
@@ -43,6 +47,43 @@ export const registerUser = async (name: string, email: string, password: string
     // Mock registration success
     throw e;
   }
+};
+
+export const verify2Fa = async (dto: Verify2FaDto): Promise<AuthResponse> => {
+  const response = await http.post(`${API_URL}/verify-2fa`, dto);
+  return {
+    token: response.data.token,
+    user: {
+      id: response.data.userId,
+      name: response.data.name,
+      email: response.data.email,
+      isTwoFactorEnabled: response.data.isTwoFactorEnabled
+    }
+  };
+};
+
+export const setup2Fa = async (): Promise<TwoFactorSetupDto> => {
+  const token = getStoredToken();
+  const response = await http.get(`${API_URL}/setup-2fa`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+};
+
+export const enable2Fa = async (dto: TwoFactorVerifySetupDto): Promise<boolean> => {
+  const token = getStoredToken();
+  const response = await http.post(`${API_URL}/enable-2fa`, dto, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.status >= 200 && response.status < 300;
+};
+
+export const disable2Fa = async (): Promise<boolean> => {
+  const token = getStoredToken();
+  const response = await http.post(`${API_URL}/disable-2fa`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.status >= 200 && response.status < 300;
 };
 
 export const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
