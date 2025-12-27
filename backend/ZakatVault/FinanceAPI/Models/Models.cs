@@ -130,3 +130,19 @@ public class CreateLiabilityDto
     public DateTime? DueDate { get; set; }
     public bool IsDeductible { get; set; }
 }
+
+public class ZakatPayment
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CreateZakatPaymentDto
+{
+    public decimal Amount { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}

@@ -15,12 +15,35 @@ public class ZakatCalcService(FinanceDbContext context, ILogger<ZakatCalcService
     {
         var zakatCalc = await context.VwZakatCalc
             .FirstOrDefaultAsync(z => z.UserId == userId);
+        
         if (zakatCalc == null)
         {
             logger.LogWarning("Zakat calculation not found for user ID {UserId}", userId);
-            return new VwZakatCalc();
+            zakatCalc = new VwZakatCalc { UserId = userId };
         }
-        return zakatCalc;
 
+        // Determine the current Zakat year window
+        var zakatConfig = await context.ZakatConfigs
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        DateTime zakatEndDate = zakatConfig?.ZakatDate ?? DateTime.UtcNow.AddDays(355);
+        
+        // If the date is in the deep past, advance it to the current/next cycle
+        while (zakatEndDate < DateTime.UtcNow.Date)
+        {
+            zakatEndDate = zakatEndDate.AddDays(355);
+        }
+
+        DateTime zakatStartDate = zakatEndDate.AddDays(-355);
+
+        var totalPayments = await context.ZakatPayments
+            .Where(p => p.UserId == userId && p.Date >= zakatStartDate && p.Date <= zakatEndDate)
+            .SumAsync(p => p.Amount);
+
+        zakatCalc.TotalPayments = totalPayments;
+        zakatCalc.RemainingZakatDue = Math.Max(0, zakatCalc.TotalZakatDue - totalPayments);
+        zakatCalc.LunarEndDate = zakatEndDate.ToString("yyyy-MM-dd");
+
+        return zakatCalc;
     }
 }

@@ -8,7 +8,10 @@ public class VwZakatCalc
     public decimal NetZakatBase { get; set; }= decimal.Zero;
     public decimal GlodAmount { get; set; } = decimal.Zero;
     public decimal TotalZakatDue { get; set; } = decimal.Zero;
+    public decimal TotalPayments { get; set; } = decimal.Zero;
+    public decimal RemainingZakatDue { get; set; } = decimal.Zero;
     public decimal NisabGoldValue { get; set; } = decimal.Zero;
     public decimal NisabSilverValue { get; set; } = decimal.Zero;
     public string LunarEndDate { get; set; } = string.Empty;
+    public string ZakatEndDate { get; set; } = string.Empty;
 }

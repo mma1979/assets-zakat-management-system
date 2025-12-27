@@ -1,11 +1,12 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { StoreData, ZakatCalculationResult } from '../types';
 import { NISAB_GOLD_GRAMS, NISAB_SILVER_GRAMS, ZAKAT_RATE } from '../constants';
-import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, BellRing, Mail, Coins, ArrowDown, Gem } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, CalendarClock, ArrowRight, Bell, BellRing, Mail, Coins, ArrowDown, Gem, Receipt } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { addDays, format, isBefore, isAfter, isSameDay, differenceInDays } from 'date-fns';
 import { useStore } from '../services/storage';
 import { CustomDatePicker } from './DatePicker';
+import { ZakatPaymentManager } from './ZakatPaymentManager';
 
 interface ZakatCalculatorProps {
   data: StoreData;
@@ -25,7 +26,7 @@ const isValidDate = (d: Date) => d instanceof Date && !isNaN(d.getTime());
 
 export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   const { t, language, dir } = useLanguage();
-  const { updateZakatConfig, fetchZakatCalculation, isSyncing } = useStore();
+  const { updateZakatConfig, fetchZakatCalculation, isSyncing, addZakatPayment, removeZakatPayment } = useStore();
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [serverCalculation, setServerCalculation] = useState<ZakatCalculationResult | null>(null);
 
@@ -88,7 +89,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     if (!isSyncing) {
       fetchZakatCalculation().then(setServerCalculation).catch(console.error);
     }
-  }, [fetchZakatCalculation, zakatDate, data.transactions, data.liabilities, isSyncing]);
+  }, [fetchZakatCalculation, zakatDate, data.transactions, data.liabilities, data.zakatPayments, isSyncing]);
 
   const clientCalculation = useMemo(() => {
     // 0. Time Windows
@@ -178,6 +179,8 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       nisabGoldValue: serverCalculation?.nisabGoldValue ?? 0,
       nisabSilverValue: serverCalculation?.nisabSilverValue ?? 0,
       zakatDue: serverCalculation?.totalZakatDue ?? 0,
+      totalPayments: serverCalculation?.totalPayments ?? 0,
+      remainingZakatDue: serverCalculation?.remainingZakatDue ?? 0,
       lunarEndDate: serverCalculation?.lunarEndDate ?? '2026-07-23',
       isEligible: (serverCalculation?.totalZakatDue ?? 0) > 0,
     };
@@ -282,6 +285,13 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
         </div>
       </div>
 
+      <ZakatPaymentManager 
+        payments={data.zakatPayments}
+        onAddPayment={addZakatPayment}
+        onRemovePayment={removeZakatPayment}
+        isSyncing={isSyncing}
+      />
+
       {/* Result Card */}
       <div className={`p-8 rounded-3xl text-center border-2 transition-colors duration-300 ${calculation.isEligible
         ? 'bg-emerald-600 border-emerald-500 text-white'
@@ -291,11 +301,16 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
           {calculation.isEligible ? <CheckCircle size={40} className="text-white" /> : <Info size={40} className="text-slate-400" />}
         </div>
         <h3 className={`text-lg font-medium ${calculation.isEligible ? 'text-emerald-100' : 'text-slate-500'}`}>
-          {t('totalZakatDue')}
+          {t('remainingZakatDue')}
         </h3>
         <div className="text-5xl font-bold my-4 tracking-tight">
-          {formatCurrency(calculation.zakatDue)}
+          {formatCurrency(calculation.remainingZakatDue)}
         </div>
+        {calculation.totalPayments > 0 && (
+          <div className="text-sm opacity-80 mb-2">
+            {t('totalZakatDue')}: {formatCurrency(calculation.zakatDue)} | {t('paid')}: {formatCurrency(calculation.totalPayments)}
+          </div>
+        )}
         <p className={`max-w-md mx-auto ${calculation.isEligible ? 'text-emerald-100' : 'text-slate-400'}`}>
           {calculation.isEligible ? t('eligibleMsg') : t('notEligibleMsg')}
         </p>
@@ -356,6 +371,42 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
                 <span className="text-sm font-bold text-slate-700">{t('netZakatBase')}</span>
               </div>
               <span className="font-bold text-xl text-blue-700">{formatNum(calculation.zakatBase)} <span className="text-xs">EGP</span></span>
+            </div>
+
+            {/* Operator: Equal for Zakat Due */}
+            <div className="flex justify-center -my-2 z-10">
+              <div className="bg-white border border-slate-200 p-1.5 rounded-full shadow-sm text-slate-400">
+                <ArrowDown size={16} strokeWidth={3} />
+              </div>
+            </div>
+
+            {/* 4. Total Zakat Due */}
+            <div className="relative p-4 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center group hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-200 rounded-lg text-slate-600">
+                  <Info size={20} />
+                </div>
+                <span className="text-sm font-medium text-slate-600">{t('totalZakatDue')}</span>
+              </div>
+              <span className="font-bold text-lg text-slate-700">{formatNum(calculation.zakatDue)} <span className="text-xs">EGP</span></span>
+            </div>
+
+            {/* Operator: Minus for Payments */}
+            <div className="flex justify-center -my-2 z-10">
+              <div className="bg-white border border-slate-200 p-1.5 rounded-full shadow-sm text-slate-400">
+                <ArrowDown size={16} strokeWidth={3} />
+              </div>
+            </div>
+
+            {/* 5. Total Payments */}
+            <div className="relative p-4 rounded-xl bg-emerald-50 border border-emerald-100 flex justify-between items-center group hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                  <Receipt size={20} />
+                </div>
+                <span className="text-sm font-medium text-slate-600">{t('totalPayments')}</span>
+              </div>
+              <span className="font-bold text-lg text-emerald-700">-{formatNum(calculation.totalPayments)} <span className="text-xs">EGP</span></span>
             </div>
 
             {/* 4. Result Explanation */}

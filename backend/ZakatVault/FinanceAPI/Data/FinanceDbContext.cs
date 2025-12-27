@@ -10,12 +10,13 @@ public class FinanceDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<PriceAlert> PriceAlerts { get; set; }
     public DbSet<ZakatConfig> ZakatConfigs { get; set; }
+    public DbSet<ZakatPayment> ZakatPayments { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Liability> Liabilities { get; set; }
     public DbSet<Rate> Rates { get; set; }
 
    
-    public DbSet<VwZakatCalc> VwZakatCalc { get; set; }
+    public virtual DbSet<VwZakatCalc> VwZakatCalc { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -128,6 +129,17 @@ public class FinanceDbContext : DbContext
                 Name = "EGP",
                 Value =1m,
             });
+        });
+
+        modelBuilder.Entity<ZakatPayment>(entity =>
+        {
+            entity.ToTable("ZakatPayments");
+            entity.HasKey(e => e.Id);
+            entity.HasOne<User>()
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
         });
     }
 }

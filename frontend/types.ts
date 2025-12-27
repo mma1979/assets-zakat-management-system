@@ -58,26 +58,34 @@ export interface ZakatConfig {
 export interface PriceAlert {
   id: number;
   assetType: AssetType;
-  targetPrice: number;
   condition: 'ABOVE' | 'BELOW';
+  targetPrice: number;
   isActive: boolean;
+}
+
+export interface ZakatPayment {
+  id: number;
+  amount: number;
+  date: string;
+  notes?: string;
 }
 
 export interface StoreData {
   transactions: Transaction[];
   liabilities: Liability[];
   rates: Rate[];
-  zakatConfig?: ZakatConfig;
+  zakatConfig: ZakatConfig;
   priceAlerts: PriceAlert[];
+  zakatPayments: ZakatPayment[];
 }
 
 export interface ZakatCalculationResult {
-  userId: number;
   totalAssets: number;
   totalDebts: number;
   netZakatBase: number;
-  glodAmount: number;
   totalZakatDue: number;
+  totalPayments: number;
+  remainingZakatDue: number;
   nisabGoldValue: number;
   nisabSilverValue: number;
   lunarEndDate: string;
