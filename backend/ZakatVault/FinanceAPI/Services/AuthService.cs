@@ -20,6 +20,7 @@ public interface IAuthService
     Task<bool> Enable2FaAsync(int userId, TwoFactorVerifySetupDto dto);
     Task<bool> Disable2FaAsync(int userId);
     Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto dto);
+    Task<AuthResponseDto?> LoginWithPinAsync(LoginPinDto dto);
 }
 
 public class AuthService : IAuthService
@@ -61,11 +62,25 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null || !VerifyPassword(dto.Password, user.PasswordHash))
+        var user = await _context.Users
+            .Include(u => u.TrustedDevices)
+            .FirstOrDefaultAsync(u => u.Email == dto.Email);
+            
+        if (user == null || (dto.Password != null && !VerifyPassword(dto.Password, user.PasswordHash)))
             return null;
 
-        if (user.IsTwoFactorEnabled)
+        // Check Trust Token if provided
+        bool deviceTrusted = false;
+        if (!string.IsNullOrEmpty(dto.TrustToken))
+        {
+            var trustedDevice = user.TrustedDevices.FirstOrDefault(td => td.ExpiresAt > DateTime.UtcNow && VerifyPassword(dto.TrustToken, td.TokenHash));
+            if (trustedDevice != null)
+            {
+                deviceTrusted = true;
+            }
+        }
+
+        if (user.IsTwoFactorEnabled && !deviceTrusted)
         {
             return new AuthResponseDto
             {
@@ -82,7 +97,31 @@ public class AuthService : IAuthService
             UserId = user.Id,
             Name = user.Name,
             Email = user.Email,
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled
+            IsTwoFactorEnabled = user.IsTwoFactorEnabled,
+            TrustToken = deviceTrusted ? dto.TrustToken : null
+        };
+    }
+
+    public async Task<AuthResponseDto?> LoginWithPinAsync(LoginPinDto dto)
+    {
+        var user = await _context.Users
+            .Include(u => u.TrustedDevices)
+            .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+        if (user == null) return null;
+
+        var trustedDevice = user.TrustedDevices.FirstOrDefault(td => td.ExpiresAt > DateTime.UtcNow && VerifyPassword(dto.TrustToken, td.TokenHash));
+        if (trustedDevice == null || string.IsNullOrEmpty(trustedDevice.PinHash) || !VerifyPassword(dto.Pin, trustedDevice.PinHash))
+            return null;
+
+        return new AuthResponseDto
+        {
+            Token = GenerateJwtToken(user),
+            UserId = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            IsTwoFactorEnabled = user.IsTwoFactorEnabled,
+            TrustToken = dto.TrustToken
         };
     }
 
@@ -99,13 +138,31 @@ public class AuthService : IAuthService
         if (!totp.VerifyTotp(dto.Code, out _))
             return null;
 
+        string? trustToken = null;
+        if (dto.RememberDevice)
+        {
+            trustToken = Guid.NewGuid().ToString();
+            var trustedDevice = new TrustedDevice
+            {
+                UserId = user.Id,
+                TokenHash = HashPassword(trustToken),
+                PinHash = !string.IsNullOrEmpty(dto.Pin) ? HashPassword(dto.Pin) : null,
+                DeviceName = "Trusted Device",
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(30)
+            };
+            _context.TrustedDevices.Add(trustedDevice);
+            await _context.SaveChangesAsync();
+        }
+
         return new AuthResponseDto
         {
             Token = GenerateJwtToken(user),
             UserId = user.Id,
             Name = user.Name,
             Email = user.Email,
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled
+            IsTwoFactorEnabled = user.IsTwoFactorEnabled,
+            TrustToken = trustToken
         };
     }
 

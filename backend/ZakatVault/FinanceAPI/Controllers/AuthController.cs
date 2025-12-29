@@ -40,6 +40,16 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("login-pin")]
+    public async Task<IActionResult> LoginWithPin([FromBody] LoginPinDto dto)
+    {
+        var result = await _authService.LoginWithPinAsync(dto);
+        if (result == null)
+            return Unauthorized(new { message = "Invalid PIN or untrusted device" });
+
+        return Ok(result);
+    }
+
     [HttpPost("verify-2fa")]
     public async Task<IActionResult> Verify2Fa([FromBody] Verify2FaDto dto)
     {

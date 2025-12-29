@@ -14,6 +14,7 @@ public class FinanceDbContext : DbContext
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Liability> Liabilities { get; set; }
     public DbSet<Rate> Rates { get; set; }
+    public DbSet<TrustedDevice> TrustedDevices { get; set; }
 
    
     public virtual DbSet<VwZakatCalc> VwZakatCalc { get; set; }
@@ -36,6 +37,20 @@ public class FinanceDbContext : DbContext
             entity.HasIndex(e => e.Email).IsUnique();
             entity.Property(e => e.PasswordHash).IsRequired();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
+
+        // TrustedDevice Configuration
+        modelBuilder.Entity<TrustedDevice>(entity =>
+        {
+            entity.ToTable("TrustedDevices");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.TrustedDevices)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.PinHash).IsRequired(false).HasMaxLength(512);
+            entity.HasIndex(e => e.TokenHash).IsUnique();
         });
 
         // PriceAlert Configuration

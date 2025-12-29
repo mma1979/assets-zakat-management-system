@@ -13,12 +13,27 @@ export interface AuthResponse {
   token: string;
   twoFactorRequired?: boolean;
   challengeToken?: string;
+  trustToken?: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password?: string;
+  trustToken?: string;
+}
+
+export interface LoginPinDto {
+  email: string;
+  pin: string;
+  trustToken: string;
 }
 
 export interface Verify2FaDto {
   email: string;
   code: string;
   challengeToken: string;
+  rememberDevice?: boolean;
+  pin?: string;
 }
 
 export interface TwoFactorSetupDto {

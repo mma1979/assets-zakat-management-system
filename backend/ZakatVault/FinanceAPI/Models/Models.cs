@@ -9,6 +9,18 @@ public class User
     public DateTime CreatedAt { get; set; }
     public string? TwoFactorSecret { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
+    public List<TrustedDevice> TrustedDevices { get; set; } = new();
+}
+public class TrustedDevice
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public virtual User? User { get; set; }
+    public string TokenHash { get; set; } = string.Empty;
+    public string? PinHash { get; set; }
+    public string DeviceName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
 }
 
 public class PriceAlert
@@ -89,7 +101,16 @@ public class RegisterDto
 public class LoginDto
 {
     public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+    public string? Password { get; set; }
+    public string? Pin { get; set; }
+    public string? TrustToken { get; set; }
+}
+
+public class LoginPinDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string Pin { get; set; } = string.Empty;
+    public string TrustToken { get; set; } = string.Empty;
 }
 
 public class ChangePasswordDto
@@ -109,6 +130,7 @@ public class AuthResponseDto
     public bool TwoFactorRequired { get; set; }
     public string? ChallengeToken { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
+    public string? TrustToken { get; set; }
 }
 
 public class Verify2FaDto
@@ -116,6 +138,8 @@ public class Verify2FaDto
     public string Email { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string ChallengeToken { get; set; } = string.Empty;
+    public bool RememberDevice { get; set; }
+    public string? Pin { get; set; }
 }
 
 public class TwoFactorSetupDto

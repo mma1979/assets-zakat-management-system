@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { UserProfile, AuthResponse } from '../types';
-import { loginUser, registerUser, logout as performLogout, getStoredToken, getStoredUser } from '../services/auth';
+import { loginUser, registerUser, logout as performLogout, getStoredToken, getStoredUser, setTrustToken } from '../services/auth';
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<AuthResponse>;
-  verify2Fa: (code: string, email: string, challengeToken: string) => Promise<void>;
+  loginWithPin: (email: string, pin: string, trustToken: string) => Promise<void>;
+  verify2Fa: (code: string, email: string, challengeToken: string, rememberDevice?: boolean, pin?: string) => Promise<void>;
   register: (name: string, email: string, pass: string) => Promise<void>;
   logout: () => void;
   updateUser: (updates: Partial<UserProfile>) => void;
@@ -27,6 +28,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(data.token);
     localStorage.setItem('auth_token', data.token);
     localStorage.setItem('auth_user', JSON.stringify(data.user));
+    if (data.trustToken && data.user.email) {
+      setTrustToken(data.user.email, data.trustToken);
+    }
     setError(null);
   };
 
@@ -47,12 +51,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const verify2Fa = async (code: string, email: string, challengeToken: string) => {
+  const loginWithPin = async (email: string, pin: string, trustToken: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { loginWithPin: performLoginPin } = await import('../services/auth');
+      const data = await performLoginPin({ email, pin, trustToken });
+      handleAuthSuccess(data);
+    } catch (e: any) {
+      setError(e.message || 'PIN login failed');
+      throw e;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verify2Fa = async (code: string, email: string, challengeToken: string, rememberDevice?: boolean, pin?: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const { verify2Fa: performVerify } = await import('../services/auth');
-      const data = await performVerify({ code, email, challengeToken });
+      const data = await performVerify({ code, email, challengeToken, rememberDevice, pin });
       handleAuthSuccess(data);
     } catch (e: any) {
       setError(e.message || '2FA verification failed');
@@ -96,6 +115,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isAuthenticated: !!token,
       isLoading,
       login,
+      loginWithPin,
       verify2Fa,
       register,
       logout,

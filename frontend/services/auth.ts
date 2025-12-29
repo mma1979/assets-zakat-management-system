@@ -1,5 +1,5 @@
 // services/auth.ts
-import { AuthResponse, UserProfile, Verify2FaDto, TwoFactorSetupDto, TwoFactorVerifySetupDto } from '../types';
+import { AuthResponse, UserProfile, Verify2FaDto, TwoFactorSetupDto, TwoFactorVerifySetupDto, LoginPinDto } from '../types';
 import http from './http';
 
 const API_URL = '/api/auth';
@@ -8,10 +8,10 @@ const API_URL = '/api/auth';
 // In production, these would be real fetch calls to the endpoints
 const MOCK_DELAY = 800;
 
-export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
-  // Try real endpoint first
+export const loginUser = async (email: string, password?: string): Promise<AuthResponse> => {
+  const trustToken = getTrustToken(email);
   try {
-    const response = await http.post(`${API_URL}/login`, { email, password });
+    const response = await http.post(`${API_URL}/login`, { email, password, trustToken });
     return {
       token: response.data.token,
       user: response.data.userId ? {
@@ -21,13 +21,27 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
         isTwoFactorEnabled: response.data.isTwoFactorEnabled
       } : undefined as any,
       twoFactorRequired: response.data.twoFactorRequired,
-      challengeToken: response.data.challengeToken
+      challengeToken: response.data.challengeToken,
+      trustToken: response.data.trustToken
     };
   } catch (e) {
-    console.warn("Real auth endpoint failed, falling back to mock for demo if allowed", e);
+    console.warn("Real auth endpoint failed", e);
+    throw e;
   }
+};
 
-  throw new Error('Invalid credentials');
+export const loginWithPin = async (dto: LoginPinDto): Promise<AuthResponse> => {
+  const response = await http.post(`${API_URL}/login-pin`, dto);
+  return {
+    token: response.data.token,
+    user: {
+      id: response.data.userId,
+      name: response.data.name,
+      email: response.data.email,
+      isTwoFactorEnabled: response.data.isTwoFactorEnabled
+    },
+    trustToken: response.data.trustToken
+  };
 };
 
 export const registerUser = async (name: string, email: string, password: string): Promise<AuthResponse> => {
@@ -58,7 +72,8 @@ export const verify2Fa = async (dto: Verify2FaDto): Promise<AuthResponse> => {
       name: response.data.name,
       email: response.data.email,
       isTwoFactorEnabled: response.data.isTwoFactorEnabled
-    }
+    },
+    trustToken: response.data.trustToken
   };
 };
 
@@ -104,6 +119,17 @@ export const getStoredToken = () => localStorage.getItem('auth_token');
 export const getStoredUser = () => {
   const u = localStorage.getItem('auth_user');
   return u ? JSON.parse(u) : null;
+};
+
+export const getTrustToken = (email: string) => {
+  const tokens = JSON.parse(localStorage.getItem('trust_tokens') || '{}');
+  return tokens[email];
+};
+
+export const setTrustToken = (email: string, token: string) => {
+  const tokens = JSON.parse(localStorage.getItem('trust_tokens') || '{}');
+  tokens[email] = token;
+  localStorage.setItem('trust_tokens', JSON.stringify(tokens));
 };
 
 export const logout = () => {
