@@ -8,14 +8,27 @@ import { TwoFactorSetupModal } from './TwoFactorSetupModal';
 import { ConfirmModal } from './ConfirmModal';
 import { CustomDatePicker } from './DatePicker';
 import { AssetType } from '../types';
+import { useSearchParams } from 'react-router-dom';
 
 export const SettingsPage: React.FC = () => {
   const { t, language, setLanguage, dir } = useLanguage();
   const { data, updateZakatConfig, addPriceAlert, removePriceAlert, addRate, removeRate, reorderRates } = useStore();
   const { user, logout, updateUser } = useAuth();
+  const [searchParams] = useSearchParams();
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'profile' | 'config' | 'security' | 'alerts' | 'rates'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'config' | 'security' | 'alerts' | 'rates'>(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['profile', 'config', 'security', 'alerts', 'rates'].includes(tab)) return tab as any;
+    return 'profile';
+  });
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['profile', 'config', 'security', 'alerts', 'rates'].includes(tab)) {
+      setActiveTab(tab as any);
+    }
+  }, [searchParams]);
 
   // Profile / Password State
   const [currentPassword, setCurrentPassword] = useState('');

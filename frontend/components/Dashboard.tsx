@@ -10,6 +10,7 @@ import { exportTransactionsToCSV, exportLiabilitiesToCSV, exportPortfolioSummary
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { FinancialAdvisor } from './FinancialAdvisor';
 import { Shield, ShieldAlert, ArrowRight } from 'lucide-react';
 import { formatCurrency, formatNumber } from '../utils/formatters';
@@ -23,6 +24,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRateModal, setShowRateModal] = useState(false);
@@ -267,7 +269,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
             </div>
           </div>
           <button 
-            onClick={() => window.location.hash = '#settings'} 
+            onClick={() => navigate('/app/settings?tab=security')} 
             className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-700 transition-all whitespace-nowrap shadow-sm"
           >
             {t('enableNow') || 'Enable Now'}
