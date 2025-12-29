@@ -14,6 +14,7 @@ export const loginUser = async (email: string, password?: string): Promise<AuthR
     const response = await http.post(`${API_URL}/login`, { email, password, trustToken });
     return {
       token: response.data.token,
+      refreshToken: response.data.refreshToken,
       user: response.data.userId ? {
         id: response.data.userId,
         name: response.data.name,
@@ -34,6 +35,7 @@ export const loginWithPin = async (dto: LoginPinDto): Promise<AuthResponse> => {
   const response = await http.post(`${API_URL}/login-pin`, dto);
   return {
     token: response.data.token,
+    refreshToken: response.data.refreshToken,
     user: {
       id: response.data.userId,
       name: response.data.name,
@@ -49,6 +51,7 @@ export const registerUser = async (name: string, email: string, password: string
     const response = await http.post(`${API_URL}/register`, { name, email, password });
     return {
       token: response.data.token,
+      refreshToken: response.data.refreshToken,
       user: {
         id: response.data.userId,
         name: response.data.name,
@@ -67,6 +70,7 @@ export const verify2Fa = async (dto: Verify2FaDto): Promise<AuthResponse> => {
   const response = await http.post(`${API_URL}/verify-2fa`, dto);
   return {
     token: response.data.token,
+    refreshToken: response.data.refreshToken,
     user: {
       id: response.data.userId,
       name: response.data.name,
@@ -115,7 +119,37 @@ export const changePassword = async (currentPassword: string, newPassword: strin
   }
 };
 
+export const refreshToken = async (): Promise<AuthResponse | null> => {
+  const token = getStoredToken();
+  const rToken = getStoredRefreshToken();
+  if (!token || !rToken) return null;
+
+  try {
+    const response = await http.post(`${API_URL}/refresh`, { token, refreshToken: rToken });
+    return {
+      token: response.data.token,
+      refreshToken: response.data.refreshToken,
+      user: {
+        id: response.data.userId,
+        name: response.data.name,
+        email: response.data.email,
+        isTwoFactorEnabled: response.data.isTwoFactorEnabled
+      }
+    };
+  } catch (e) {
+    console.error("Token refresh failed", e);
+    return null;
+  }
+};
+
+export const setStoredAuth = (data: AuthResponse) => {
+  localStorage.setItem('auth_token', data.token);
+  localStorage.setItem('auth_refresh_token', data.refreshToken);
+  localStorage.setItem('auth_user', JSON.stringify(data.user));
+};
+
 export const getStoredToken = () => localStorage.getItem('auth_token');
+export const getStoredRefreshToken = () => localStorage.getItem('auth_refresh_token');
 export const getStoredUser = () => {
   const u = localStorage.getItem('auth_user');
   return u ? JSON.parse(u) : null;
@@ -134,6 +168,7 @@ export const setTrustToken = (email: string, token: string) => {
 
 export const logout = () => {
   localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_refresh_token');
   localStorage.removeItem('auth_user');
   // Clear offline cache on logout to avoid leaking data to next user
   localStorage.removeItem('zakat_vault_offline_cache');

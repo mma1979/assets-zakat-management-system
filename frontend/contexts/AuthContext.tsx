@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { UserProfile, AuthResponse } from '../types';
-import { loginUser, registerUser, logout as performLogout, getStoredToken, getStoredUser, setTrustToken } from '../services/auth';
+import { loginUser, registerUser, logout as performLogout, getStoredToken, getStoredUser, setTrustToken, setStoredAuth, refreshToken as performRefresh } from '../services/auth';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -26,8 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const handleAuthSuccess = (data: AuthResponse) => {
     setUser(data.user);
     setToken(data.token);
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('auth_user', JSON.stringify(data.user));
+    setStoredAuth(data);
     if (data.trustToken && data.user.email) {
       setTrustToken(data.user.email, data.trustToken);
     }

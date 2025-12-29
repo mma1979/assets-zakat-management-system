@@ -21,6 +21,7 @@ public interface IAuthService
     Task<bool> Disable2FaAsync(int userId);
     Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto dto);
     Task<AuthResponseDto?> LoginWithPinAsync(LoginPinDto dto);
+    Task<AuthResponseDto?> RefreshTokenAsync(RefreshTokenDto dto);
 }
 
 public class AuthService : IAuthService
@@ -83,14 +84,7 @@ public class AuthService : IAuthService
 
         await _context.SaveChangesAsync();
 
-        return new AuthResponseDto
-        {
-            Token = GenerateJwtToken(user),
-            UserId = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled
-        };
+        return await CreateAuthResponse(user);
     }
 
     public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
@@ -124,15 +118,12 @@ public class AuthService : IAuthService
             };
         }
 
-        return new AuthResponseDto
+        var response = await CreateAuthResponse(user);
+        if (response != null)
         {
-            Token = GenerateJwtToken(user),
-            UserId = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled,
-            TrustToken = deviceTrusted ? dto.TrustToken : null
-        };
+            response.TrustToken = deviceTrusted ? dto.TrustToken : null;
+        }
+        return response;
     }
 
     public async Task<AuthResponseDto?> LoginWithPinAsync(LoginPinDto dto)
@@ -147,15 +138,12 @@ public class AuthService : IAuthService
         if (trustedDevice == null || string.IsNullOrEmpty(trustedDevice.PinHash) || !VerifyPassword(dto.Pin, trustedDevice.PinHash))
             return null;
 
-        return new AuthResponseDto
+        var response = await CreateAuthResponse(user);
+        if (response != null)
         {
-            Token = GenerateJwtToken(user),
-            UserId = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled,
-            TrustToken = dto.TrustToken
-        };
+            response.TrustToken = dto.TrustToken;
+        }
+        return response;
     }
 
     public async Task<AuthResponseDto?> Verify2FaAsync(Verify2FaDto dto)
@@ -188,15 +176,12 @@ public class AuthService : IAuthService
             await _context.SaveChangesAsync();
         }
 
-        return new AuthResponseDto
+        var response = await CreateAuthResponse(user);
+        if (response != null)
         {
-            Token = GenerateJwtToken(user),
-            UserId = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled,
-            TrustToken = trustToken
-        };
+            response.TrustToken = trustToken;
+        }
+        return response;
     }
 
     public async Task<TwoFactorSetupDto> Setup2FaAsync(int userId)
@@ -245,6 +230,79 @@ public class AuthService : IAuthService
         return true;
     }
 
+    public async Task<AuthResponseDto?> RefreshTokenAsync(RefreshTokenDto dto)
+    {
+        var principal = GetPrincipalFromExpiredToken(dto.Token);
+        if (principal == null) return null;
+
+        var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr)) return null;
+
+        var user = await _context.Users.FindAsync(int.Parse(userIdStr));
+        if (user == null || user.RefreshToken != dto.RefreshToken || user.RefreshTokenExpiry <= DateTime.UtcNow)
+            return null;
+
+        return await CreateAuthResponse(user);
+    }
+
+    private async Task<AuthResponseDto> CreateAuthResponse(User user)
+    {
+        var token = GenerateJwtToken(user);
+        var refreshToken = GenerateRefreshToken();
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+        await _context.SaveChangesAsync();
+
+        return new AuthResponseDto
+        {
+            Token = token,
+            RefreshToken = refreshToken,
+            UserId = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            IsTwoFactorEnabled = user.IsTwoFactorEnabled
+        };
+    }
+
+    private string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
+    {
+        var jwtSettings = _config.GetSection("JwtSettings");
+        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+            ValidateIssuer = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateLifetime = false 
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _config.GetSection("JwtSettings");
@@ -263,7 +321,7 @@ public class AuthService : IAuthService
             issuer: jwtSettings["Issuer"],
             audience: jwtSettings["Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(7),
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: credentials
         );
 

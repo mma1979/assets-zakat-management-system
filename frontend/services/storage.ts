@@ -32,30 +32,12 @@ const INITIAL_DATA: StoreData = {
   zakatPayments: []
 };
 
+
 type DataKey = keyof typeof API_ENDPOINTS;
 
-// Helper to get Auth headers dynamically
-const getAuthHeaders = () => {
-  const token = getStoredToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  };
-
-  if (token) {
-    if (token.startsWith('mock-jwt-token')) {
-      headers['Authorization'] = 'Basic ' + btoa('mabdelhay:Abc@1234');
-    } else {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  }
-  return headers;
-};
-
-// Generic fetch function for any data type
 const fetchData = async <T,>(key: DataKey, defaultValue: T): Promise<T> => {
   try {
-    const response = await http.get(API_ENDPOINTS[key], { headers: getAuthHeaders() });
+    const response = await http.get(API_ENDPOINTS[key]);
     if (response.status === 200) {
       return response.data;
     } else if (response.status === 404) {
@@ -72,11 +54,8 @@ const fetchData = async <T,>(key: DataKey, defaultValue: T): Promise<T> => {
 
 // Generic save function for any data type
 const saveDataPart = async <T, R = any>(key: DataKey, value: T, method: 'POST' | 'PUT' | 'DELETE' = 'POST'): Promise<R | null> => {
-  const token = getStoredToken();
-  if (!token) return null;
-
   try {
-    const response = await (http as any)[method.toLowerCase()](API_ENDPOINTS[key], value, { headers: getAuthHeaders() });
+    const response = await (http as any)[method.toLowerCase()](API_ENDPOINTS[key], value);
     if (response.status >= 200 && response.status < 300) {
       return response.data || (true as any);
     }
@@ -211,7 +190,7 @@ export const useStore = () => {
     setLoadingStates(prev => ({ ...prev, transactions: true }));
 
     try {
-      const response = await http.delete(`${API_ENDPOINTS.transactions}/${id}`, { headers: getAuthHeaders() });
+      const response = await http.delete(`${API_ENDPOINTS.transactions}/${id}`);
       if (response.status >= 200 && response.status < 300) {
         await loadAllData();
       } else {
@@ -261,7 +240,7 @@ export const useStore = () => {
     setLoadingStates(prev => ({ ...prev, liabilities: true }));
 
     try {
-      const response = await http.delete(`${API_ENDPOINTS.liabilities}/${id}`, { headers: getAuthHeaders() });
+      const response = await http.delete(`${API_ENDPOINTS.liabilities}/${id}`);
       if (response.status >= 200 && response.status < 300) {
         await loadAllData();
       } else {
@@ -286,7 +265,7 @@ export const useStore = () => {
 
     try {
       const payload = rates.map(r => ({ id: r.id, value: r.value }));
-      const response = await http.put(API_ENDPOINTS.rates, payload, { headers: getAuthHeaders() });
+      const response = await http.put(API_ENDPOINTS.rates, payload);
 
       if (response.status >= 200 && response.status < 300) {
         setData(prev => {
@@ -324,7 +303,7 @@ export const useStore = () => {
     });
 
     try {
-      const response = await http.put(`${API_ENDPOINTS.rates}/reorder`, newOrder, { headers: getAuthHeaders() });
+      const response = await http.put(`${API_ENDPOINTS.rates}/reorder`, newOrder);
       if (response.status < 200 || response.status >= 300) {
         throw new Error(`Reorder failed: ${response.status}`);
       }
@@ -344,7 +323,7 @@ export const useStore = () => {
 
     try {
       const payload = { key, value, icon, title };
-      const response = await http.post(API_ENDPOINTS.rates, payload, { headers: getAuthHeaders() });
+      const response = await http.post(API_ENDPOINTS.rates, payload);
 
       if (response.status >= 200 && response.status < 300) {
         const returnedRate = response.data as Rate;
@@ -383,7 +362,7 @@ export const useStore = () => {
     setLoadingStates(prev => ({ ...prev, rates: true }));
 
     try {
-      const response = await http.delete(`${API_ENDPOINTS.rates}/${id}`, { headers: getAuthHeaders() });
+      const response = await http.delete(`${API_ENDPOINTS.rates}/${id}`);
       if (response.status >= 200 && response.status < 300) {
         const newRates = data.rates.filter(r => r.id !== id);
         setData(prev => ({ ...prev, rates: newRates }));
@@ -441,7 +420,7 @@ export const useStore = () => {
     setLoadingStates(prev => ({ ...prev, priceAlerts: true }));
 
     try {
-      const response = await http.delete(`${API_ENDPOINTS.priceAlerts}/${id}`, { headers: getAuthHeaders() });
+      const response = await http.delete(`${API_ENDPOINTS.priceAlerts}/${id}`);
       if (response.status >= 200 && response.status < 300) {
         const newAlerts = data.priceAlerts.filter(a => a.id !== id);
         setData(prev => ({ ...prev, priceAlerts: newAlerts }));
@@ -494,7 +473,7 @@ export const useStore = () => {
     setLoadingStates(prev => ({ ...prev, zakatPayments: true }));
 
     try {
-      const response = await http.delete(`${API_ENDPOINTS.zakatPayments}/${id}`, { headers: getAuthHeaders() });
+      const response = await http.delete(`${API_ENDPOINTS.zakatPayments}/${id}`);
       if (response.status >= 200 && response.status < 300) {
         const newPayments = data.zakatPayments.filter(p => p.id !== id);
         setData(prev => ({ ...prev, zakatPayments: newPayments }));

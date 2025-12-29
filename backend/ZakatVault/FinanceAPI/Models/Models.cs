@@ -9,6 +9,8 @@ public class User
     public DateTime CreatedAt { get; set; }
     public string? TwoFactorSecret { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiry { get; set; }
     public List<TrustedDevice> TrustedDevices { get; set; } = new();
 }
 public class TrustedDevice
@@ -135,6 +137,13 @@ public class AuthResponseDto
     public string? ChallengeToken { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
     public string? TrustToken { get; set; }
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public class RefreshTokenDto
+{
+    public string Token { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
 }
 
 public class Verify2FaDto

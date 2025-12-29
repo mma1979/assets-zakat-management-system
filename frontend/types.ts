@@ -11,6 +11,7 @@ export interface UserProfile {
 export interface AuthResponse {
   user: UserProfile;
   token: string;
+  refreshToken: string;
   twoFactorRequired?: boolean;
   challengeToken?: string;
   trustToken?: string;

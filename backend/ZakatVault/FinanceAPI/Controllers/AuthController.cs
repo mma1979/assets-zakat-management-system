@@ -103,4 +103,14 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Password change failed" });
         return Ok(new { message = "Password change success" });
     }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
+    {
+        var result = await _authService.RefreshTokenAsync(dto);
+        if (result == null)
+            return Unauthorized(new { message = "Invalid token or refresh token" });
+
+        return Ok(result);
+    }
 }
