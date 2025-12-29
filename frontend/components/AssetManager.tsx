@@ -9,6 +9,7 @@ import { calculateAssetMetrics } from '../utils/calculations';
 import { useStore } from '../services/storage';
 import { CustomDatePicker } from './DatePicker';
 import { ConfirmModal } from './ConfirmModal';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 interface AssetManagerProps {
   data: StoreData;
@@ -56,7 +57,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
   }, [data.rates, activeTab]);
 
   const getCurrentRate = (type: AssetType) => {
-    if (type === 'EGP') return 1;
+    const baseCurr = data.zakatConfig?.baseCurrency || 'EGP';
+    if (type === baseCurr) return 1;
     // Find rate in array
     return data.rates.find(r => r.key === type)?.value || 0;
   };
@@ -160,8 +162,9 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
 
   const activeAlerts = data.priceAlerts.filter(a => a.assetType === activeTab);
 
-  const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
-  const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
+  const baseCurrency = data.zakatConfig?.baseCurrency || 'EGP';
+  const formatWithCurrency = (val: number) => formatCurrency(val, baseCurrency, language);
+  const formatWithNumber = (val: number) => formatNumber(val, language);
 
   return (
     <div className="space-y-6">
@@ -222,20 +225,20 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('currentHoldings')}</p>
           <div className="text-3xl font-bold text-slate-800 mt-1 flex items-baseline gap-2">
-            {formatNum(assetMetrics[activeTab]?.quantity ?? 0)} <span className="text-lg text-slate-400 font-normal">{ASSET_UNITS[activeTab] || 'Units'}</span>
+            {formatWithNumber(assetMetrics[activeTab]?.quantity ?? 0)} <span className="text-lg text-slate-400 font-normal">{ASSET_UNITS[activeTab] || 'Units'}</span>
           </div>
         </div>
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('avgPurchasePrice')}</p>
           <div className="text-3xl font-bold text-slate-800 mt-1">
-            {formatCurrency(assetMetrics[activeTab]?.avgCost ?? 0)}
+            {formatWithCurrency(assetMetrics[activeTab]?.avgCost ?? 0)}
             <span className="text-sm text-slate-400 font-normal block">{t('perUnit')}</span>
           </div>
         </div>
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('currentMarketValue')}</p>
           <div className="text-3xl font-bold text-emerald-600 mt-1">
-            {formatCurrency((assetMetrics[activeTab]?.quantity ?? 0) * getCurrentRate(activeTab))}
+            {formatWithCurrency((assetMetrics[activeTab]?.quantity ?? 0) * getCurrentRate(activeTab))}
           </div>
         </div>
       </div>
@@ -282,11 +285,11 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     <td className="px-6 py-4 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         {getAssetIcon(tx.assetType)}
-                        <span>{formatNum(tx.amount)} {ASSET_UNITS[tx.assetType] || 'Units'}</span>
+                        <span>{formatWithNumber(tx.amount)} {ASSET_UNITS[tx.assetType] || 'Units'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{formatNum(tx.pricePerUnit)} EGP</td>
-                    <td className="px-6 py-4 text-slate-600">{formatNum(tx.amount * tx.pricePerUnit)} EGP</td>
+                    <td className="px-6 py-4 text-slate-600">{formatWithNumber(tx.pricePerUnit)} {baseCurrency}</td>
+                    <td className="px-6 py-4 text-slate-600">{formatWithNumber(tx.amount * tx.pricePerUnit)} {baseCurrency}</td>
                     <td className="px-6 py-4 text-end">
                       <button
                         onClick={() => setDeleteConfirm({ id: tx.id, type: 'TRANSACTION' })}
@@ -374,7 +377,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">
-                    {t('priceUnit')} (EGP)
+                    {t('priceUnit')} ({baseCurrency})
                   </label>
                   <input
                     type="number" step="0.01" min="0"
@@ -443,7 +446,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                   <div key={alert.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-lg shadow-sm">
                     <div className="text-sm text-slate-700">
                       <span className="font-medium">{alert.condition === 'ABOVE' ? t('above') : t('below')}</span>
-                      <span className="mx-2 font-bold">{formatNum(alert.targetPrice)} EGP</span>
+                      <span className="mx-2 font-bold">{formatWithNumber(alert.targetPrice)} {baseCurrency}</span>
                     </div>
                     <button
                       onClick={() => setDeleteConfirm({ id: alert.id, type: 'ALERT' })}
@@ -528,12 +531,12 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                     const rateTo = getCurrentRate(calcTo);
                     if (rateTo === 0) return '0.00';
                     const result = (amount * rateFrom) / rateTo;
-                    return formatNum(result);
+                    return formatWithNumber(result);
                   })()}
                   <span className="text-sm font-normal text-emerald-600 ml-1">{ASSET_UNITS[calcTo] || 'Units'}</span>
                 </p>
                 <p className="text-xs text-emerald-500 mt-1">
-                  1 {ASSET_UNITS[calcFrom] || 'Unit'} = {formatNum(getCurrentRate(calcFrom) / getCurrentRate(calcTo))} {ASSET_UNITS[calcTo] || 'Units'}
+                  1 {ASSET_UNITS[calcFrom] || 'Unit'} = {formatWithNumber(getCurrentRate(calcFrom) / getCurrentRate(calcTo))} {ASSET_UNITS[calcTo] || 'Units'}
                 </p>
               </div>
 

@@ -177,6 +177,7 @@ export const translations = {
     saveSuccess: "Configuration saved successfully",
     setupZakatMsg: "Please configure your Zakat preferences to continue.",
     zakatDateHelp: "The date your Zakat is due (usually 1 year after reaching Nisab).",
+    baseCurrency: "Base Currency",
     saveAndContinue: "Save & Continue",
     skipForNow: "Skip for now",
 
@@ -213,11 +214,19 @@ export const translations = {
     icon: "Icon",
 
     // Asset Labels
-    asset_GOLD: "Gold (24k)",
-    asset_GOLD_21: "Gold (21k)",
-    asset_SILVER: "Silver",
-    asset_USD: "US Dollar",
     asset_EGP: "Egyptian Pound",
+    asset_USD: "US Dollar",
+    asset_EUR: "Euro",
+    asset_GBP: "British Pound",
+    asset_SAR: "Saudi Riyal",
+    asset_AED: "UAE Dirham",
+    asset_KWD: "Kuwaiti Dinar",
+    asset_QAR: "Qatari Riyal",
+    asset_TRY: "Turkish Lira",
+    asset_CAD: "Canadian Dollar",
+    asset_AUD: "Australian Dollar",
+    asset_GOLD: "Gold (24K)",
+    asset_SILVER: "Silver",
 
     // Validation
     errRequired: "Required field",
@@ -424,6 +433,7 @@ export const translations = {
     saveSuccess: "تم حفظ الإعدادات بنجاح",
     setupZakatMsg: "يرجى تكوين تفضيلات الزكاة للمتابعة.",
     zakatDateHelp: "تاريخ استحقاق الزكاة (عادة بعد عام من بلوغ النصاب).",
+    baseCurrency: "العملة الأساسية",
     saveAndContinue: "حفظ ومتابعة",
     skipForNow: "تخطي الآن",
 
@@ -431,7 +441,7 @@ export const translations = {
     enableReminder: "تفعيل التذكير",
     reminderActive: "التذكير مفعل",
     permDenied: "تم رفض إذن الإشعارات",
-    zakatDueTitle: "حان موعد الزكاة",
+    zakatDueTitle: "Zakat Due Date Reached",
     zakatDueBody: "اليوم هو التاريخ المحدد لحساب الزكاة. يرجى مراجعة زكاة فولت.",
     emailAddress: "البريد الإلكتروني",
     emailSent: "تم إرسال تذكير بالبريد",
@@ -460,11 +470,19 @@ export const translations = {
     icon: "الأيقونة",
 
     // Asset Labels
-    asset_GOLD: "ذهب (24)",
-    asset_GOLD_21: "ذهب (21)",
+    asset_EGP: "الجنيه المصري",
+    asset_USD: "الدولار الأمريكي",
+    asset_EUR: "اليورو",
+    asset_GBP: "الجنيه الإسترليني",
+    asset_SAR: "الريال السعودي",
+    asset_AED: "الدرهم الإماراتي",
+    asset_KWD: "الدينار الكويتي",
+    asset_QAR: "الريال القطري",
+    asset_TRY: "الليرة التركية",
+    asset_CAD: "الدولار الكندي",
+    asset_AUD: "الدولار الأسترالي",
+    asset_GOLD: "الذهب (24 قيراط)",
     asset_SILVER: "فضة",
-    asset_USD: "دولار أمريكي",
-    asset_EGP: "جنيه مصري",
 
     // Validation
     errRequired: "حقل مطلوب",

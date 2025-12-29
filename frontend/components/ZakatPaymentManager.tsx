@@ -3,6 +3,8 @@ import { ZakatPayment } from '../types';
 import { Plus, Trash2, Calendar, Receipt, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { format } from 'date-fns';
+import { useStore } from '../services/storage';
+import { formatCurrency } from '../utils/formatters';
 
 interface ZakatPaymentManagerProps {
   payments: ZakatPayment[];
@@ -18,6 +20,7 @@ export const ZakatPaymentManager: React.FC<ZakatPaymentManagerProps> = ({
   isSyncing
 }) => {
   const { t, language } = useLanguage();
+  const { data } = useStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
@@ -38,8 +41,8 @@ export const ZakatPaymentManager: React.FC<ZakatPaymentManagerProps> = ({
     setNotes('');
   };
 
-  const formatCurrency = (val: number) => 
-    val.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
+  const baseCurrency = data.zakatConfig?.baseCurrency || 'EGP';
+  const formatWithCurrency = (val: number) => formatCurrency(val, baseCurrency, language);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -111,7 +114,7 @@ export const ZakatPaymentManager: React.FC<ZakatPaymentManagerProps> = ({
                       <Calendar size={16} />
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-slate-700">{formatCurrency(p.amount)}</div>
+                      <div className="text-sm font-bold text-slate-700">{formatWithCurrency(p.amount)}</div>
                       <div className="text-[10px] text-slate-400 flex items-center gap-1">
                         {p.date} {p.notes && <span>• {p.notes}</span>}
                       </div>

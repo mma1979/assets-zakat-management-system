@@ -50,6 +50,39 @@ public class AuthService : IAuthService
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
+        // Seed default rates for the new user
+        var defaultRates = await _context.Rates
+            .AsNoTracking()
+            .Where(r => r.UserId == null)
+            .ToListAsync();
+
+        if (defaultRates.Any())
+        {
+            var userRates = defaultRates.Select(r => new Rate
+            {
+                UserId = user.Id,
+                Name = r.Name,
+                Icon = r.Icon,
+                Title = r.Title,
+                Value = r.Value,
+                Order = r.Order,
+                LastUpdated = DateTime.UtcNow
+            }).ToList();
+            _context.Rates.AddRange(userRates);
+        }
+
+        // Initialize ZakatConfig
+        var config = new ZakatConfig
+        {
+            UserId = user.Id,
+            ZakatDate = DateTime.UtcNow.AddYears(1),
+            BaseCurrency = "EGP",
+            Email = user.Email
+        };
+        _context.ZakatConfigs.Add(config);
+
+        await _context.SaveChangesAsync();
+
         return new AuthResponseDto
         {
             Token = GenerateJwtToken(user),

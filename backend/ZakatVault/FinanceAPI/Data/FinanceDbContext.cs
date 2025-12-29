@@ -16,7 +16,7 @@ public class FinanceDbContext : DbContext
     public DbSet<Rate> Rates { get; set; }
     public DbSet<TrustedDevice> TrustedDevices { get; set; }
 
-   
+
     public virtual DbSet<VwZakatCalc> VwZakatCalc { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,8 +24,8 @@ public class FinanceDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<VwZakatCalc>()
-          .ToView("VW_ZakatCalc", "dbo")
-          .HasNoKey();
+         .ToView("VW_ZakatCalc", "dbo")
+         .HasNoKey();
 
         // User Configuration
         modelBuilder.Entity<User>(entity =>
@@ -76,7 +76,7 @@ public class FinanceDbContext : DbContext
                   .HasForeignKey<ZakatConfig>(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.Email).HasMaxLength(255);
-
+            entity.Property(e => e.BaseCurrency).IsRequired().HasMaxLength(10).HasDefaultValue("EGP");
         });
 
         // Transaction Configuration
@@ -112,11 +112,16 @@ public class FinanceDbContext : DbContext
         {
             entity.ToTable("Rates");
             entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Value).HasColumnType("decimal(18,6)");
             entity.Property(e => e.LastUpdated).HasDefaultValueSql("GETUTCDATE()");
+        });
 
-            entity.HasData(new Rate
+        modelBuilder.Entity<Rate>().HasData(new Rate
             {
                 Id = 1,
                 Name = "GOLD",
@@ -144,7 +149,6 @@ public class FinanceDbContext : DbContext
                 Name = "EGP",
                 Value =1m,
             });
-        });
 
         modelBuilder.Entity<ZakatPayment>(entity =>
         {

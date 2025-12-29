@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CustomDatePicker } from './DatePicker';
 import { ConfirmModal } from './ConfirmModal';
+import { formatNumber } from '../utils/formatters';
 
 interface LiabilityManagerProps {
   data: StoreData;
@@ -35,7 +36,8 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
     setIsDeductible(true);
   };
 
-  const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
+  const baseCurrency = data.zakatConfig?.baseCurrency || 'EGP';
+  const formatNum = (val: number) => formatNumber(val, language);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -68,7 +70,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-bold text-lg text-slate-700">-{formatNum(item.amount)} EGP</span>
+                  <span className="font-bold text-lg text-slate-700">-{formatNum(item.amount)} {baseCurrency}</span>
                   <button
                     onClick={() => setDeleteId(item.id)}
                     className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
@@ -96,7 +98,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('amount')} (EGP)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('amount')} ({baseCurrency})</label>
               <input
                 type="number" required min="0" value={amount} onChange={e => setAmount(e.target.value)}
                 className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"

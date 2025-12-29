@@ -7,6 +7,7 @@ import { addDays, format, isBefore, isAfter, isSameDay, differenceInDays } from 
 import { useStore } from '../services/storage';
 import { CustomDatePicker } from './DatePicker';
 import { ZakatPaymentManager } from './ZakatPaymentManager';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 interface ZakatCalculatorProps {
   data: StoreData;
@@ -66,9 +67,11 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         updateZakatConfig({
+          ...data.zakatConfig,
           zakatDate,
           email: userEmail,
-          reminderEnabled: true
+          reminderEnabled: true,
+          baseCurrency: data.zakatConfig?.baseCurrency || 'EGP'
         });
         // Test notification
         new Notification("ZakatVault", { body: t('reminderActive') });
@@ -77,9 +80,11 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       }
     } else {
       updateZakatConfig({
+        ...data.zakatConfig,
         zakatDate,
         email: userEmail,
-        reminderEnabled: false
+        reminderEnabled: false,
+        baseCurrency: data.zakatConfig?.baseCurrency || 'EGP'
       });
     }
   };
@@ -103,9 +108,10 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     // 1. Calculate Total Assets Value (Market Value)
     const holdings: Record<string, number> = {};
 
-    // Initialize for all known rates + EGP
+    // Initialize for all known rates + baseCurr
+    const baseCurr = data.zakatConfig?.baseCurrency || 'EGP';
     data.rates.forEach(r => holdings[r.key] = 0);
-    holdings['EGP'] = 0;
+    holdings[baseCurr] = 0;
 
     data.transactions.forEach(tx => {
       if (holdings[tx.assetType] === undefined) holdings[tx.assetType] = 0;
@@ -124,8 +130,8 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       assetValue += qty * rate.value;
     });
 
-    // 2. Add EGP (Base Currency)
-    assetValue += holdings['EGP'] || 0;
+    // 2. Add base currency cash
+    assetValue += holdings[baseCurr] || 0;
 
     // 2. Deduct Liabilities (Within Lunar Year Window)
     const deductibleLiabilities = data.liabilities
@@ -216,8 +222,9 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     return `${Math.abs(remainingDays)} ${t('daysOverdue')}`;
   }, [remainingDays, t]);
 
-  const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
-  const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
+  const baseCurrency = data.zakatConfig?.baseCurrency || 'EGP';
+  const formatWithCurrency = (val: number) => formatCurrency(val, baseCurrency, language);
+  const formatWithNumber = (val: number) => formatNumber(val, language);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -304,11 +311,11 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
           {t('remainingZakatDue')}
         </h3>
         <div className="text-5xl font-bold my-4 tracking-tight">
-          {formatCurrency(calculation.remainingZakatDue)}
+          {formatWithCurrency(calculation.remainingZakatDue)}
         </div>
         {calculation.totalPayments > 0 && (
           <div className="text-sm opacity-80 mb-2">
-            {t('totalZakatDue')}: {formatCurrency(calculation.zakatDue)} | {t('paid')}: {formatCurrency(calculation.totalPayments)}
+            {t('totalZakatDue')}: {formatWithCurrency(calculation.zakatDue)} | {t('paid')}: {formatWithCurrency(calculation.totalPayments)}
           </div>
         )}
         <p className={`max-w-md mx-auto ${calculation.isEligible ? 'text-emerald-100' : 'text-slate-400'}`}>
@@ -332,7 +339,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
                 </div>
                 <span className="text-sm font-medium text-slate-600">{t('totalAssets')}</span>
               </div>
-              <span className="font-bold text-lg text-emerald-700">{formatNum(calculation.assetValue)} <span className="text-xs">EGP</span></span>
+              <span className="font-bold text-lg text-emerald-700">{formatWithNumber(calculation.assetValue)} <span className="text-xs">{baseCurrency}</span></span>
             </div>
 
             {/* Operator: Minus */}
@@ -351,7 +358,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
                 <span className="text-sm font-medium text-slate-600">{t('lessDebts')}</span>
               </div>
               <span className="font-bold text-lg text-rose-700">
-                {calculation.deductibleLiabilities > 0 ? '-' : ''}{formatNum(calculation.deductibleLiabilities)} <span className="text-xs">EGP</span>
+                {calculation.deductibleLiabilities > 0 ? '-' : ''}{formatWithNumber(calculation.deductibleLiabilities)} <span className="text-xs">{baseCurrency}</span>
               </span>
             </div>
 
@@ -370,7 +377,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
                 </div>
                 <span className="text-sm font-bold text-slate-700">{t('netZakatBase')}</span>
               </div>
-              <span className="font-bold text-xl text-blue-700">{formatNum(calculation.zakatBase)} <span className="text-xs">EGP</span></span>
+              <span className="font-bold text-xl text-blue-700">{formatWithNumber(calculation.zakatBase)} <span className="text-xs">{baseCurrency}</span></span>
             </div>
 
             {/* Operator: Equal for Zakat Due */}
@@ -388,7 +395,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
                 </div>
                 <span className="text-sm font-medium text-slate-600">{t('totalZakatDue')}</span>
               </div>
-              <span className="font-bold text-lg text-slate-700">{formatNum(calculation.zakatDue)} <span className="text-xs">EGP</span></span>
+              <span className="font-bold text-lg text-slate-700">{formatWithNumber(calculation.zakatDue)} <span className="text-xs">{baseCurrency}</span></span>
             </div>
 
             {/* Operator: Minus for Payments */}
@@ -406,14 +413,14 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
                 </div>
                 <span className="text-sm font-medium text-slate-600">{t('totalPayments')}</span>
               </div>
-              <span className="font-bold text-lg text-emerald-700">-{formatNum(calculation.totalPayments)} <span className="text-xs">EGP</span></span>
+              <span className="font-bold text-lg text-emerald-700">-{formatWithNumber(calculation.totalPayments)} <span className="text-xs">{baseCurrency}</span></span>
             </div>
 
             {/* 4. Result Explanation */}
             <div className="mt-2 text-center">
               <p className="text-xs text-slate-400">
                 {calculation.isEligible
-                  ? `${t('zakatDueBody')} (${formatNum(ZAKAT_RATE * 100)}%)`
+                  ? `${t('zakatDueBody')} (${formatWithNumber(ZAKAT_RATE * 100)}%)`
                   : t('notEligibleMsg')
                 }
               </p>
@@ -428,13 +435,13 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
               <div className="text-amber-800 font-semibold mb-1">{t('goldNisab')}</div>
-              <div className="text-2xl font-bold text-amber-900">{formatNum(calculation.nisabGoldValue)} EGP</div>
-              <div className="text-xs text-amber-700 mt-1">@ {formatNum(data.rates.find(r => r.key === 'GOLD')?.value || 0)} EGP/g</div>
+              <div className="text-2xl font-bold text-amber-900">{formatWithNumber(calculation.nisabGoldValue)} {baseCurrency}</div>
+              <div className="text-xs text-amber-700 mt-1">@ {formatWithNumber(data.rates.find(r => r.key === 'GOLD')?.value || 0)} {baseCurrency}/g</div>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 opacity-75">
               <div className="text-slate-600 font-semibold mb-1">{t('silverNisab')}</div>
-              <div className="text-xl font-bold text-slate-700">{formatNum(calculation.nisabSilverValue)} EGP</div>
-              <div className="text-xs text-slate-500 mt-1">@ {formatNum(data.rates.find(r => r.key === 'SILVER')?.value || 0)} EGP/g</div>
+              <div className="text-xl font-bold text-slate-700">{formatWithNumber(calculation.nisabSilverValue)} {baseCurrency}</div>
+              <div className="text-xs text-slate-500 mt-1">@ {formatWithNumber(data.rates.find(r => r.key === 'SILVER')?.value || 0)} {baseCurrency}/g</div>
             </div>
           </div>
         </div>

@@ -25,7 +25,8 @@ const INITIAL_DATA: StoreData = {
     email: process.env.NOTIFICATION_EMAIL && !process.env.NOTIFICATION_EMAIL.includes('__APP_')
       ? process.env.NOTIFICATION_EMAIL
       : '',
-    geminiApiKey: ''
+    geminiApiKey: '',
+    baseCurrency: 'EGP'
   },
   priceAlerts: [],
   zakatPayments: []

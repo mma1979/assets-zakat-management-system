@@ -18,7 +18,7 @@ public interface INotificationService
     void SendPriceAlert();
 }
 
-public class NotificationService(FinanceDbContext context, RazorComponentCompiler compiler, ResendService resendService) : INotificationService
+public class NotificationService(FinanceDbContext context, RazorComponentCompiler compiler, ResendService resendService, IZakatCalcService zakatCalcService) : INotificationService
 {
 
 
@@ -47,8 +47,7 @@ public class NotificationService(FinanceDbContext context, RazorComponentCompile
             //throw new InvalidOperationException("User not found.");
             return;
         }
-        var zakatCalc = await context.VwZakatCalc
-            .FirstOrDefaultAsync(z => z.UserId == userId);
+        var zakatCalc = await zakatCalcService.GetZakatCalcAsync(userId);
 
         if (zakatCalc == null)
         {

@@ -12,6 +12,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { FinancialAdvisor } from './FinancialAdvisor';
 import { Shield, ShieldAlert, ArrowRight } from 'lucide-react';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 
 interface DashboardProps {
@@ -44,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
       GOLD_21: '#f59e0b',
       SILVER: '#94a3b8',
       USD: '#10b981',
-      EGP: '#3b82f6',
+      [data.zakatConfig?.baseCurrency || 'EGP']: '#3b82f6',
       // Fallbacks
     };
     if (colors[assetType]) return colors[assetType];
@@ -60,7 +61,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
   // Calculate Net Worth & Breakdown
   const summary = useMemo(() => {
     // 1. Initialize holdings dynamically
-    const holdings: Record<string, number> = { EGP: 0 };
+    const baseCurr = data.zakatConfig?.baseCurrency || 'EGP';
+    const holdings: Record<string, number> = { [baseCurr]: 0 };
     data.rates.forEach(r => holdings[r.key] = 0);
 
     data.transactions.forEach(tx => {
@@ -72,7 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     });
 
     // 2. Calculate values
-    const values: Record<string, number> = { EGP: holdings.EGP };
+    const values: Record<string, number> = { [baseCurr]: holdings[baseCurr] || 0 };
     data.rates.forEach(r => {
       values[r.key] = (holdings[r.key] || 0) * r.value;
     });
@@ -97,8 +99,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     const sortedDates = Array.from(txsByDate.keys()).sort();
 
     // 2. Initialize cumulative quantities and prices
-    const qty: Record<string, number> = { EGP: 0 };
-    const prices: Record<string, number> = { EGP: 1 };
+    const baseCurr = data.zakatConfig?.baseCurrency || 'EGP';
+    const qty: Record<string, number> = { [baseCurr]: 0 };
+    const prices: Record<string, number> = { [baseCurr]: 1 };
 
     data.rates.forEach(r => {
       qty[r.key] = 0;
@@ -135,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     // 4. Add "Today" data point with current market rates
     const today = format(new Date(), 'yyyy-MM-dd');
     if (result.length === 0 || result[result.length - 1].date !== today) {
-      const todaySnapshot: any = { date: today, EGP: qty.EGP };
+      const todaySnapshot: any = { date: today, [baseCurr]: qty[baseCurr] || 0 };
       data.rates.forEach(r => {
         todaySnapshot[r.key] = (qty[r.key] || 0) * r.value;
       });
@@ -147,8 +150,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
   // Dynamic Pie Chart Data
   const pieChartData = useMemo(() => {
+    const baseCurr = data.zakatConfig?.baseCurrency || 'EGP';
     const pData = [
-      { name: t('asset_EGP'), value: summary.values.EGP, color: getAssetColor('EGP') }
+      { name: t(`asset_${baseCurr}` as any) || baseCurr, value: summary.values[baseCurr] || 0, color: getAssetColor(baseCurr) }
     ];
     data.rates.forEach(r => {
       if (summary.values[r.key] > 0) {
@@ -166,7 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
     setUpdating(true);
     setError(null);
     try {
-      const newRates = await fetchMarketRates(data.rates, data.zakatConfig?.geminiApiKey);
+      const newRates = await fetchMarketRates(data.rates, data.zakatConfig?.geminiApiKey, data.zakatConfig?.baseCurrency);
       onUpdateRates(newRates);
     } catch (e) {
       setError(t('checkNetwork'));
@@ -191,9 +195,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
   };
 
   // Pie chart data handled in useMemo above now
+  const baseCurrency = data.zakatConfig?.baseCurrency || 'EGP';
 
-  const formatCurrency = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG', { style: 'currency', currency: 'EGP' });
-  const formatNum = (val: number) => (val ?? 0).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-EG');
+  const formatWithCurrency = (val: number) => formatCurrency(val, baseCurrency, language);
+  const formatWithNumber = (val: number) => formatNumber(val, language);
 
   return (
     <>
@@ -286,7 +291,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
             <div>
               <p className="text-sm font-medium text-slate-500">{t('netWorth')}</p>
               <h3 className="text-2xl font-bold text-slate-800">
-                {formatCurrency(isNaN(summary?.netWorth ?? 0) ? 0 : summary?.netWorth)}
+                {formatWithCurrency(isNaN(summary?.netWorth ?? 0) ? 0 : summary?.netWorth)}
               </h3>
             </div>
           </div>
@@ -300,7 +305,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
             <div>
               <p className="text-sm font-medium text-slate-500">{t('totalAssets')}</p>
               <h3 className="text-2xl font-bold text-slate-800">
-                {formatCurrency(isNaN(summary?.totalAssets ?? 0) ? 0 : summary?.totalAssets)}
+                {formatWithCurrency(isNaN(summary?.totalAssets ?? 0) ? 0 : summary?.totalAssets)}
               </h3>
             </div>
           </div>
@@ -314,7 +319,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
             <div>
               <p className="text-sm font-medium text-slate-500">{t('totalLiabilities')}</p>
               <h3 className="text-2xl font-bold text-slate-800">
-                {formatCurrency(isNaN(summary?.totalLiabilities ?? 0) ? 0 : summary?.totalLiabilities)}
+                {formatWithCurrency(isNaN(summary?.totalLiabilities ?? 0) ? 0 : summary?.totalLiabilities)}
               </h3>
             </div>
           </div>
@@ -344,7 +349,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <RechartsTooltip formatter={(val: number) => formatCurrency(val)} />
+                  <RechartsTooltip formatter={(val: number) => formatWithCurrency(val)} />
                   <Legend verticalAlign="bottom" height={36} />
                 </PieChart>
               </ResponsiveContainer>
@@ -380,7 +385,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
                     </div>
                     <span className="font-medium text-slate-700">{rate.title || rate.key}</span>
                   </div>
-                  <span className="font-bold text-slate-900">{formatNum(rate.value)} {rate.key === 'USD' ? 'EGP/$' : 'EGP'}</span>
+                  <span className="font-bold text-slate-900">{formatWithNumber(rate.value)} {baseCurrency}{rate.key === 'USD' ? '/$' : ''}</span>
                 </div>
               );
             })}
@@ -421,11 +426,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
                 tickFormatter={(value) => `${value / 1000}k`}
               />
               <RechartsTooltip
-                formatter={(val: number) => formatCurrency(val)}
+                formatter={(val: number) => formatWithCurrency(val)}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
               <Legend verticalAlign="top" height={36} />
-              <Line type="monotone" dataKey="EGP" name={t('asset_EGP')} stroke={getAssetColor('EGP')} strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey={baseCurrency} name={t(`asset_${baseCurrency}` as any) || baseCurrency} stroke={getAssetColor(baseCurrency)} strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
               {data.rates.map(r => (
                 <Line
                   key={r.key}
@@ -493,7 +498,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
               <button
                 onClick={() => {
-                  exportTransactionsToCSV(data.transactions);
+                  exportTransactionsToCSV(data.transactions, baseCurrency);
                   setShowExportModal(false);
                 }}
                 className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
@@ -504,7 +509,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
               <button
                 onClick={() => {
-                  exportLiabilitiesToCSV(data.liabilities);
+                  exportLiabilitiesToCSV(data.liabilities, baseCurrency);
                   setShowExportModal(false);
                 }}
                 className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-all"
@@ -515,7 +520,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onUpdateRates }) => 
 
               <button
                 onClick={() => {
-                  exportPortfolioSummaryToCSV(summary, data.rates);
+                  exportPortfolioSummaryToCSV(summary, data.rates, baseCurrency);
                   setShowExportModal(false);
                 }}
                 className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-200"

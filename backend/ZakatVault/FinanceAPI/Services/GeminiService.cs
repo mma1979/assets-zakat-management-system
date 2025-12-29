@@ -20,7 +20,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 public interface IGeminiService
 {
-    Task<List<RateRequest>?> FetchMarketRatesAsync();
+    Task<List<RateRequest>?> FetchMarketRatesAsync(string baseCurrency = "EGP");
 }
 
 public class GeminiService : IGeminiService
@@ -36,21 +36,21 @@ public class GeminiService : IGeminiService
         _context = context;
     }
 
-    public async Task<List<RateRequest>?> FetchMarketRatesAsync()
+    public async Task<List<RateRequest>?> FetchMarketRatesAsync(string baseCurrency = "EGP")
     {
         var rates = await _context.Rates
             .AsNoTracking()
             .ToListAsync();
 
-        StringBuilder sb = new("""
-                        Search for the current market prices in Egypt today. 
-            I need:
-            """);
-        rates.ForEach(r => sb.AppendLine($"\"{r.Name}\": Price of {r.Name} in EGP`"));
-        sb.AppendLine("""
-            for gold use prices from https://egypt.gold-era.com/gold-price/
-            for silver use prices from https://www.sabika.app/#Calculator
+        StringBuilder sb = new();
+        sb.AppendLine($"Search for the current market prices relative to {baseCurrency} today.");
+        sb.AppendLine("I need:");
+        rates.ForEach(r => sb.AppendLine($"\"{r.Name}\": Price of {r.Name} in {baseCurrency}"));
+        sb.AppendLine($$"""
+            for gold use global prices if not in Egypt, otherwise use https://egypt.gold-era.com/gold-price/
+            for silver use global prices or https://www.sabika.app/#Calculator
             Return ONLY a valid JSON object with the exact keys specified above and numeric values.
+            The values MUST be in {{baseCurrency}}.
             Example:
             {
               "GOLD": 3500.50,

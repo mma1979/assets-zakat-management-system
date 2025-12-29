@@ -18,6 +18,7 @@ export const ZakatSetup: React.FC = () => {
     const [reminderEnabled, setReminderEnabled] = useState(data.zakatConfig?.reminderEnabled || false);
     const [email, setEmail] = useState(data.zakatConfig?.email || user?.email || '');
     const [geminiApiKey, setGeminiApiKey] = useState(data.zakatConfig?.geminiApiKey || '');
+    const [baseCurrency, setBaseCurrency] = useState(data.zakatConfig?.baseCurrency || 'EGP');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,6 +29,7 @@ export const ZakatSetup: React.FC = () => {
             setReminderEnabled(data.zakatConfig.reminderEnabled || false);
             setEmail(data.zakatConfig.email || user?.email || '');
             setGeminiApiKey(data.zakatConfig.geminiApiKey || '');
+            setBaseCurrency(data.zakatConfig.baseCurrency || 'EGP');
         }
     }, [data.zakatConfig]);
 
@@ -37,7 +39,7 @@ export const ZakatSetup: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const success = await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey }, 'POST');
+            const success = await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey, baseCurrency }, 'POST');
             if (success) {
                 navigate('/app');
             } else {
@@ -78,6 +80,23 @@ export const ZakatSetup: React.FC = () => {
                             dir="ltr"
                             placeholder="your@email.com"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('baseCurrency') || 'Base Currency'}</label>
+                        <select 
+                            value={baseCurrency} 
+                            onChange={e => setBaseCurrency(e.target.value)} 
+                            className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all bg-white"
+                        >
+                            <option value="EGP">EGP - Egyptian Pound</option>
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="SAR">SAR - Saudi Riyal</option>
+                            <option value="AED">AED - UAE Dirham</option>
+                            <option value="KWD">KWD - Kuwaiti Dinar</option>
+                        </select>
                     </div>
 
                     <div>

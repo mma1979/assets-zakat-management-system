@@ -66,6 +66,7 @@ export interface Liability {
 
 export interface Rate {
   id: number;
+  userId?: number;
   key: string;
   value: number;
   lastUpdated: string;
@@ -87,6 +88,7 @@ export interface ZakatConfig {
   reminderEnabled?: boolean;
   email?: string;
   geminiApiKey?: string;
+  baseCurrency: string;
 }
 
 export interface PriceAlert {

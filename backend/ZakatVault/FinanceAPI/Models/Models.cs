@@ -41,6 +41,7 @@ public class ZakatConfig
     public bool ReminderEnabled { get; set; }
     public string? Email { get; set; } = string.Empty;
     public string? GeminiApiKey { get; set; } = string.Empty;
+    public string BaseCurrency { get; set; } = "EGP";
     public User? User { get; set; }
 }
 
@@ -50,6 +51,7 @@ public class ZakatConfigRequest
     public bool ReminderEnabled { get; set; }
     public string? Email { get; set; } = string.Empty;
     public string? GeminiApiKey { get; set; } = string.Empty;
+    public string? BaseCurrency { get; set; }
 }
 
 public class Transaction
@@ -82,12 +84,14 @@ public class Liability
 public class Rate
 {
     public int Id { get; set; }
+    public int? UserId { get; set; }
     public string Name { get; set; } = string.Empty; // "Gold", "Silver", "USD_EGP"
     public string Icon { get; set; } = string.Empty; 
     public string Title { get; set; } = string.Empty; 
     public decimal Value { get; set; }
     public int Order { get; set; } = 1;
     public DateTime LastUpdated { get; set; }
+    public User? User { get; set; }
 }
 
 // DTOs

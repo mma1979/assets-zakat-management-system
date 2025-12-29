@@ -3,6 +3,7 @@ using FinanceAPI.Services;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FinanceAPI.Controllers;
 
@@ -14,35 +15,40 @@ public class RatesController(IRatesService service) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var rates = await service.GetLatestRatesAsync();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var rates = await service.GetLatestRatesAsync(userId);
         return Ok(rates);
     }
 
     [HttpPost]
     public async Task<IActionResult> AddRate([FromBody]RateItem rate)
     {
-        var newRates = await service.AddRateAsync(rate);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var newRates = await service.AddRateAsync(userId, rate);
         return Ok(newRates);
     }
 
     [HttpPut]
     public async Task<IActionResult> UpdateRates(List<RateRequest> rates)
     {
-        var newRates = await service.UpdateRatesAsync(rates);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var newRates = await service.UpdateRatesAsync(userId, rates);
         return Ok(newRates);
     }
 
     [HttpPut("reorder")]
     public async Task<IActionResult> ReorderRates(List<RateReorderRequest> rates)
     {
-        var newRates = await service.ReorderRatesAsync(rates);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var newRates = await service.ReorderRatesAsync(userId, rates);
         return Ok(newRates);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRate([FromRoute] int id)
     {
-        var newRates = await service.DeleteRateAsync(id);
-        return Ok();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var newRates = await service.DeleteRateAsync(userId, id);
+        return Ok(newRates);
     }
 }

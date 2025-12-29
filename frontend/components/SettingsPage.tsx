@@ -34,6 +34,7 @@ export const SettingsPage: React.FC = () => {
   const [reminderEnabled, setReminderEnabled] = useState(data.zakatConfig?.reminderEnabled || false);
   const [email, setEmail] = useState(data.zakatConfig?.email || '');
   const [geminiApiKey, setGeminiApiKey] = useState(data.zakatConfig?.geminiApiKey || '');
+  const [baseCurrency, setBaseCurrency] = useState(data.zakatConfig?.baseCurrency || 'EGP');
   const [zakatMsg, setZakatMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [isSubmittingZakat, setIsSubmittingZakat] = useState(false);
 
@@ -68,6 +69,7 @@ export const SettingsPage: React.FC = () => {
       setReminderEnabled(data.zakatConfig.reminderEnabled || false);
       setEmail(data.zakatConfig.email || '');
       setGeminiApiKey(data.zakatConfig.geminiApiKey || '');
+      setBaseCurrency(data.zakatConfig.baseCurrency || 'EGP');
     }
   }, [data.zakatConfig]);
 
@@ -104,7 +106,7 @@ export const SettingsPage: React.FC = () => {
     setZakatMsg(null);
     setIsSubmittingZakat(true);
     try {
-      await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey });
+      await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey, baseCurrency });
       setZakatMsg({ type: 'success', text: t('saveSuccess') });
     } catch (e: any) {
       setZakatMsg({ type: 'error', text: t('configSaveError') });
@@ -259,6 +261,26 @@ export const SettingsPage: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Gemini API Key</label>
                 <input type="password" value={geminiApiKey} onChange={e => setGeminiApiKey(e.target.value)} className="w-full p-2 border rounded-lg" dir="ltr" placeholder="AIzaSy..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('baseCurrency') || 'Base Currency'}</label>
+                <select 
+                  value={baseCurrency} 
+                  onChange={e => setBaseCurrency(e.target.value)} 
+                  className="w-full p-2 border rounded-lg bg-white"
+                >
+                  <option value="EGP">EGP - Egyptian Pound</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="GBP">GBP - British Pound</option>
+                  <option value="SAR">SAR - Saudi Riyal</option>
+                  <option value="AED">AED - UAE Dirham</option>
+                  <option value="KWD">KWD - Kuwaiti Dinar</option>
+                  <option value="QAR">QAR - Qatari Riyal</option>
+                  <option value="TRY">TRY - Turkish Lira</option>
+                  <option value="CAD">CAD - Canadian Dollar</option>
+                  <option value="AUD">AUD - Australian Dollar</option>
+                </select>
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="reminder" checked={reminderEnabled} onChange={e => setReminderEnabled(e.target.checked)} className="w-4 h-4 text-emerald-600" />

@@ -16,13 +16,17 @@ export const FinancialAdvisor: React.FC<FinancialAdvisorProps> = ({ data }) => {
 
   const holdings = useMemo(() => {
     const result: Record<AssetType, { quantity: number; avgCost: number; currentPrice: number }> = {} as any;
-    const types: AssetType[] = ['GOLD', 'GOLD_21', 'SILVER', 'USD'];
+    const allTypes = [...data.rates.map(r => r.key), data.zakatConfig?.baseCurrency || 'EGP'] as AssetType[];
 
-    types.forEach(type => {
+    allTypes.forEach(type => {
       const { quantity, avgCost } = calculateAssetMetrics(data.transactions, type);
       let currentPrice = 0;
-      const rate = data.rates.find(r => r.key === type);
-      if (rate) currentPrice = rate.value;
+      if (type === (data.zakatConfig?.baseCurrency || 'EGP')) {
+        currentPrice = 1;
+      } else {
+        const rate = data.rates.find(r => r.key === type);
+        if (rate) currentPrice = rate.value;
+      }
 
       result[type] = { quantity, avgCost, currentPrice };
     });
@@ -32,7 +36,7 @@ export const FinancialAdvisor: React.FC<FinancialAdvisorProps> = ({ data }) => {
   const handleGetAdvice = async () => {
     setLoading(true);
     try {
-      const result = await getPortfolioAdvice(holdings, language, data.zakatConfig?.geminiApiKey);
+      const result = await getPortfolioAdvice(holdings, language, data.zakatConfig?.geminiApiKey, data.zakatConfig?.baseCurrency);
       setAdvice(result);
     } catch (e) {
       setAdvice(language === 'ar' ? 'حدث خطأ' : 'An error occurred');

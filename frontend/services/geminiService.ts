@@ -17,7 +17,7 @@ const extractJSON = (text: string): Record<string, number> | null => {
   }
 };
 
-export const fetchMarketRates = async (currentRates: Rate[], apiKey?: string): Promise<Rate[]> => {
+export const fetchMarketRates = async (currentRates: Rate[], apiKey?: string, baseCurrency: string = 'EGP'): Promise<Rate[]> => {
   const key = apiKey;
   if (!key) {
     console.warn("API Key not provided");
@@ -30,27 +30,26 @@ export const fetchMarketRates = async (currentRates: Rate[], apiKey?: string): P
   try {
     const ai = new GoogleGenAI({ apiKey: key });
 
-    const itemsList = ratesToFetch.map(r => `"${r.key}": Price of ${r.title || r.key} in EGP`).join('\n');
+    const itemsList = ratesToFetch.map(r => `"${r.key}": Price of ${r.title || r.key} in ${baseCurrency}`).join('\n');
 
     // We use search grounding to get real-time data
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Search for the current market prices in Egypt today.
-I need the current Buy prices in EGP for the following assets:
+      model: 'gemini-2.0-flash',
+      contents: `Search for the current market prices today.
+I need the current Buy prices in ${baseCurrency} for the following assets:
 ${itemsList}
 
-For Gold use prices from https://egypt.gold-era.com/gold-price/ if available.
-For Silver use prices from https://www.sabika.app/#Calculator if available.
+For Gold use prices from https://egypt.gold-era.com/gold-price/ if in Egypt, otherwise use international markets.
+For Silver use international market prices in ${baseCurrency}.
 
 Return ONLY a valid JSON object with the exact keys specified above and numeric values.
 Example:
 {
   "GOLD": 3500.50,
-  "USD": 49.20
+  "USD": 1.00
 }`,
       config: {
         tools: [{ googleSearch: {} }],
-        // responseMimeType: "application/json" // Unsupported with tools
       }
     });
 
@@ -91,7 +90,8 @@ Example:
 export const getPortfolioAdvice = async (
   holdings: Record<AssetType, { quantity: number; avgCost: number; currentPrice: number }>,
   language: 'en' | 'ar',
-  apiKey?: string
+  apiKey?: string,
+  baseCurrency: string = 'EGP'
 ): Promise<string> => {
   const key = apiKey;
   if (!key) {
@@ -107,13 +107,14 @@ export const getPortfolioAdvice = async (
       .map(([type, data]) => {
         if (data.quantity <= 0) return null;
         const profitLoss = ((data.currentPrice - data.avgCost) / data.avgCost) * 100;
-        return `- ${type}: ${data.quantity.toFixed(2)} units. Avg Cost: ${data.avgCost.toFixed(0)} EGP. Current Price: ${data.currentPrice.toFixed(0)} EGP. P/L: ${profitLoss.toFixed(1)}%`;
+        return `- ${type}: ${data.quantity.toFixed(2)} units. Avg Cost: ${data.avgCost.toFixed(0)} ${baseCurrency}. Current Price: ${data.currentPrice.toFixed(0)} ${baseCurrency}. P/L: ${profitLoss.toFixed(1)}%`;
       })
       .filter(Boolean)
       .join('\n');
 
     const prompt = `
-      You are an expert financial advisor specializing in personal savings in Egypt (Gold, Silver, USD).
+      You are an expert financial advisor specializing in personal savings (Gold, Silver, Currency).
+      The user's base currency is ${baseCurrency}.
       
       User Portfolio Status:
       ${portfolioSummary || "The user currently has no assets."}

@@ -26,8 +26,8 @@ const escapeCsvField = (field: any): string => {
   return stringField;
 };
 
-export const exportTransactionsToCSV = (transactions: Transaction[]) => {
-  const headers = ['Date', 'Type', 'Asset', 'Amount', 'Unit', 'Price_Per_Unit_EGP', 'Total_Value_EGP', 'Notes'];
+export const exportTransactionsToCSV = (transactions: Transaction[], baseCurrency: string = 'EGP') => {
+  const headers = ['Date', 'Type', 'Asset', 'Amount', 'Unit', `Price_Per_Unit_${baseCurrency}`, `Total_Value_${baseCurrency}`, 'Notes'];
 
   const rows = transactions.map(tx => {
     return [
@@ -48,8 +48,8 @@ export const exportTransactionsToCSV = (transactions: Transaction[]) => {
   downloadFile(csvContent, fileName);
 };
 
-export const exportLiabilitiesToCSV = (liabilities: Liability[]) => {
-  const headers = ['Title', 'Amount_EGP', 'Due_Date', 'Is_Deductible'];
+export const exportLiabilitiesToCSV = (liabilities: Liability[], baseCurrency: string = 'EGP') => {
+  const headers = ['Title', `Amount_${baseCurrency}`, 'Due_Date', 'Is_Deductible'];
 
   const rows = liabilities.map(l => {
     return [
@@ -66,8 +66,8 @@ export const exportLiabilitiesToCSV = (liabilities: Liability[]) => {
   downloadFile(csvContent, fileName);
 };
 
-export const exportPortfolioSummaryToCSV = (summary: any, rates: Rate[]) => {
-  const headers = ['Category', 'Item', 'Quantity', 'Unit', 'Current_Rate_EGP', 'Market_Value_EGP'];
+export const exportPortfolioSummaryToCSV = (summary: any, rates: Rate[], baseCurrency: string = 'EGP') => {
+  const headers = ['Category', 'Item', 'Quantity', 'Unit', `Current_Rate_${baseCurrency}`, `Market_Value_${baseCurrency}`];
 
   const rows = [];
 
@@ -78,7 +78,7 @@ export const exportPortfolioSummaryToCSV = (summary: any, rates: Rate[]) => {
   if (summary.holdings.GOLD_21 > 0) rows.push(['Asset', ASSET_LABELS.GOLD_21, summary.holdings.GOLD_21.toFixed(3), 'g', getRate('GOLD_21'), summary.values.GOLD_21.toFixed(2)]);
   if (summary.holdings.SILVER > 0) rows.push(['Asset', ASSET_LABELS.SILVER, summary.holdings.SILVER.toFixed(3), 'g', getRate('SILVER'), summary.values.SILVER.toFixed(2)]);
   if (summary.holdings.USD > 0) rows.push(['Asset', ASSET_LABELS.USD, summary.holdings.USD.toFixed(2), '$', getRate('USD'), summary.values.USD.toFixed(2)]);
-  if (summary.holdings.EGP > 0) rows.push(['Asset', ASSET_LABELS.EGP, summary.holdings.EGP.toFixed(2), 'EGP', '1', summary.values.EGP.toFixed(2)]);
+  if (summary.holdings[baseCurrency] > 0) rows.push(['Asset', ASSET_LABELS[baseCurrency as any] || baseCurrency, summary.holdings[baseCurrency].toFixed(2), baseCurrency, '1', summary.values[baseCurrency].toFixed(2)]);
 
   // Totals
   rows.push(['Summary', 'Total Assets', '', '', '', summary.totalAssets.toFixed(2)]);
