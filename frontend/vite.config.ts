@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    base: './',
     // Polyfill process.env for the GenAI SDK and Resend
     // If keys are not present at build time, use placeholders that will be replaced 
     // by the Docker entrypoint script at runtime.
