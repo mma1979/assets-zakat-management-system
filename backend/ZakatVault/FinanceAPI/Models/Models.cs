@@ -12,6 +12,7 @@ public class User
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiry { get; set; }
     public List<TrustedDevice> TrustedDevices { get; set; } = new();
+    public List<ZakatCycle> ZakatCycles { get; set; } = new();
 }
 public class TrustedDevice
 {
@@ -44,6 +45,8 @@ public class ZakatConfig
     public string? Email { get; set; } = string.Empty;
     public string? GeminiApiKey { get; set; } = string.Empty;
     public string BaseCurrency { get; set; } = "EGP";
+    public int? ZakatAnniversaryDay { get; set; }
+    public int? ZakatAnniversaryMonth { get; set; } // 1-12 Hijri
     public User? User { get; set; }
 }
 
@@ -54,6 +57,8 @@ public class ZakatConfigRequest
     public string? Email { get; set; } = string.Empty;
     public string? GeminiApiKey { get; set; } = string.Empty;
     public string? BaseCurrency { get; set; }
+    public int? ZakatAnniversaryDay { get; set; }
+    public int? ZakatAnniversaryMonth { get; set; }
 }
 
 public class Transaction
@@ -80,6 +85,21 @@ public class Liability
     public decimal Amount { get; set; }
     public DateTime? DueDate { get; set; }
     public bool IsDeductible { get; set; }
+    public User? User { get; set; }
+}
+
+public class ZakatCycle
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string HijriYear { get; set; } = string.Empty; // e.g. "1446"
+    public DateTime GregorianDate { get; set; } // The anniversary date
+    public decimal TotalAssets { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal ZakatDue { get; set; }
+    public decimal AmountPaid { get; set; }
+    public string Status { get; set; } = "Open"; // Open, Calculating, Due, Paid
+    public DateTime CreatedAt { get; set; }
     public User? User { get; set; }
 }
 

@@ -102,6 +102,7 @@ builder.Services.AddScoped<IRatesService, RatesService>();
 builder.Services.AddScoped<IZakatConfigService, ZakatConfigService>();
 builder.Services.AddScoped<IZakatCalcService, ZakatCalcService>();
 builder.Services.AddScoped<IZakatPaymentService, ZakatPaymentService>();
+builder.Services.AddScoped<IZakatCycleService, ZakatCycleService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IGeminiService, GeminiService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();

@@ -19,6 +19,10 @@ export const ZakatSetup: React.FC = () => {
     const [email, setEmail] = useState(data.zakatConfig?.email || user?.email || '');
     const [geminiApiKey, setGeminiApiKey] = useState(data.zakatConfig?.geminiApiKey || '');
     const [baseCurrency, setBaseCurrency] = useState(data.zakatConfig?.baseCurrency || 'EGP');
+    const [zakatAnniversaryDay, setZakatAnniversaryDay] = useState(data.zakatConfig?.zakatAnniversaryDay || 27);
+    const [zakatAnniversaryMonth, setZakatAnniversaryMonth] = useState(data.zakatConfig?.zakatAnniversaryMonth || 9); // Ramadan
+    const [useHijri, setUseHijri] = useState(!!data.zakatConfig?.zakatAnniversaryDay);
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +34,11 @@ export const ZakatSetup: React.FC = () => {
             setEmail(data.zakatConfig.email || user?.email || '');
             setGeminiApiKey(data.zakatConfig.geminiApiKey || '');
             setBaseCurrency(data.zakatConfig.baseCurrency || 'EGP');
+            if (data.zakatConfig.zakatAnniversaryDay) {
+                setZakatAnniversaryDay(data.zakatConfig.zakatAnniversaryDay);
+                setZakatAnniversaryMonth(data.zakatConfig.zakatAnniversaryMonth || 9);
+                setUseHijri(true);
+            }
         }
     }, [data.zakatConfig]);
 
@@ -39,7 +48,16 @@ export const ZakatSetup: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const success = await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey, baseCurrency }, 'POST');
+            const configPayload = { 
+                zakatDate, 
+                reminderEnabled, 
+                email, 
+                geminiApiKey, 
+                baseCurrency,
+                zakatAnniversaryDay: useHijri ? zakatAnniversaryDay : undefined,
+                zakatAnniversaryMonth: useHijri ? zakatAnniversaryMonth : undefined
+            };
+            const success = await updateZakatConfig(configPayload, 'POST');
             if (success) {
                 navigate('/app');
             } else {
@@ -64,10 +82,57 @@ export const ZakatSetup: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('zakatDueDate')}</label>
-                        <CustomDatePicker value={zakatDate} onChange={setZakatDate} />
-                        <p className="text-xs text-slate-400 mt-1">{t('zakatDateHelp') || 'The date your Zakat is due (usually 1 year after reaching Nisab).'}</p>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-semibold text-slate-700">{t('zakatDate') || 'Zakat Date'}</label>
+                            <div className="flex bg-white p-1 rounded-lg border border-slate-200">
+                                <button 
+                                    type="button"
+                                    onClick={() => setUseHijri(false)}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${!useHijri ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    {t('gregorian') || 'Gregorian'}
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setUseHijri(true)}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${useHijri ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    {t('hijri') || 'Hijri'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {!useHijri ? (
+                            <div>
+                                <CustomDatePicker value={zakatDate} onChange={setZakatDate} />
+                                <p className="text-xs text-slate-400 mt-2">{t('zakatDateHelp') || 'A fixed Gregorian date for your next Zakat calculation.'}</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <select 
+                                        value={zakatAnniversaryDay}
+                                        onChange={e => setZakatAnniversaryDay(parseInt(e.target.value))}
+                                        className="w-full p-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-sm"
+                                    >
+                                        {[...Array(30)].map((_, i) => (
+                                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                                        ))}
+                                    </select>
+                                    <select 
+                                        value={zakatAnniversaryMonth}
+                                        onChange={e => setZakatAnniversaryMonth(parseInt(e.target.value))}
+                                        className="w-full p-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-sm"
+                                    >
+                                        {[...Array(12)].map((_, i) => (
+                                            <option key={i + 1} value={i + 1}>{t(`hijri_month_${i + 1}` as any)}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <p className="text-xs text-slate-400">{t('hijriAnniversaryHelp') || 'The Zakat anniversary will repeat every lunar year automatically (e.g. 27 Ramadan).'}</p>
+                            </div>
+                        )}
                     </div>
 
                     <div>

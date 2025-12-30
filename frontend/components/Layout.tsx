@@ -81,7 +81,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span>{language === 'en' ? 'العربية' : 'English'}</span>
           </button>
           <div className="text-xs text-slate-400 text-center">
-            v2.1.1 &bull; {t('footer')}
+            v2.2.0 &bull; {t('footer')}
           </div>
         </div>
       </aside >

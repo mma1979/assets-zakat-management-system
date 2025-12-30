@@ -15,6 +15,7 @@ public class FinanceDbContext : DbContext
     public DbSet<Liability> Liabilities { get; set; }
     public DbSet<Rate> Rates { get; set; }
     public DbSet<TrustedDevice> TrustedDevices { get; set; }
+    public DbSet<ZakatCycle> ZakatCycles { get; set; }
 
 
     public virtual DbSet<VwZakatCalc> VwZakatCalc { get; set; }
@@ -159,6 +160,23 @@ public class FinanceDbContext : DbContext
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+        });
+
+        // ZakatCycle Configuration
+        modelBuilder.Entity<ZakatCycle>(entity =>
+        {
+            entity.ToTable("ZakatCycles");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.ZakatCycles)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.TotalAssets).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.TotalLiabilities).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.ZakatDue).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.AmountPaid).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         });
     }
 }

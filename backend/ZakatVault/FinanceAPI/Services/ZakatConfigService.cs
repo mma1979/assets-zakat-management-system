@@ -32,6 +32,9 @@ public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
         config.ReminderEnabled = configRequest.ReminderEnabled;
         config.Email = configRequest.Email;
         config.GeminiApiKey = configRequest.GeminiApiKey;
+        config.BaseCurrency = configRequest.BaseCurrency ?? config.BaseCurrency;
+        config.ZakatAnniversaryDay = configRequest.ZakatAnniversaryDay;
+        config.ZakatAnniversaryMonth = configRequest.ZakatAnniversaryMonth;
 
         await context.SaveChangesAsync();
 
@@ -40,14 +43,17 @@ public class ZakatConfigService(FinanceDbContext context) : IZakatConfigService
 
     public async Task<ZakatConfig> AddZakatConfigAsync(int userId, ZakatConfigRequest configRequest)
     {
-       var zakatConfig = new ZakatConfig
-       {
-           UserId = userId,
-           ZakatDate = configRequest.ZakatDate,
-           ReminderEnabled = configRequest.ReminderEnabled,
-           Email = configRequest.Email,
-           GeminiApiKey = configRequest.GeminiApiKey
-       };
+        var zakatConfig = new ZakatConfig
+        {
+            UserId = userId,
+            ZakatDate = configRequest.ZakatDate,
+            ReminderEnabled = configRequest.ReminderEnabled,
+            Email = configRequest.Email,
+            GeminiApiKey = configRequest.GeminiApiKey,
+            BaseCurrency = configRequest.BaseCurrency ?? "EGP",
+            ZakatAnniversaryDay = configRequest.ZakatAnniversaryDay,
+            ZakatAnniversaryMonth = configRequest.ZakatAnniversaryMonth
+        };
 
          await context.ZakatConfigs.AddAsync(zakatConfig);
             await context.SaveChangesAsync();

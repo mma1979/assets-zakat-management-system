@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Shield, Info, LogOut, CheckCircle, AlertTriangle, Trash2, Edit2, Plus, Bell, Key, Globe, Layout, Smartphone, Mail, Lock, Settings as SettingsIcon, Save, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor, X, GripVertical, Calculator } from 'lucide-react';
+import { User, Shield, Info, LogOut, CheckCircle, AlertTriangle, Trash2, Edit2, Plus, Bell, Key, Globe, Layout, Smartphone, Mail, Lock, Settings as SettingsIcon, Save, Coins, DollarSign, Gem, Landmark, Bitcoin, Banknote, CreditCard, Wallet, CircleDollarSign, ChevronDown, Euro, PoundSterling, JapaneseYen, RussianRuble, IndianRupee, TrendingUp, BarChart3, PieChart, Activity, Briefcase, Building2, Vault, PiggyBank, Factory, Warehouse, Container, Plane, Ship, Tractor, X, GripVertical, Calculator, History } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useStore } from '../services/storage';
@@ -17,15 +17,15 @@ export const SettingsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'profile' | 'config' | 'security' | 'alerts' | 'rates'>(() => {
+  const [activeTab, setActiveTab] = useState<'profile' | 'config' | 'timeline' | 'security' | 'alerts' | 'rates'>(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['profile', 'config', 'security', 'alerts', 'rates'].includes(tab)) return tab as any;
+    if (tab && ['profile', 'config', 'timeline', 'security', 'alerts', 'rates'].includes(tab)) return tab as any;
     return 'profile';
   });
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['profile', 'config', 'security', 'alerts', 'rates'].includes(tab)) {
+    if (tab && ['profile', 'config', 'timeline', 'security', 'alerts', 'rates'].includes(tab)) {
       setActiveTab(tab as any);
     }
   }, [searchParams]);
@@ -50,6 +50,9 @@ export const SettingsPage: React.FC = () => {
   const [baseCurrency, setBaseCurrency] = useState(data.zakatConfig?.baseCurrency || 'EGP');
   const [zakatMsg, setZakatMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [isSubmittingZakat, setIsSubmittingZakat] = useState(false);
+  const [useHijri, setUseHijri] = useState(!!data.zakatConfig?.zakatAnniversaryDay);
+  const [zakatAnniversaryDay, setZakatAnniversaryDay] = useState(data.zakatConfig?.zakatAnniversaryDay || 27);
+  const [zakatAnniversaryMonth, setZakatAnniversaryMonth] = useState(data.zakatConfig?.zakatAnniversaryMonth || 9);
 
   // Price Alert State
   const [newAlertAsset, setNewAlertAsset] = useState<AssetType>('GOLD');
@@ -83,6 +86,11 @@ export const SettingsPage: React.FC = () => {
       setEmail(data.zakatConfig.email || '');
       setGeminiApiKey(data.zakatConfig.geminiApiKey || '');
       setBaseCurrency(data.zakatConfig.baseCurrency || 'EGP');
+      if (data.zakatConfig.zakatAnniversaryDay) {
+        setZakatAnniversaryDay(data.zakatConfig.zakatAnniversaryDay);
+        setZakatAnniversaryMonth(data.zakatConfig.zakatAnniversaryMonth || 9);
+        setUseHijri(true);
+      }
     }
   }, [data.zakatConfig]);
 
@@ -119,7 +127,15 @@ export const SettingsPage: React.FC = () => {
     setZakatMsg(null);
     setIsSubmittingZakat(true);
     try {
-      await updateZakatConfig({ zakatDate, reminderEnabled, email, geminiApiKey, baseCurrency });
+      await updateZakatConfig({ 
+        zakatDate, 
+        reminderEnabled, 
+        email, 
+        geminiApiKey, 
+        baseCurrency,
+        zakatAnniversaryDay: useHijri ? zakatAnniversaryDay : undefined,
+        zakatAnniversaryMonth: useHijri ? zakatAnniversaryMonth : undefined
+      });
       setZakatMsg({ type: 'success', text: t('saveSuccess') });
     } catch (e: any) {
       setZakatMsg({ type: 'error', text: t('configSaveError') });
@@ -209,6 +225,7 @@ export const SettingsPage: React.FC = () => {
         {[
           { id: 'profile', icon: User, label: t('tabProfile') },
           { id: 'config', icon: Calculator, label: t('zakatConfig') },
+          { id: 'timeline', icon: History, label: t('zakatTimeline') || 'Timeline' },
           { id: 'security', icon: Shield, label: t('securitySettings') || 'Security' },
           { id: 'alerts', icon: Bell, label: t('priceAlerts') },
           { id: 'rates', icon: Coins, label: t('manageRates') || 'Rates' }
@@ -263,9 +280,57 @@ export const SettingsPage: React.FC = () => {
               {t('zakatConfig')}
             </h3>
             <div className="space-y-4 max-w-md">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('zakatDueDate')}</label>
-                <CustomDatePicker value={zakatDate} onChange={setZakatDate} />
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-sm font-semibold text-slate-700">{t('zakatDate') || 'Zakat Date'}</label>
+                  <div className="flex bg-white p-1 rounded-lg border border-slate-200">
+                    <button 
+                      type="button"
+                      onClick={() => setUseHijri(false)}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${!useHijri ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      {t('gregorian') || 'Gregorian'}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setUseHijri(true)}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${useHijri ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      {t('hijri') || 'Hijri'}
+                    </button>
+                  </div>
+                </div>
+
+                {!useHijri ? (
+                  <div>
+                    <CustomDatePicker value={zakatDate} onChange={setZakatDate} />
+                    <p className="text-xs text-slate-400 mt-2">{t('zakatDateHelp') || 'A fixed Gregorian date for your next Zakat calculation.'}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <select 
+                        value={zakatAnniversaryDay}
+                        onChange={e => setZakatAnniversaryDay(parseInt(e.target.value))}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-sm"
+                      >
+                        {[...Array(30)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1}</option>
+                        ))}
+                      </select>
+                      <select 
+                        value={zakatAnniversaryMonth}
+                        onChange={e => setZakatAnniversaryMonth(parseInt(e.target.value))}
+                        className="w-full p-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-sm"
+                      >
+                        {[...Array(12)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>{t(`hijri_month_${i + 1}` as any)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <p className="text-xs text-slate-400">{t('hijriAnniversaryHelp') || 'The Zakat anniversary will repeat every lunar year automatically (e.g. 27 Ramadan).'}</p>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('emailAddress')}</label>
@@ -304,6 +369,85 @@ export const SettingsPage: React.FC = () => {
                 <Save size={18} />
                 {isSubmittingZakat ? 'Saving...' : t('saveConfig')}
               </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'timeline' && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <History size={20} className="text-emerald-600" />
+              {t('zakatTimeline')}
+            </h3>
+            
+            <div className="relative">
+              {(!data.zakatCycles || data.zakatCycles.length === 0) ? (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                   <p className="text-slate-400 italic">{t('noZakatCycles')}</p>
+                </div>
+              ) : (
+                <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-emerald-500 before:via-slate-200 before:to-transparent">
+                  {data.zakatCycles.map((cycle) => (
+                    <div key={cycle.id} className="relative flex items-start gap-6 group">
+                      <div className={`mt-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-white shadow-md z-10 transition-colors ${
+                        cycle.status === 'Paid' ? 'bg-emerald-500 text-white' : 
+                        cycle.status === 'Due' ? 'bg-amber-500 text-white animate-pulse' : 
+                        'bg-slate-100 text-slate-400'
+                      }`}>
+                        {cycle.status === 'Paid' ? <CheckCircle size={18} /> : 
+                         cycle.status === 'Due' ? <AlertTriangle size={18} /> : 
+                         <Activity size={18} />}
+                      </div>
+                      
+                      <div className="flex-1 bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all group-hover:border-emerald-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                          <div>
+                            <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                              {cycle.hijriYear} {t('hijriYearShort')}
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider ${
+                                cycle.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 
+                                cycle.status === 'Due' ? 'bg-amber-100 text-amber-700' : 
+                                'bg-slate-100 text-slate-500'
+                              }`}>
+                                {t(`status_${cycle.status.toLowerCase()}` as any) || cycle.status}
+                              </span>
+                            </h4>
+                            <p className="text-sm text-slate-500 flex items-center gap-1">
+                              <Globe size={14} />
+                              {new Date(cycle.gregorianDate).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                             <div className="text-2xl font-black text-slate-900 leading-none">
+                               {cycle.zakatDue.toLocaleString()} <span className="text-xs font-normal text-slate-400 uppercase">{data.zakatConfig.baseCurrency}</span>
+                             </div>
+                             <p className="text-xs text-slate-400 mt-1">{t('totalZakatDue') || 'Total Zakat Due'}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-slate-50 rounded-lg">
+                           <div>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('assets')}</p>
+                              <p className="text-sm font-semibold text-slate-700">{cycle.totalAssets.toLocaleString()}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('liabilities')}</p>
+                              <p className="text-sm font-semibold text-slate-700">{cycle.totalLiabilities.toLocaleString()}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('paid')}</p>
+                              <p className="text-sm font-semibold text-emerald-600 font-mono">{cycle.amountPaid.toLocaleString()}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('remaining')}</p>
+                              <p className="text-sm font-semibold text-slate-700 font-mono">{(cycle.zakatDue - cycle.amountPaid).toLocaleString()}</p>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

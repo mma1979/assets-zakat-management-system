@@ -187,6 +187,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       zakatDue: serverCalculation?.totalZakatDue ?? 0,
       totalPayments: serverCalculation?.totalPayments ?? 0,
       remainingZakatDue: serverCalculation?.remainingZakatDue ?? 0,
+      zakatStartDate: serverCalculation?.zakatStartDate ?? '2025-07-23',
       lunarEndDate: serverCalculation?.lunarEndDate ?? '2026-07-23',
       isEligible: (serverCalculation?.totalZakatDue ?? 0) > 0,
     };
@@ -226,6 +227,11 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   const formatWithCurrency = (val: number) => formatCurrency(val, baseCurrency, language);
   const formatWithNumber = (val: number) => formatNumber(val, language);
 
+  const currentCycle = useMemo(() => {
+    if (!data.zakatCycles || data.zakatCycles.length === 0) return null;
+    return [...data.zakatCycles].sort((a, b) => new Date(b.gregorianDate).getTime() - new Date(a.gregorianDate).getTime())[0];
+  }, [data.zakatCycles]);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
@@ -235,37 +241,65 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
 
       {/* Date Configuration */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-start gap-6">
-        <div className="flex items-center gap-4 w-full">
-          <div className="p-3 bg-emerald-100 text-emerald-700 rounded-xl">
-            <CalendarClock size={24} />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-100 text-emerald-700 rounded-xl">
+              <CalendarClock size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                {t('zakatDueDate')}
+                {currentCycle && (
+                  <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-bold uppercase tracking-wider">
+                    {currentCycle.hijriYear} {t('hijriYearShort')}
+                  </span>
+                )}
+              </h3>
+              <p className="text-sm text-slate-500">{t('lunarYearWindow')}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-slate-800">{t('zakatDueDate')}</h3>
-            <p className="text-sm text-slate-500">{t('lunarYearWindow')}</p>
-          </div>
+          
+          {currentCycle && (
+            <div className={`text-[10px] px-3 py-1 rounded-lg font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm border ${
+              currentCycle.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+              currentCycle.status === 'Due' ? 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse' : 
+              'bg-slate-50 text-slate-500 border-slate-100'
+            }`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${
+                currentCycle.status === 'Paid' ? 'bg-emerald-500' : 
+                currentCycle.status === 'Due' ? 'bg-amber-500' : 
+                'bg-slate-400'
+              }`} />
+              {t(`status_${currentCycle.status.toLowerCase()}` as any) || currentCycle.status}
+            </div>
+          )}
         </div>
 
         <div className="w-full flex flex-wrap gap-4 items-center">
-          {/* Date Input */}
-          <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
-            <CustomDatePicker
-              value={zakatDate}
-              onChange={handleDateChange}
-              className="flex-1"
-              disabled={true}
-            />
-            {dir === 'rtl' ? <ArrowRight className="text-slate-300 hidden sm:block" size={16} transform="scale(-1, 1)" /> : <ArrowRight className="text-slate-300 hidden sm:block" size={16} />}
-            <div className="text-center px-2 hidden sm:block">
-              <div className={`text-xs font-bold uppercase ${remainingDays < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+          {/* Cycle Window Display */}
+          <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100 flex-1 min-w-[320px]">
+            <div className="flex-1 text-center sm:text-start min-w-0">
+               <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 truncate">{t('calculationDetails') || 'Calculation Window'}</div>
+               <div className="flex items-center justify-center sm:justify-start gap-2 flex-nowrap">
+                  <div className="text-sm font-bold text-slate-700 font-mono flex-shrink-0">{calculation.zakatStartDate}</div>
+                  <ArrowRight size={14} className="text-slate-300 flex-shrink-0" />
+                  <div className="text-sm font-bold text-emerald-700 font-mono flex-shrink-0">{calculation.lunarEndDate}</div>
+               </div>
+            </div>
+            
+            <div className="h-10 w-px bg-slate-200 hidden sm:block mx-2" />
+            
+            <div className="text-center px-2">
+              <div className={`text-[10px] font-black uppercase tracking-widest ${remainingDays < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                 {remainingText}
               </div>
-              <div className="text-sm font-bold text-slate-700" dir="ltr">{calculation.lunarEndDate}</div>
+              <div className="text-xs text-slate-400 mt-1">{t('untilNextAnniversary') || 'Until Anniversary'}</div>
             </div>
           </div>
 
           {/* Email Input */}
           <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1 min-w-[250px]">
-            <Mail size={18} className="text-slate-400 ms-2" />
+            <Mail size={14} className="text-slate-400 ms-2" />
             <input
               type="email"
               value={userEmail}

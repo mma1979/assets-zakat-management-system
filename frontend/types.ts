@@ -90,6 +90,20 @@ export interface ZakatConfig {
   email?: string;
   geminiApiKey?: string;
   baseCurrency: string;
+  zakatAnniversaryDay?: number;
+  zakatAnniversaryMonth?: number;
+}
+
+export interface ZakatCycle {
+  id: number;
+  hijriYear: string;
+  gregorianDate: string;
+  totalAssets: number;
+  totalLiabilities: number;
+  zakatDue: number;
+  amountPaid: number;
+  status: 'Open' | 'Calculating' | 'Due' | 'Paid';
+  createdAt: string;
 }
 
 export interface PriceAlert {
@@ -114,6 +128,7 @@ export interface StoreData {
   zakatConfig: ZakatConfig;
   priceAlerts: PriceAlert[];
   zakatPayments: ZakatPayment[];
+  zakatCycles: ZakatCycle[];
 }
 
 export interface ZakatCalculationResult {
@@ -125,5 +140,6 @@ export interface ZakatCalculationResult {
   remainingZakatDue: number;
   nisabGoldValue: number;
   nisabSilverValue: number;
+  zakatStartDate: string;
   lunarEndDate: string;
 }

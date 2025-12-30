@@ -13,5 +13,6 @@ public class VwZakatCalc
     public decimal NisabGoldValue { get; set; } = decimal.Zero;
     public decimal NisabSilverValue { get; set; } = decimal.Zero;
     public string LunarEndDate { get; set; } = string.Empty;
+    public string ZakatStartDate { get; set; } = string.Empty;
     public string ZakatEndDate { get; set; } = string.Empty;
 }
