@@ -5,6 +5,8 @@ using FinanceAPI.Models;
 
 using Hangfire;
 
+using Lib.Net.Http.WebPush;
+using Lib.Net.Http.WebPush.Authentication;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,10 +18,19 @@ public interface INotificationService
     void SendZakatReminder();
 
     void SendPriceAlert();
+
+    Task SendPushNotificationAsync(int userId, string title, string body, string? url = null);
+    Task SendPushToSubscriptionAsync(FinanceAPI.Models.PushSubscription sub, string title, string body, string? url = null);
 }
 
-public class NotificationService(FinanceDbContext context, RazorComponentCompiler compiler, ResendService resendService, IZakatCalcService zakatCalcService) : INotificationService
+public class NotificationService(
+    FinanceDbContext context, 
+    RazorComponentCompiler compiler, 
+    ResendService resendService, 
+    IZakatCalcService zakatCalcService,
+    IVapidKeyService vapidKeyService) : INotificationService
 {
+    private readonly PushServiceClient _pushClient = new();
 
 
     public void SendZakatReminder()
@@ -105,5 +116,67 @@ public class NotificationService(FinanceDbContext context, RazorComponentCompile
 
         await resendService.Send(email, "Price Alert", html);
 
+    }
+
+    public async Task SendPushNotificationAsync(int userId, string title, string body, string? url = null)
+    {
+        var subscriptions = await context.PushSubscriptions
+            .Where(s => s.UserId == userId)
+            .ToListAsync();
+
+        foreach (var sub in subscriptions)
+        {
+            await SendPushToSubscriptionAsync(sub, title, body, url);
+        }
+    }
+
+    public async Task SendPushToSubscriptionAsync(FinanceAPI.Models.PushSubscription sub, string title, string body, string? url = null)
+    {
+        try
+        {
+            var pushSubscription = new Lib.Net.Http.WebPush.PushSubscription
+            {
+                Endpoint = sub.Endpoint,
+                Keys = new Dictionary<string, string>
+                {
+                    { "p256dh", sub.P256dh },
+                    { "auth", sub.Auth }
+                }
+            };
+
+            var payload = System.Text.Json.JsonSerializer.Serialize(new { title, body, url });
+            var message = new PushMessage(payload)
+            {
+                Topic = "general"
+            };
+
+            var publicKey = vapidKeyService.GetPublicKey();
+            var privateKey = vapidKeyService.GetPrivateKey();
+
+            if (string.IsNullOrEmpty(publicKey) || string.IsNullOrEmpty(privateKey))
+            {
+                // Push notifications won't work without keys
+                return;
+            }
+
+            var vapidAuthentication = new VapidAuthentication(publicKey, privateKey)
+            {
+                Subject = "mailto:admin@zakatvault.com"
+            };
+
+            await _pushClient.RequestPushMessageDeliveryAsync(pushSubscription, message, vapidAuthentication);
+        }
+        catch (PushServiceClientException ex)
+        {
+            if (ex.StatusCode == System.Net.HttpStatusCode.Gone || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                context.PushSubscriptions.Remove(sub);
+                await context.SaveChangesAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Log other errors
+        }
     }
 }

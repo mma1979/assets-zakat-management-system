@@ -9,6 +9,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { CustomDatePicker } from './DatePicker';
 import { AssetType } from '../types';
 import { useSearchParams } from 'react-router-dom';
+import { pushService } from '../services/pushService';
 
 export const SettingsPage: React.FC = () => {
   const { t, language, setLanguage, dir } = useLanguage();
@@ -53,6 +54,37 @@ export const SettingsPage: React.FC = () => {
   const [useHijri, setUseHijri] = useState(!!data.zakatConfig?.zakatAnniversaryDay);
   const [zakatAnniversaryDay, setZakatAnniversaryDay] = useState(data.zakatConfig?.zakatAnniversaryDay || 27);
   const [zakatAnniversaryMonth, setZakatAnniversaryMonth] = useState(data.zakatConfig?.zakatAnniversaryMonth || 9);
+
+  // Push Notification State
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [isUpdatingPush, setIsUpdatingPush] = useState(false);
+
+  useEffect(() => {
+    pushService.isSupported().then(supported => {
+      setPushSupported(supported);
+      if (supported) {
+        pushService.getSubscription().then(sub => {
+          setPushEnabled(!!sub);
+        });
+      }
+    });
+  }, []);
+
+  const handlePushToggle = async () => {
+    setIsUpdatingPush(true);
+    try {
+      if (pushEnabled) {
+        const success = await pushService.unsubscribeUser();
+        if (success) setPushEnabled(false);
+      } else {
+        const success = await pushService.subscribeUser();
+        if (success) setPushEnabled(true);
+      }
+    } finally {
+      setIsUpdatingPush(false);
+    }
+  };
 
   // Price Alert State
   const [newAlertAsset, setNewAlertAsset] = useState<AssetType>('GOLD');
@@ -364,6 +396,27 @@ export const SettingsPage: React.FC = () => {
                 <input type="checkbox" id="reminder" checked={reminderEnabled} onChange={e => setReminderEnabled(e.target.checked)} className="w-4 h-4 text-emerald-600" />
                 <label htmlFor="reminder" className="text-slate-700">{t('enableReminder')}</label>
               </div>
+
+              {pushSupported && (
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm text-emerald-600">
+                      <Bell size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">{t('pushNotifications') || 'Push Notifications'}</p>
+                      <p className="text-xs text-slate-500">{t('pushNotificationsHelp') || 'Get alerts for due dates on this device.'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handlePushToggle}
+                    disabled={isUpdatingPush}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${pushEnabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              )}
               {zakatMsg && <p className={`text-sm ${zakatMsg.type === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}>{zakatMsg.text}</p>}
               <button onClick={handleZakatSave} disabled={isSubmittingZakat} className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50">
                 <Save size={18} />

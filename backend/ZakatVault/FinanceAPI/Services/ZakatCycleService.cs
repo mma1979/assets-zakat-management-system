@@ -12,7 +12,7 @@ public interface IZakatCycleService
     Task<List<ZakatCycle>> GetUserCyclesAsync(int userId);
 }
 
-public class ZakatCycleService(FinanceDbContext context, ILogger<ZakatCycleService> logger) : IZakatCycleService
+public class ZakatCycleService(FinanceDbContext context, ILogger<ZakatCycleService> logger, INotificationService notificationService) : IZakatCycleService
 {
     private readonly UmAlQuraCalendar _hijriCalendar = new UmAlQuraCalendar();
 
@@ -27,11 +27,26 @@ public class ZakatCycleService(FinanceDbContext context, ILogger<ZakatCycleServi
             try
             {
                 await CreateNextCycleIfNeededAsync(config);
+                await CheckAndNotifyDueCyclesAsync(config.UserId);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error processing Zakat cycle for user {UserId}", config.UserId);
             }
+        }
+    }
+
+    private async Task CheckAndNotifyDueCyclesAsync(int userId)
+    {
+        var now = DateTime.UtcNow.Date;
+        var dueCycle = await context.ZakatCycles
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.Status != "Paid" && c.GregorianDate.Date <= now);
+
+        if (dueCycle != null)
+        {
+            // If it was Open, mark as Due? Or just notify.
+            // ZakatCalculator logic might handle status.
+            await notificationService.SendPushNotificationAsync(userId, "Zakat Due", $"Your Zakat for {dueCycle.HijriYear} AH is now due.");
         }
     }
 

@@ -16,6 +16,7 @@ public class FinanceDbContext : DbContext
     public DbSet<Rate> Rates { get; set; }
     public DbSet<TrustedDevice> TrustedDevices { get; set; }
     public DbSet<ZakatCycle> ZakatCycles { get; set; }
+    public DbSet<PushSubscription> PushSubscriptions { get; set; }
 
 
     public virtual DbSet<VwZakatCalc> VwZakatCalc { get; set; }
@@ -176,6 +177,21 @@ public class FinanceDbContext : DbContext
             entity.Property(e => e.ZakatDue).HasColumnType("decimal(18,2)");
             entity.Property(e => e.AmountPaid).HasColumnType("decimal(18,2)");
             entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
+
+        // PushSubscription Configuration
+        modelBuilder.Entity<PushSubscription>(entity =>
+        {
+            entity.ToTable("PushSubscriptions");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Endpoint).IsRequired();
+            entity.Property(e => e.P256dh).IsRequired();
+            entity.Property(e => e.Auth).IsRequired();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         });
     }

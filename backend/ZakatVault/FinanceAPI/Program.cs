@@ -2,6 +2,7 @@
 using FinanceAPI.Converters;
 using FinanceAPI.Data;
 using FinanceAPI.Services;
+using FinanceAPI.Jobs;
 
 using Hangfire;
 using Hangfire.Dashboard.BasicAuthorization;
@@ -95,6 +96,7 @@ catch (Exception ex)
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<IVapidKeyService, VapidKeyService>();
 builder.Services.AddScoped<IPriceAlertService, PriceAlertService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ILiabilityService, LiabilityService>();
@@ -107,6 +109,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IGeminiService, GeminiService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<HangfireService>();
+builder.Services.AddScoped<ZakatJobsService>();
+builder.Services.AddScoped<LiabilityReminderJob>();
 builder.Services.AddScoped<RazorComponentCompiler>();
 builder.Services.AddScoped<ResendService>();
 builder.Services.AddHttpContextAccessor();

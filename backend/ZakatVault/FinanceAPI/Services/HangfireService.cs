@@ -9,9 +9,11 @@ namespace FinanceAPI.Services;
 public class HangfireService
 {
     private readonly IConfiguration _configuration;
-    public HangfireService(IConfiguration configuration)
+    private readonly IServiceProvider _serviceProvider;
+    public HangfireService(IConfiguration configuration, IServiceProvider serviceProvider)
     {
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
     }
     public List<Type> JobsServiceTypes
     {
@@ -57,8 +59,15 @@ public class HangfireService
         var jobConfigs = _configuration.GetSection("Jobs").Get<List<JobConfig>>()!;
         foreach (var type in JobsServiceTypes)
         {
-            var instance = (BaseJobService)Activator.CreateInstance(type)!;
-            instance.RegisterJobs(jobConfigs);
+            try
+            {
+                var instance = (BaseJobService)ActivatorUtilities.CreateInstance(_serviceProvider, type);
+                instance.RegisterJobs(jobConfigs);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error registering job {type.Name}: {ex.Message}");
+            }
         }
         RemoveDisabledJobs();
     }
