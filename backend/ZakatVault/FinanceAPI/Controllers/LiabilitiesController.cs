@@ -44,4 +44,12 @@ public class LiabilitiesController : ControllerBase
         if (!result) return NotFound();
         return NoContent();
     }
+
+    [HttpPatch("{id}/decrease")]
+    public async Task<IActionResult> DecreaseAmount(int id, [FromBody] DecreaseLiabilityDto dto)
+    {
+        var liability = await _service.DecreaseLiabilityAmountAsync(GetUserId(), id, dto.Amount);
+        if (liability == null) return Ok(new { removed = true });
+        return Ok(liability);
+    }
 }

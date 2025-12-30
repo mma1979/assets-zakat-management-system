@@ -212,6 +212,11 @@ public class CreateLiabilityDto
     public bool IsDeductible { get; set; }
 }
 
+public class DecreaseLiabilityDto
+{
+    public decimal Amount { get; set; }
+}
+
 public class ZakatPayment
 {
     public int Id { get; set; }

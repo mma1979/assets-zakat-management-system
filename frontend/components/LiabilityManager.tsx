@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StoreData, Liability } from '../types';
-import { Trash2, Calendar, DollarSign, CheckCircle2 } from 'lucide-react';
+import { Trash2, Calendar, DollarSign, CheckCircle2, MinusCircle, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CustomDatePicker } from './DatePicker';
@@ -11,15 +11,17 @@ interface LiabilityManagerProps {
   data: StoreData;
   onAddLiability: (l: Liability) => void;
   onRemoveLiability: (id: number) => void;
+  onDecreaseLiability: (id: number, amount: number) => Promise<boolean>;
 }
 
-export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddLiability, onRemoveLiability }) => {
+export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddLiability, onRemoveLiability, onDecreaseLiability }) => {
   const { t, language } = useLanguage();
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isDeductible, setIsDeductible] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [decreaseState, setDecreaseState] = useState<{ id: number; amount: string } | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,13 +72,65 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-bold text-lg text-slate-700">-{formatNum(item.amount)} {baseCurrency}</span>
-                  <button
-                    onClick={() => setDeleteId(item.id)}
-                    className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="text-right">
+                    <span className="font-bold text-lg text-slate-700 block">-{formatNum(item.amount)} {baseCurrency}</span>
+                    {decreaseState?.id === item.id ? (
+                      <div className="flex items-center gap-2 mt-1 animate-fade-in">
+                        <input
+                          type="number"
+                          autoFocus
+                          value={decreaseState.amount}
+                          onChange={e => setDecreaseState({ ...decreaseState, amount: e.target.value })}
+                          className="w-24 p-1 text-sm border rounded bg-slate-50 focus:ring-1 focus:ring-emerald-500 outline-none"
+                          placeholder="Amount"
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              const val = parseFloat(decreaseState.amount);
+                              if (!isNaN(val) && val > 0) {
+                                onDecreaseLiability(item.id, val);
+                                setDecreaseState(null);
+                              }
+                            } else if (e.key === 'Escape') {
+                              setDecreaseState(null);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const val = parseFloat(decreaseState.amount);
+                            if (!isNaN(val) && val > 0) {
+                              onDecreaseLiability(item.id, val);
+                              setDecreaseState(null);
+                            }
+                          }}
+                          className="text-emerald-600 hover:bg-emerald-50 p-1 rounded"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          onClick={() => setDecreaseState(null)}
+                          className="text-slate-400 hover:bg-slate-100 p-1 rounded"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDecreaseState({ id: item.id, amount: '' })}
+                        className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider hover:underline"
+                      >
+                        {t('decreaseValue') || 'Decrease Value'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setDeleteId(item.id)}
+                      className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))

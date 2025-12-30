@@ -11,6 +11,7 @@ public interface ILiabilityService
     Task<IEnumerable<Liability>> GetUserLiabilitiesAsync(int userId);
     Task<Liability?> CreateLiabilityAsync(int userId, CreateLiabilityDto dto);
     Task<bool> DeleteLiabilityAsync(int userId, int liabilityId);
+    Task<Liability?> DecreaseLiabilityAmountAsync(int userId, int liabilityId, decimal decreaseAmount);
 }
 
 public class LiabilityService : ILiabilityService
@@ -57,5 +58,23 @@ public class LiabilityService : ILiabilityService
         _context.Liabilities.Remove(liability);
         await _context.SaveChangesAsync();
         return true;
+    }
+    
+    public async Task<Liability?> DecreaseLiabilityAmountAsync(int userId, int liabilityId, decimal decreaseAmount)
+    {
+        var liability = await _context.Liabilities
+            .FirstOrDefaultAsync(l => l.Id == liabilityId && l.UserId == userId);
+            
+        if (liability == null) return null;
+        
+        liability.Amount -= decreaseAmount;
+        
+        if (liability.Amount <= 0)
+        {
+            _context.Liabilities.Remove(liability);
+        }
+        
+        await _context.SaveChangesAsync();
+        return liability.Amount <= 0 ? null : liability;
     }
 }

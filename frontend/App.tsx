@@ -28,7 +28,8 @@ const AuthenticatedApp: React.FC = () => {
     addLiability,
     removeLiability,
     addRate,
-    updateRates
+    updateRates,
+    decreaseLiability
   } = useStore();
 
   const { t } = useLanguage();
@@ -139,6 +140,7 @@ const AuthenticatedApp: React.FC = () => {
               data={data}
               onAddLiability={addLiability}
               onRemoveLiability={removeLiability}
+              onDecreaseLiability={decreaseLiability}
             />
           }
         />

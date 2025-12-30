@@ -97,8 +97,9 @@ export const translations = {
 
     // Liabilities
     liabHeader: "Liabilities & Installments",
-    liabSubtitle: "Register debts. Only debts due within the coming lunar year are typically deductible.",
-    noLiab: "No liabilities recorded.",
+    liabSubtitle: 'Manage your outstanding debts and liabilities for deduction.',
+    decreaseValue: 'Pay / Decrease',
+    noLiab: 'No liabilities added yet. Deductible debts will reduce your total Zakat.',
     deductible: "Deductible",
     notDeductible: "Not Deductible",
     noDate: "No Date",
@@ -382,8 +383,9 @@ export const translations = {
 
     // Liabilities
     liabHeader: "الالتزامات والأقساط",
-    liabSubtitle: "سجل الديون. الديون المستحقة خلال العام القمري القادم هي فقط التي تخصم عادة.",
-    noLiab: "لا توجد التزامات مسجلة.",
+    liabSubtitle: 'إدارة ديونك والتزاماتك القائمة لخصمها.',
+    decreaseValue: 'سداد / تخفيض',
+    noLiab: 'لم يتم إضافة التزامات بعد. الديون القابلة للخصم ستقلل من إجمالي الزكاة.',
     deductible: "قابل للخصم",
     notDeductible: "لا يخصم",
     noDate: "بدون تاريخ",

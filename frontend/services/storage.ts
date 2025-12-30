@@ -167,6 +167,20 @@ export const useStore = () => {
     }
   }, [loadAllData]);
 
+  const decreaseLiability = useCallback(async (id: number, amount: number) => {
+    setIsSyncing(true);
+    try {
+      await http.patch(`${API_ENDPOINTS.liabilities}/${id}/decrease`, { amount });
+      await loadAllData();
+      return true;
+    } catch (e) {
+      setSyncError("Failed to decrease liability.");
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [loadAllData]);
+
   const reorderRates = useCallback(async (newOrder: { id: number, order: number }[]) => {
     setIsSyncing(true);
     try {
@@ -327,6 +341,7 @@ export const useStore = () => {
     removeTransaction,
     addLiability,
     removeLiability,
+    decreaseLiability,
     addRate,
     removeRate,
     updateRates,
