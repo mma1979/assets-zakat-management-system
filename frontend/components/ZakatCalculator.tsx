@@ -136,16 +136,12 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     // 2. Deduct Liabilities (Within Lunar Year Window)
     const deductibleLiabilities = data.liabilities
       .filter(l => {
-        if (!l.isDeductible) return false;
-
-        // Check date logic
-        if (!l.dueDate) return false;
+        // Logic: Is the due date NULL OR (ON or AFTER the Zakat Date AND BEFORE or ON the Lunar End Date)?
+        if (!l.dueDate) return true;
 
         const due = parseLocal(l.dueDate);
-        if (!isValidDate(due)) return false;
+        if (!isValidDate(due)) return true;
 
-        // Logic: Is the due date ON or AFTER the Zakat Date AND BEFORE or ON the Lunar End Date?
-        // Basically: due \in [zakatDate, zakatDate + 354]
         const isOnOrAfterStart = isAfter(due, startDate) || isSameDay(due, startDate);
         const isOnOrBeforeEnd = isBefore(due, lunarEndDate) || isSameDay(due, lunarEndDate);
 

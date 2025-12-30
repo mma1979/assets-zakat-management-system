@@ -106,8 +106,8 @@ export const translations = {
     addLiability: "Add Liability",
     title: "Title",
     dueDate: "Due Date",
-    isDeductible: "Include in Zakat Calc",
-    isDeductibleHint: "Enable this to allow deduction if it falls within the lunar year window.",
+    isDeductible: 'Deductibility Status',
+    isDeductibleHint: 'Automated based on cycle window.',
 
     // Zakat
     zakatTitle: "Zakat Calculator",
@@ -392,8 +392,8 @@ export const translations = {
     addLiability: "إضافة التزام",
     title: "العنوان",
     dueDate: "تاريخ الاستحقاق",
-    isDeductible: "تضمين في حساب الزكاة",
-    isDeductibleHint: "قم بالتفعيل للسماح بالخصم إذا وقع ضمن نافذة العام القمري.",
+    isDeductible: 'حالة الخصم',
+    isDeductibleHint: 'يتم احتسابه تلقائياً بناءً على الحول.',
 
     // Zakat
     zakatTitle: "حاسبة الزكاة",

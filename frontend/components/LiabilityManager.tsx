@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StoreData, Liability } from '../types';
-import { Trash2, Calendar, DollarSign, CheckCircle2, MinusCircle, Check, X } from 'lucide-react';
+import { Trash2, Calendar, DollarSign, CheckCircle2, MinusCircle, Check, X, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CustomDatePicker } from './DatePicker';
 import { ConfirmModal } from './ConfirmModal';
 import { formatNumber } from '../utils/formatters';
+
+const parseLocal = (dateStr: string) => {
+  if (!dateStr) return new Date(NaN);
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2].split('T')[0]));
+  }
+  return new Date(dateStr);
+};
 
 interface LiabilityManagerProps {
   data: StoreData;
@@ -19,9 +28,37 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [isDeductible, setIsDeductible] = useState(true);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [decreaseState, setDecreaseState] = useState<{ id: number; amount: string } | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  
+  const currentCycle = useMemo(() => {
+    if (!data.zakatCycles || data.zakatCycles.length === 0) return null;
+    return [...data.zakatCycles].sort((a, b) => new Date(b.gregorianDate).getTime() - new Date(a.gregorianDate).getTime())[0];
+  }, [data.zakatCycles]);
+
+  const cycleRange = useMemo(() => {
+    let endDate = currentCycle ? new Date(currentCycle.gregorianDate) : new Date(data.zakatConfig.zakatDate);
+    if (isNaN(endDate.getTime())) endDate = new Date();
+    
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 355);
+    
+    return { start: startDate, end: endDate };
+  }, [currentCycle, data.zakatConfig.zakatDate]);
+
+  const checkDeductible = (dateStr: string | null) => {
+    if (!dateStr) return true; // Immediate debts are deductible
+    const due = parseLocal(dateStr);
+    if (isNaN(due.getTime())) return true;
+    
+    // Normalize to start of day for comparison
+    const dStart = new Date(cycleRange.start);
+    dStart.setHours(0,0,0,0);
+    const dEnd = new Date(cycleRange.end);
+    dEnd.setHours(23,59,59,999);
+    
+    return due.getTime() >= dStart.getTime() && due.getTime() <= dEnd.getTime();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +67,11 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
       title,
       amount: parseFloat(amount),
       dueDate,
-      isDeductible
+      isDeductible: checkDeductible(dueDate)
     });
     setTitle('');
     setAmount('');
     setDueDate('');
-    setIsDeductible(true);
   };
 
   const baseCurrency = data.zakatConfig?.baseCurrency || 'EGP';
@@ -58,7 +94,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
             data.liabilities.map(item => (
               <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between group hover:border-emerald-200 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${item.isDeductible ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                  <div className={`p-2 rounded-lg ${checkDeductible(item.dueDate) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
                     <DollarSign size={20} />
                   </div>
                   <div>
@@ -67,7 +103,9 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                       <Calendar size={12} />
                       {item.dueDate ? format(new Date(item.dueDate), 'dd-MM-yyyy') : t('noDate')}
                       <span className="text-slate-300">|</span>
-                      <span>{item.isDeductible ? t('deductible') : t('notDeductible')}</span>
+                      <span className={checkDeductible(item.dueDate) ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                        {checkDeductible(item.dueDate) ? t('deductible') : t('notDeductible')}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -169,16 +207,21 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
               />
             </div>
 
-            <div
-              className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-center gap-3 ${isDeductible ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}
-              onClick={() => setIsDeductible(!isDeductible)}
-            >
-              <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isDeductible ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300'}`}>
-                {isDeductible && <CheckCircle2 size={14} className="text-white" />}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700">{t('isDeductible')}</p>
-                <p className="text-xs text-slate-400">{t('isDeductibleHint')}</p>
+            <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${checkDeductible(dueDate) ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${checkDeductible(dueDate) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                  <Info size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">
+                    {checkDeductible(dueDate) ? t('deductible') : t('notDeductible')}
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                    {checkDeductible(dueDate) 
+                      ? (language === 'ar' ? 'يتم خصمه من الزكاة (ضمن العام الحالي)' : 'Deductible from Zakat (Within current cycle)')
+                      : (language === 'ar' ? 'لا يخصم (خارج نطاق العام الحالي)' : 'Not deductible (Outside current cycle range)')}
+                  </p>
+                </div>
               </div>
             </div>
 
