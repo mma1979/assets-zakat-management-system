@@ -1,10 +1,17 @@
 import axios from 'axios';
 
-// const base = (process.env.BACKEND_URL && !process.env.BACKEND_URL.includes('__APP_'))
-//   ? `${process.env.BACKEND_URL}/api`
-//   : '/api';
+const getBaseUrl = () => {
+  const backendUrl = process.env.BACKEND_URL;
+  // If backendUrl is the placeholder or local, we might want to default to /api for web
+  // but on mobile we need the full IP.
+  if (backendUrl && !backendUrl.includes('__APP_')) {
+    return `${backendUrl}/api`;
+  }
+  return '/api';
+};
 
 const http = axios.create({
+  baseURL: getBaseUrl(),
   withCredentials: true,
   headers: { Accept: 'application/json', 'Content-Type': 'application/json' }
 });

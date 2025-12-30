@@ -153,11 +153,17 @@ const AuthenticatedApp: React.FC = () => {
 };
 
 import { LandingPage } from './components/LandingPage';
+import { mobileBridge } from './services/mobileBridge';
 
 const AppRoutes: React.FC = () => {
+  const isMobile = mobileBridge.isMobileShell();
+
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route 
+        path="/" 
+        element={isMobile ? <Navigate to="/app" replace /> : <LandingPage />} 
+      />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute />}>
