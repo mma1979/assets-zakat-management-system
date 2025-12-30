@@ -10,6 +10,7 @@ public interface IZakatCycleService
     Task ProcessPendingCyclesAsync();
     Task<ZakatCycle?> CreateNextCycleAsync(int userId);
     Task<List<ZakatCycle>> GetUserCyclesAsync(int userId);
+    Task RecalculateUserCyclesAsync(int userId);
 }
 
 public class ZakatCycleService(FinanceDbContext context, ILogger<ZakatCycleService> logger, INotificationService notificationService) : IZakatCycleService
@@ -108,6 +109,25 @@ public class ZakatCycleService(FinanceDbContext context, ILogger<ZakatCycleServi
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.GregorianDate)
             .ToListAsync();
+    }
+
+    public async Task RecalculateUserCyclesAsync(int userId)
+    {
+        var config = await context.ZakatConfigs.FirstOrDefaultAsync(c => c.UserId == userId);
+        if (config == null || config.ZakatAnniversaryDay == null || config.ZakatAnniversaryMonth == null) return;
+
+        // Remove existing Open cycles as they might have wrong dates now
+        var openCycles = await context.ZakatCycles
+            .Where(c => c.UserId == userId && c.Status == "Open")
+            .ToListAsync();
+
+        if (openCycles.Any())
+        {
+            context.ZakatCycles.RemoveRange(openCycles);
+            await context.SaveChangesAsync();
+        }
+
+        await CreateNextCycleIfNeededAsync(config);
     }
 
     private DateTime GetGregorianDate(int hijriYear, int hijriMonth, int hijriDay)

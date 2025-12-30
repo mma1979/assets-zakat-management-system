@@ -27,6 +27,8 @@ services:
       - GeminiApiKey=${API_KEY}
       - Resend__ApiToken=${RESEND_API_KEY}
       - Resend__Sender=${RESEND_SENDER}
+      - VapidPublicKey=${VAPID_PUBLIC_KEY}
+      - VapidPrivateKey=${VAPID_PRIVATE_KEY}  
     volumes:
       - ./backend/ZakatVault/FinanceAPI/Logs:/app/Logs
     ports:

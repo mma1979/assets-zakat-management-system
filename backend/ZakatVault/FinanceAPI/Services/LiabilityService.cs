@@ -12,6 +12,7 @@ public interface ILiabilityService
     Task<Liability?> CreateLiabilityAsync(int userId, CreateLiabilityDto dto);
     Task<bool> DeleteLiabilityAsync(int userId, int liabilityId);
     Task<Liability?> DecreaseLiabilityAmountAsync(int userId, int liabilityId, decimal decreaseAmount);
+    Task RecalculateDeductibilityAsync(int userId);
 }
 
 public class LiabilityService : ILiabilityService
@@ -58,6 +59,38 @@ public class LiabilityService : ILiabilityService
         _context.Liabilities.Remove(liability);
         await _context.SaveChangesAsync();
         return true;
+    }
+    
+    public async Task RecalculateDeductibilityAsync(int userId)
+    {
+        var config = await _context.ZakatConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.UserId == userId);
+        if (config == null) return;
+
+        // Determine the window [StartDate, EndDate]
+        // Same logic as ZakatCycleService/VW_ZakatCalc
+        var lastCycle = await _context.ZakatCycles.AsNoTracking()
+            .Where(c => c.UserId == userId)
+            .OrderByDescending(c => c.GregorianDate)
+            .FirstOrDefaultAsync();
+
+        DateTime endDate = lastCycle?.GregorianDate ?? config.ZakatDate;
+        DateTime startDate = endDate.AddDays(-355);
+
+        var liabilities = await _context.Liabilities.Where(l => l.UserId == userId).ToListAsync();
+        foreach (var l in liabilities)
+        {
+            if (l.DueDate == null)
+            {
+                l.IsDeductible = true;
+            }
+            else
+            {
+                // Simple date comparison
+                l.IsDeductible = l.DueDate >= startDate && l.DueDate <= endDate;
+            }
+        }
+
+        await _context.SaveChangesAsync();
     }
     
     public async Task<Liability?> DecreaseLiabilityAmountAsync(int userId, int liabilityId, decimal decreaseAmount)

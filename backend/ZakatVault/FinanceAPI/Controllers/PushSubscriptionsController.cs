@@ -8,9 +8,9 @@ using System.Security.Claims;
 
 namespace FinanceAPI.Controllers;
 
-[Authorize]
-[ApiController]
 [Route("api/[controller]")]
+[Route("api/push-subscriptions")]
+[ApiController]
 public class PushSubscriptionsController : ControllerBase
 {
     private readonly FinanceDbContext _context;
@@ -22,12 +22,14 @@ public class PushSubscriptionsController : ControllerBase
         _vapidKeyService = vapidKeyService;
     }
 
+    [AllowAnonymous]
     [HttpGet("vapid-public-key")]
     public IActionResult GetVapidPublicKey()
     {
         return Ok(new { publicKey = _vapidKeyService.GetPublicKey() });
     }
 
+    [Authorize]
     [HttpPost("register")]
     public async Task<IActionResult> Register(PushSubscriptionDto dto)
     {
@@ -57,6 +59,7 @@ public class PushSubscriptionsController : ControllerBase
         return Ok();
     }
 
+    [Authorize]
     [HttpPost("unregister")]
     public async Task<IActionResult> Unregister([FromBody] string endpoint)
     {
