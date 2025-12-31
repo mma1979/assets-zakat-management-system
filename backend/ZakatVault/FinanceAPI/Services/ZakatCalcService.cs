@@ -9,7 +9,7 @@ public interface IZakatCalcService
 {
     Task<VwZakatCalc> GetZakatCalcAsync(int userId);
 }
-public class ZakatCalcService(FinanceDbContext context, ILogger<ZakatCalcService> logger) : IZakatCalcService
+public class ZakatCalcService(FinanceDbContext context) : IZakatCalcService
 {
     public async Task<VwZakatCalc> GetZakatCalcAsync(int userId)
     {

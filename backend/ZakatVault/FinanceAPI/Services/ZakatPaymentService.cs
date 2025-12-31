@@ -8,7 +8,7 @@ namespace FinanceAPI.Services;
 public interface IZakatPaymentService
 {
     Task<IEnumerable<ZakatPayment>> GetUserPaymentsAsync(int userId);
-    Task<ZakatPayment> GetPaymentByIdAsync(int paymentId, int userId);
+    Task<ZakatPayment?> GetPaymentByIdAsync(int paymentId, int userId);
     Task<ZakatPayment> AddPaymentAsync(int userId, CreateZakatPaymentDto dto);
     Task<bool> DeletePaymentAsync(int paymentId, int userId);
 }
@@ -23,7 +23,7 @@ public class ZakatPaymentService(FinanceDbContext context) : IZakatPaymentServic
             .ToListAsync();
     }
 
-    public async Task<ZakatPayment> GetPaymentByIdAsync(int paymentId, int userId)
+    public async Task<ZakatPayment?> GetPaymentByIdAsync(int paymentId, int userId)
     {
         return await context.ZakatPayments
             .FirstOrDefaultAsync(p => p.Id == paymentId && p.UserId == userId);

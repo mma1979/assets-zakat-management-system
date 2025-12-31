@@ -34,9 +34,9 @@ public class LiabilityReminderJob(FinanceDbContext context, INotificationService
             .Where(l => l.DueDate.HasValue && l.DueDate.Value.Date <= threeDaysFromNow && l.DueDate.Value.Date >= today)
             .ToListAsync();
 
-        foreach (var liability in upcomingLiabilities)
+        foreach (var liability in upcomingLiabilities )
         {
-            var daysLeft = (liability.DueDate.Value.Date - today).Days;
+            var daysLeft = (liability.DueDate?.Date - today)?.Days ?? 0;
             string message = daysLeft == 0 
                 ? $"Your liability '{liability.Title}' is due today!" 
                 : $"Your liability '{liability.Title}' is due in {daysLeft} days.";
