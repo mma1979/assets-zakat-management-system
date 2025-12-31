@@ -43,152 +43,184 @@ public class DashboardService(FinanceDbContext context) : IDashboardService
 
     public async Task<DashboardSummary> GetDashboardSummaryAsync(int userId)
     {
-        var totalBuy = await context.Transactions
-             .Where(t => t.UserId == userId && t.Type == TransactionType.BUY)
-             .Join(context.Rates,
+        var totalAssets = await context.Transactions
+            .Where(t => t.UserId == userId)
+            .Join(context.Rates.Where(r => r.UserId == userId),
                   t => t.AssetType,
                   r => r.Name,
-                  (t, r) => new
-                  {
-                      t.UserId,
-                      t.Amount,
-                      PricePerUnit = r.Value
-                  })
-            .SumAsync(t => t.Amount * t.PricePerUnit);
-
-        var totalSell = await context.Transactions
-             .Where(t => t.UserId == userId && t.Type == TransactionType.SELL)
-             .Join(context.Rates,
-                  t => t.AssetType,
-                  r => r.Name,
-                  (t, r) => new
-                  {
-                      t.UserId,
-                      t.Amount,
-                      PricePerUnit = r.Value
-                  })
-            .SumAsync(t => t.Amount * t.PricePerUnit);
+                  (t, r) => new { Transaction = t, RateValue = r.Value })
+            .SumAsync(g => g.Transaction.Amount * g.RateValue * (g.Transaction.Type == TransactionType.BUY ? 1 : -1));
 
         var totalLiabilities = await context.Liabilities
             .Where(l => l.UserId == userId)
             .SumAsync(l => l.Amount);
 
-        var totalAssets = totalBuy - totalSell;
         var netWorth = totalAssets - totalLiabilities;
 
-        var summary = new DashboardSummary
+        return new DashboardSummary
         {
             TotalAssets = totalAssets,
             TotalLiabilities = totalLiabilities,
             NetWorth = netWorth
         };
+    }
 
-        return summary;
+    public async Task<DashboardSummary> GetDashboardSummaryAsyncV1(int userId)
+    {
+        var config = await context.ZakatConfigs.FirstOrDefaultAsync(c => c.UserId == userId);
+        var baseCurrency = config?.BaseCurrency ?? "EGP";
+
+        var transactions = await context.Transactions
+            .Where(t => t.UserId == userId)
+            .ToListAsync();
+
+        var rates = await context.Rates
+            .Where(r => r.UserId == userId)
+            .ToDictionaryAsync(r => r.Name, r => r.Value);
+
+        decimal GetRate(string? assetType)
+        {
+            if (string.IsNullOrEmpty(assetType) || assetType == baseCurrency) return 1.0m;
+            return rates.TryGetValue(assetType, out var value) ? value : 0m;
+        }
+
+        var totalAssets = transactions
+            .Sum(t => t.Amount * GetRate(t.AssetType) * (t.Type == TransactionType.BUY ? 1 : -1));
+
+        var totalLiabilities = await context.Liabilities
+            .Where(l => l.UserId == userId)
+            .SumAsync(l => l.Amount);
+
+        var netWorth = totalAssets - totalLiabilities;
+
+        return new DashboardSummary
+        {
+            TotalAssets = totalAssets,
+            TotalLiabilities = totalLiabilities,
+            NetWorth = netWorth
+        };
     }
 
     public async Task<List<PortfolioMetric>> GetPortfolioCompositionAsync(int userId)
     {
+        var config = await context.ZakatConfigs.FirstOrDefaultAsync(c => c.UserId == userId);
+        var baseCurrency = config?.BaseCurrency ?? "EGP";
 
+        var transactions = await context.Transactions
+            .Where(t => t.UserId == userId)
+            .ToListAsync();
 
-        // current value of the portfolio
-        var portfolio = await context.Transactions
-             .Where(t => t.UserId == userId)
-             .Join(context.Rates,
-                  t => t.AssetType,
-                  r => r.Name,
-                  (t, r) => new
-                  {
-                      Value = t.Amount * r.Value * (t.Type == TransactionType.BUY ? 1 : -1),
-                      Name = r.Title,
-                      Key = r.Name
-                  }).GroupBy(t => t.Name)
-                  .Select(g => new PortfolioMetric
-                  {
-                      Name = g.Key,
-                      Value = g.Sum(x => x.Value),
-                      Percentage = 0,
-                      Color = GetAssetColor(g.First().Key)
+        var rates = await context.Rates
+            .Where(r => r.UserId == userId)
+            .ToListAsync();
 
-                  }).ToListAsync();
+        var ratesDict = rates.ToDictionary(r => r.Name, r => r);
+
+        var portfolio = transactions
+            .GroupBy(t => t.AssetType ?? baseCurrency)
+            .Select(g =>
+            {
+                var assetKey = g.Key;
+                var amount = g.Sum(t => t.Amount * (t.Type == TransactionType.BUY ? 1 : -1));
+                
+                decimal rateValue = 1.0m;
+                string title = baseCurrency;
+                if (assetKey != baseCurrency && ratesDict.TryGetValue(assetKey, out var rate))
+                {
+                    rateValue = rate.Value;
+                    title = rate.Title;
+                }
+
+                return new PortfolioMetric
+                {
+                    Name = title,
+                    Value = amount * rateValue,
+                    Percentage = 0,
+                    Color = GetAssetColor(assetKey)
+                };
+            })
+            .Where(p => p.Value > 0.01m)
+            .ToList();
+
         var totalPortfolio = portfolio.Sum(p => p.Value);
-        portfolio.ForEach(p => p.Percentage = p.Value / totalPortfolio);
+        if (totalPortfolio > 0)
+        {
+            portfolio.ForEach(p => p.Percentage = (p.Value / totalPortfolio));
+        }
 
         return portfolio;
-
-
     }
 
     public async Task<List<PortfolioValueGroup>> GetPortfolioValueHistoryAsync(int userId)
     {
-        var rawData = (await context.Transactions
-    .Where(t => t.UserId == userId)
-    .Join(context.Rates,
-         t => t.AssetType,
-         r => r.Name,
-         (t, r) => new
-         {
-             Amount = t.Amount,
-             RateValue = r.Value,
-             Type = t.Type,
-             Date = t.Date,
-             Key = r.Name,
-             Title = r.Title
-         })
-    .ToListAsync())
-    .Select(t => new
-    {
-        Value = t.Amount * t.RateValue * (t.Type == TransactionType.BUY ? 1 : -1),
-        Date = t.Date.ToString("yyyy-MM-dd"),
-        Key = t.Key,
-        Title = t.Title
-    })
-    .OrderBy(t => t.Date) // Important: order by date first
-    .ToList();
+        var config = await context.ZakatConfigs.FirstOrDefaultAsync(c => c.UserId == userId);
+        var baseCurrency = config?.BaseCurrency ?? "EGP";
 
-        // Get min and max dates across all data
-        var allDates = rawData.Select(x => DateTime.Parse(x.Date)).ToList();
-        if (!allDates.Any())
+        var transactions = await context.Transactions
+            .Where(t => t.UserId == userId)
+            .OrderBy(t => t.Date)
+            .ToListAsync();
+
+        var rates = await context.Rates
+            .Where(r => r.UserId == userId)
+            .ToListAsync();
+
+        var ratesDict = rates.ToDictionary(r => r.Name, r => r);
+
+        if (!transactions.Any()) return new List<PortfolioValueGroup>();
+
+        var minDate = transactions.Min(t => t.Date);
+        var maxDate = DateTime.UtcNow.Date;
+
+        var dateRange = Enumerable.Range(0, (maxDate - minDate).Days + 1)
+            .Select(offset => minDate.AddDays(offset).Date)
+            .ToList();
+
+        var assetGroups = transactions.GroupBy(t => t.AssetType ?? baseCurrency).ToList();
+        var result = new List<PortfolioValueGroup>();
+
+        foreach (var group in assetGroups)
         {
-            return new List<PortfolioValueGroup>();
+            var assetKey = group.Key;
+            var cumulativeAmount = 0m;
+            var history = new List<PortfolioValue>();
+            
+            decimal currentRate = 1.0m;
+            string title = baseCurrency;
+            if (assetKey != baseCurrency && ratesDict.TryGetValue(assetKey, out var rate))
+            {
+                currentRate = rate.Value;
+                title = rate.Title;
+            }
+
+            foreach (var date in dateRange)
+            {
+                var dailyChange = group
+                    .Where(t => t.Date.Date == date)
+                    .Sum(t => t.Amount * (t.Type == TransactionType.BUY ? 1 : -1));
+                
+                cumulativeAmount += dailyChange;
+
+                history.Add(new PortfolioValue
+                {
+                    Date = date.ToString("yyyy-MM-dd"),
+                    Value = cumulativeAmount * currentRate
+                });
+            }
+
+            if (history.Any(h => h.Value > 0.01m))
+            {
+                result.Add(new PortfolioValueGroup
+                {
+                    Title = title,
+                    Color = GetAssetColor(assetKey),
+                    History = history
+                });
+            }
         }
 
-        var minDate = allDates.Min();
-        var maxDate = allDates.Max();
-
-        // Generate all dates between min and max
-        var dateRange = Enumerable.Range(0, (maxDate - minDate).Days + 1)
-            .Select(offset => minDate.AddDays(offset).ToString("yyyy-MM-dd"))
-            .ToList();
-
-        var portfolio = rawData
-            .GroupBy(t => new { t.Title, t.Key })
-            .Select(g =>
-            {
-                var cumulativeValue = 0m;
-                var history = new List<PortfolioValue>();
-
-                foreach (var date in dateRange)
-                {
-                    // Add the transaction value for this date (if any)
-                    var dailyChange = g.Where(x => x.Date == date).Sum(x => x.Value);
-                    cumulativeValue += dailyChange;
-
-                    history.Add(new PortfolioValue
-                    {
-                        Date = date,
-                        Value = cumulativeValue
-                    });
-                }
-
-                return new PortfolioValueGroup
-                {
-                    Title = g.Key.Title,
-                    Color = GetAssetColor(g.Key.Key),
-                    History = history
-                };
-            })
-            .ToList();
-
-        return portfolio;
+        return result;
     }
+
+    
 }

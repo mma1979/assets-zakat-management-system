@@ -8,6 +8,7 @@ class AuthState {
   final String? error;
   final bool twoFactorRequired;
   final String? challengeToken;
+  final String? email;
 
   AuthState({
     this.user,
@@ -15,6 +16,7 @@ class AuthState {
     this.error,
     this.twoFactorRequired = false,
     this.challengeToken,
+    this.email,
   });
 
   AuthState copyWith({
@@ -23,6 +25,7 @@ class AuthState {
     String? error,
     bool? twoFactorRequired,
     String? challengeToken,
+    String? email,
   }) {
     return AuthState(
       user: user ?? this.user,
@@ -30,6 +33,7 @@ class AuthState {
       error: error,
       twoFactorRequired: twoFactorRequired ?? this.twoFactorRequired,
       challengeToken: challengeToken ?? this.challengeToken,
+      email: email ?? this.email,
     );
   }
 }
@@ -52,6 +56,7 @@ class AuthNotifier extends Notifier<AuthState> {
           isLoading: false,
           twoFactorRequired: true,
           challengeToken: result.challengeToken,
+          email: email,
         );
         return false;
       }
@@ -79,14 +84,43 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<bool> verify2Fa(String code) async {
+    final challengeToken = state.challengeToken;
+    final email = state.email;
+    if (challengeToken == null || email == null) {
+      state = state.copyWith(error: 'Missing verification data');
+      return false;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+    
+    final authService = ref.read(authServiceProvider);
+    final (result, error) = await authService.verify2Fa(code, challengeToken, email);
+    
+    if (result != null) {
+      state = state.copyWith(
+        user: result.user, 
+        isLoading: false,
+        twoFactorRequired: false,
+        challengeToken: null,
+      );
+      return true;
+    } else {
+      state = state.copyWith(isLoading: false, error: error ?? 'Verification failed');
+      return false;
+    }
+  }
+
+  void resetError() {
+    state = state.copyWith(error: null);
+  }
+
   Future<void> logout() async {
     final authService = ref.read(authServiceProvider);
     await authService.logout();
     state = AuthState();
   }
 }
-
-final authServiceProvider = Provider((ref) => AuthService());
 
 final authNotifierProvider = NotifierProvider<AuthNotifier, AuthState>(() {
   return AuthNotifier();

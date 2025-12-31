@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_models.dart';
 import '../core/constants.dart';
+
+final authServiceProvider = Provider((ref) => AuthService());
 
 class AuthService {
   final Dio _dio = Dio(BaseOptions(
@@ -53,6 +56,32 @@ class AuthService {
         return (authData, null);
       } else {
         final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Registration failed';
+        return (null, message);
+      }
+    } on DioException catch (e) {
+      final message = (e.response?.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Network error';
+      return (null, message);
+    } catch (e) {
+      return (null, 'Unexpected error occurred');
+    }
+  }
+
+  Future<(AuthResponse?, String?)> verify2Fa(String code, String challengeToken, String email) async {
+    try {
+      final response = await _dio.post('/auth/verify-2fa', data: {
+        'code': code,
+        'challengeToken': challengeToken,
+        'email': email,
+      });
+
+      print('AuthService: Verify2Fa status ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final authData = AuthResponse.fromJson(response.data);
+        await _saveAuth(authData);
+        return (authData, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Invalid 2FA code';
         return (null, message);
       }
     } on DioException catch (e) {

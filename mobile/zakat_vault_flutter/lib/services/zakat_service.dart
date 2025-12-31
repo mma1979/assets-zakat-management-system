@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/zakat_models.dart';
 import '../core/constants.dart';
 import 'auth_service.dart';
-import '../features/auth/auth_notifier.dart';
 
 class ZakatService {
   final Dio _dio;

@@ -15,6 +15,7 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
@@ -22,6 +23,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
@@ -38,9 +40,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<void> _handleVerify2Fa() async {
+    if (_codeController.text.length == 6) {
+      final success = await ref.read(authNotifierProvider.notifier).verify2Fa(
+        _codeController.text,
+      );
+
+      if (success && mounted) {
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
+    final is2Fa = authState.twoFactorRequired;
 
     return Scaffold(
       body: Container(
@@ -85,7 +100,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Welcome Back',
+                      is2Fa ? 'Two-Factor Authentication' : 'Welcome Back',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],
@@ -112,54 +127,78 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Email Field
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(LucideIcons.mail),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Password Field
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: const Icon(LucideIcons.lock),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? LucideIcons.eyeOff
-                                        : LucideIcons.eye,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
+                            if (!is2Fa) ...[
+                              // Email Field
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'Email',
+                                  prefixIcon: Icon(LucideIcons.mail),
                                 ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!value.contains('@')) {
+                                    return 'Please enter a valid email';
+                                  }
+                                  return null;
+                                },
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 24),
+                              const SizedBox(height: 16),
+
+                              // Password Field
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: _obscurePassword,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  prefixIcon: const Icon(LucideIcons.lock),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? LucideIcons.eyeOff
+                                          : LucideIcons.eye,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                            ] else ...[
+                              const Text(
+                                'Enter the 6-digit code from your authenticator app',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 14, color: Color(0xFF4B5563)),
+                              ),
+                              const SizedBox(height: 24),
+                              TextFormField(
+                                controller: _codeController,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
+                                decoration: const InputDecoration(
+                                  hintText: '000000',
+                                  counterText: '',
+                                ),
+                                maxLength: 6,
+                                onChanged: (value) {
+                                  if (value.length == 6) _handleVerify2Fa();
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                            ],
 
                             // Error Message
                             if (authState.error != null)
@@ -185,9 +224,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                               ),
 
-                            // Login Button
+                            // Action Button
                             ElevatedButton(
-                              onPressed: authState.isLoading ? null : _handleLogin,
+                              onPressed: authState.isLoading ? null : (is2Fa ? _handleVerify2Fa : _handleLogin),
                               child: authState.isLoading
                                   ? const SizedBox(
                                       height: 20,
@@ -197,21 +236,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('Login'),
+                                  : Text(is2Fa ? 'Verify Code' : 'Login'),
                             ),
                             const SizedBox(height: 16),
 
-                            // Register Link
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const RegisterPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text('Don\'t have an account? Register'),
-                            ),
+                            if (is2Fa)
+                              TextButton(
+                                onPressed: () {
+                                  ref.read(authNotifierProvider.notifier).logout();
+                                },
+                                child: const Text('Back to Login'),
+                              )
+                            else
+                              // Register Link
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterPage(),
+                                    ),
+                                  );
+                                },
+                                child: const Text('Don\'t have an account? Register'),
+                              ),
                           ],
                         ),
                       ),

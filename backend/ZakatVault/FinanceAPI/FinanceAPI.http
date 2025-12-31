@@ -1,42 +1,303 @@
 ﻿@Host = http://localhost:5000
- 
+
+### Register
+POST {{Host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "fullName": "New User"
+}
+
 ### Login
 # @name login
 POST {{Host}}/api/auth/login
 Content-Type: application/json
- 
+
 {
   "email": "xxxxxxxx@gmail.com",
   "password": "********"
 }
- 
-###
- 
-### Get Rates
-GET {{Host}}/api/rates
+
+### Login with PIN
+POST {{Host}}/api/auth/login-pin
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "pin": "1234",
+  "deviceId": "device-uuid"
+}
+
+### Refresh Token
+POST {{Host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "token": "old-token",
+  "refreshToken": "old-refresh-token"
+}
+
+### Verify 2FA
+POST {{Host}}/api/auth/verify-2fa
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "code": "123456"
+}
+
+### Setup 2FA
+GET {{Host}}/api/auth/setup-2fa
 Authorization: Bearer {{login.response.body.$.token}}
- 
+
+### Enable 2FA
+POST {{Host}}/api/auth/enable-2fa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "code": "123456",
+  "secretKey": "secret"
+}
+
+### Disable 2FA
+POST {{Host}}/api/auth/disable-2fa
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Change Password
+PUT {{Host}}/api/auth/change-password
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewPassword123!"
+}
+
 ###
- 
-GET {{Host}}/api/Values
- 
-###
- 
+
 ### Dashboard Summary
 GET {{Host}}/api/dashboard/summary
 Authorization: Bearer {{login.response.body.$.token}}
 
-###
-
-### Dashboard Portfolio Metric
+### Dashboard Portfolio Composition
 GET {{Host}}/api/dashboard/portfolio-composition
 Authorization: Bearer {{login.response.body.$.token}}
 
-###
-
-### Dashboard Portfolio Value Over Time
+### Dashboard Portfolio Value History
 GET {{Host}}/api/dashboard/portfolio-value-history
 Authorization: Bearer {{login.response.body.$.token}}
 
 ###
 
+### Get Liabilities
+GET {{Host}}/api/liabilities
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Create Liability
+POST {{Host}}/api/liabilities
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Personal Loan",
+  "amount": 5000,
+  "dueDate": "2025-12-31"
+}
+
+### Decrease Liability Amount
+PATCH {{Host}}/api/liabilities/{id}/decrease
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "amount": 500
+}
+
+### Delete Liability
+DELETE {{Host}}/api/liabilities/{id}
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Get Price Alerts
+GET {{Host}}/api/price-alerts
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Create Price Alert
+POST {{Host}}/api/price-alerts
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "symbol": "BTC",
+  "targetPrice": 50000,
+  "isAbove": true
+}
+
+### Toggle Price Alert
+PATCH {{Host}}/api/price-alerts/{id}/toggle
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Delete Price Alert
+DELETE {{Host}}/api/price-alerts/{id}
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Get VAPID Public Key
+GET {{Host}}/api/push-subscriptions/vapid-public-key
+
+### Register Push Subscription
+POST {{Host}}/api/push-subscriptions/register
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "endpoint": "https://fcm.googleapis.com/...",
+  "p256dh": "...",
+  "auth": "..."
+}
+
+### Unregister Push Subscription
+POST {{Host}}/api/push-subscriptions/unregister
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: text/plain
+
+"https://fcm.googleapis.com/..."
+
+###
+
+### Get Rates
+GET {{Host}}/api/rates
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Add Rate
+POST {{Host}}/api/rates
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "symbol": "GOLD",
+  "price": 60,
+  "unit": "gram"
+}
+
+### Update Rates
+PUT {{Host}}/api/rates
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+[
+  {
+    "symbol": "GOLD",
+    "price": 65
+  }
+]
+
+### Reorder Rates
+PUT {{Host}}/api/rates/reorder
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+[
+  {
+    "symbol": "GOLD",
+    "order": 1
+  }
+]
+
+### Delete Rate
+DELETE {{Host}}/api/rates/{id}
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Get Transactions
+GET {{Host}}/api/transactions
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Create Transaction
+POST {{Host}}/api/transactions
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "amount": 1000,
+  "type": "Income",
+  "description": "Monthly Salary",
+  "date": "2025-12-31"
+}
+
+### Delete Transaction
+DELETE {{Host}}/api/transactions/{id}
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Values (Gemini Market Rates)
+GET {{Host}}/api/values
+
+###
+
+### Get Zakat Calculation
+GET {{Host}}/api/zakatcalc
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Get Zakat Config
+GET {{Host}}/api/zakat-config
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Add Zakat Config
+POST {{Host}}/api/zakat-config
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nisabThreshold": 5000,
+  "zakatRate": 0.025
+}
+
+### Update Zakat Config
+PUT {{Host}}/api/zakat-config
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nisabThreshold": 5500
+}
+
+###
+
+### Get Zakat Cycles
+GET {{Host}}/api/zakatcycles
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Generate Next Zakat Cycle
+POST {{Host}}/api/zakatcycles/generate
+Authorization: Bearer {{login.response.body.$.token}}
+
+###
+
+### Get Zakat Payments
+GET {{Host}}/api/zakat-payments
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Add Zakat Payment
+POST {{Host}}/api/zakat-payments
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "amount": 125,
+  "date": "2025-12-31",
+  "description": "Zakat for Q4"
+}
+
+### Delete Zakat Payment
+DELETE {{Host}}/api/zakat-payments/{id}
+Authorization: Bearer {{login.response.body.$.token}}

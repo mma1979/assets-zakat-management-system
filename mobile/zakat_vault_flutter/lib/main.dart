@@ -5,6 +5,11 @@ import 'features/auth/login_page.dart';
 import 'features/auth/auth_notifier.dart';
 
 import 'features/setup/zakat_setup_page.dart';
+import 'features/dashboard/dashboard_page.dart';
+import 'features/settings/settings_page.dart';
+import 'features/assets/assets_page.dart';
+import 'features/liabilities/liabilities_page.dart';
+import 'features/zakat/zakat_calc_page.dart';
 
 void main() {
   runApp(
@@ -25,8 +30,12 @@ class ZakatVaultApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       home: const AuthWrapper(),
       routes: {
-        '/dashboard': (context) => const DashboardPlaceholder(),
+        '/dashboard': (context) => const DashboardPage(),
         '/zakat-setup': (context) => const ZakatSetupPage(),
+        '/settings': (context) => const SettingsPage(),
+        '/assets': (context) => const AssetsPage(),
+        '/liabilities': (context) => const LiabilitiesPage(),
+        '/zakat': (context) => const ZakatCalcPage(),
       },
     );
   }
@@ -40,7 +49,7 @@ class AuthWrapper extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     
     if (authState.user != null) {
-      return const DashboardPlaceholder();
+      return const DashboardPage();
     }
     
     return const LoginPage();

@@ -62,11 +62,20 @@ public class ZakatCalcService(FinanceDbContext context) : IZakatCalcService
         decimal totalAssets = 0;
         foreach (var t in transactions)
         {
-            if (ratesMap.TryGetValue(t.AssetType ?? "", out decimal rateValue))
+            decimal rateValue = 0;
+            string assetType = t.AssetType ?? config.BaseCurrency;
+            
+            if (assetType == config.BaseCurrency)
             {
-                var factor = t.Type.ToUpper() == "BUY" ? 1 : -1;
-                totalAssets += t.Amount * rateValue * factor;
+                rateValue = 1.0m;
             }
+            else
+            {
+                ratesMap.TryGetValue(assetType, out rateValue);
+            }
+
+            var factor = t.Type.ToUpper() == "BUY" ? 1 : -1;
+            totalAssets += t.Amount * rateValue * factor;
         }
 
         var netZakatBase = Math.Max(0, totalAssets - totalDebts);
