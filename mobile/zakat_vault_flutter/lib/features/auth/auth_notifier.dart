@@ -6,14 +6,30 @@ class AuthState {
   final User? user;
   final bool isLoading;
   final String? error;
+  final bool twoFactorRequired;
+  final String? challengeToken;
 
-  AuthState({this.user, this.isLoading = false, this.error});
+  AuthState({
+    this.user,
+    this.isLoading = false,
+    this.error,
+    this.twoFactorRequired = false,
+    this.challengeToken,
+  });
 
-  AuthState copyWith({User? user, bool? isLoading, String? error}) {
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    String? error,
+    bool? twoFactorRequired,
+    String? challengeToken,
+  }) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      twoFactorRequired: twoFactorRequired ?? this.twoFactorRequired,
+      challengeToken: challengeToken ?? this.challengeToken,
     );
   }
 }
@@ -28,13 +44,22 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     
     final authService = ref.read(authServiceProvider);
-    final result = await authService.login(email, password);
+    final (result, error) = await authService.login(email, password);
     
     if (result != null) {
+      if (result.twoFactorRequired) {
+        state = state.copyWith(
+          isLoading: false,
+          twoFactorRequired: true,
+          challengeToken: result.challengeToken,
+        );
+        return false;
+      }
+      
       state = state.copyWith(user: result.user, isLoading: false);
       return true;
     } else {
-      state = state.copyWith(isLoading: false, error: 'Invalid credentials');
+      state = state.copyWith(isLoading: false, error: error ?? 'Login failed');
       return false;
     }
   }
@@ -43,13 +68,13 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     
     final authService = ref.read(authServiceProvider);
-    final result = await authService.register(email, password, fullName);
+    final (result, error) = await authService.register(email, password, fullName);
     
     if (result != null) {
       state = state.copyWith(user: result.user, isLoading: false);
       return true;
     } else {
-      state = state.copyWith(isLoading: false, error: 'Registration failed');
+      state = state.copyWith(isLoading: false, error: error ?? 'Registration failed');
       return false;
     }
   }

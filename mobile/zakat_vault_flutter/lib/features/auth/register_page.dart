@@ -35,7 +35,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       );
 
       if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        Navigator.of(context).pushReplacementNamed('/zakat-setup');
       }
     }
   }

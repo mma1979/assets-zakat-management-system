@@ -4,6 +4,8 @@ import 'core/theme.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/auth_notifier.dart';
 
+import 'features/setup/zakat_setup_page.dart';
+
 void main() {
   runApp(
     const ProviderScope(
@@ -24,6 +26,7 @@ class ZakatVaultApp extends ConsumerWidget {
       home: const AuthWrapper(),
       routes: {
         '/dashboard': (context) => const DashboardPlaceholder(),
+        '/zakat-setup': (context) => const ZakatSetupPage(),
       },
     );
   }

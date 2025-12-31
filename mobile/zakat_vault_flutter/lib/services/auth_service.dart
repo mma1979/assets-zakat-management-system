@@ -4,44 +4,63 @@ import '../models/auth_models.dart';
 import '../core/constants.dart';
 
 class AuthService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: AppConstants.baseUrl));
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: AppConstants.baseUrl,
+    validateStatus: (status) => status! < 500,
+  ));
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  Future<AuthResponse?> login(String email, String password) async {
+  Future<(AuthResponse?, String?)> login(String email, String password) async {
     try {
       final response = await _dio.post('/auth/login', data: {
         'email': email,
         'password': password,
       });
 
+      print('AuthService: Login status ${response.statusCode}');
+      print('AuthService: Login response data: ${response.data}');
+
       if (response.statusCode == 200) {
         final authData = AuthResponse.fromJson(response.data);
         await _saveAuth(authData);
-        return authData;
+        return (authData, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Login failed';
+        return (null, message);
       }
+    } on DioException catch (e) {
+      final message = (e.response?.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Network error';
+      return (null, message);
     } catch (e) {
-      print('Login error: $e');
+      return (null, 'Unexpected error occurred');
     }
-    return null;
   }
 
-  Future<AuthResponse?> register(String email, String password, String fullName) async {
+  Future<(AuthResponse?, String?)> register(String email, String password, String fullName) async {
     try {
       final response = await _dio.post('/auth/register', data: {
         'email': email,
         'password': password,
-        'fullName': fullName,
+        'name': fullName,
       });
 
+      print('AuthService: Register status ${response.statusCode}');
+      print('AuthService: Register response data: ${response.data}');
+      
       if (response.statusCode == 200 || response.statusCode == 201) {
         final authData = AuthResponse.fromJson(response.data);
         await _saveAuth(authData);
-        return authData;
+        return (authData, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Registration failed';
+        return (null, message);
       }
+    } on DioException catch (e) {
+      final message = (e.response?.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Network error';
+      return (null, message);
     } catch (e) {
-      print('Register error: $e');
+      return (null, 'Unexpected error occurred');
     }
-    return null;
   }
 
   Future<void> _saveAuth(AuthResponse auth) async {
