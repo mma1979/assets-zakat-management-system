@@ -155,7 +155,7 @@ class ZakatService {
   Future<ZakatConfig?> getConfig() async {
     try {
       final response = await _dio.get(
-        '/ZakatConfig',
+        '/zakat-config',
         options: await _getOptions(),
       );
       if (response.statusCode == 200) {
@@ -170,7 +170,7 @@ class ZakatService {
   Future<(bool, String?)> updateConfig(ZakatConfig config, {bool isUpdate = true}) async {
     try {
       final response = await _dio.request(
-        '/ZakatConfig',
+        '/zakat-config',
         data: config.toJson(),
         options: (await _getOptions()).copyWith(
           method: isUpdate ? 'PUT' : 'POST',
