@@ -1,78 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/widgets/app_drawer.dart';
+import 'pages/profile_settings_page.dart';
+import 'pages/zakat_config_settings_page.dart';
+import 'pages/timeline_settings_page.dart';
+import 'pages/security_settings_page.dart';
+import 'pages/price_alerts_settings_page.dart';
+import 'pages/market_rates_settings_page.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
-
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 6, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: const Color(0xFF047857),
-          unselectedLabelColor: const Color(0xFF64748B), // Slate 500
-          indicatorColor: const Color(0xFF059669),
-          tabs: const [
-            Tab(icon: Icon(LucideIcons.user), text: 'Profile'),
-            Tab(icon: Icon(LucideIcons.calculator), text: 'Config'),
-            Tab(icon: Icon(LucideIcons.history), text: 'Timeline'),
-            Tab(icon: Icon(LucideIcons.shield), text: 'Security'),
-            Tab(icon: Icon(LucideIcons.bell), text: 'Alerts'),
-            Tab(icon: Icon(LucideIcons.coins), text: 'Rates'),
-          ],
-        ),
       ),
       drawer: const AppDrawer(),
-      body: TabBarView(
-        controller: _tabController,
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         children: [
-          _buildPlaceholderTab('Profile Settings'),
-          _buildPlaceholderTab('Zakat Configuration'),
-          _buildPlaceholderTab('Zakat Timeline'),
-          _buildPlaceholderTab('Security Settings'),
-          _buildPlaceholderTab('Price Alerts'),
-          _buildPlaceholderTab('Market Rates'),
+          _buildsectionTitle('Account'),
+          _buildSettingsTile(
+            context, 
+            icon: LucideIcons.user, 
+            title: 'Profile', 
+            subtitle: 'Personal information and preferences',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSettingsPage())),
+          ),
+          _buildSettingsTile(
+            context, 
+            icon: LucideIcons.shield, 
+            title: 'Security', 
+            subtitle: 'Passwords and authentication',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecuritySettingsPage())),
+          ),
+          
+          const SizedBox(height: 24),
+          _buildsectionTitle('Zakat'),
+          _buildSettingsTile(
+            context, 
+            icon: LucideIcons.calculator, 
+            title: 'Configuration', 
+            subtitle: 'Anniversary, currency, and calculation rules',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ZakatConfigSettingsPage())),
+          ),
+          _buildSettingsTile(
+            context, 
+            icon: LucideIcons.history, 
+            title: 'Timeline', 
+            subtitle: 'History of Zakat cycles and payments',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TimelineSettingsPage())),
+          ),
+          
+          const SizedBox(height: 24),
+          _buildsectionTitle('Preferences'),
+          _buildSettingsTile(
+            context, 
+            icon: LucideIcons.bell, 
+            title: 'Price Alerts', 
+            subtitle: 'Notifications for gold and silver prices',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PriceAlertsSettingsPage())),
+          ),
+          _buildSettingsTile(
+            context, 
+            icon: LucideIcons.coins, 
+            title: 'Market Rates', 
+            subtitle: 'Manual rate overrides and sources',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketRatesSettingsPage())),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPlaceholderTab(String label) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(LucideIcons.settings, size: 64, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 18, color: Color(0xFF64748B)),
+  Widget _buildsectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF94A3B8), // Slate 400
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFF1F5F9)), // Slate 100
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC), // Slate 50
+            borderRadius: BorderRadius.circular(12),
           ),
-          const Text('Coming Soon', style: TextStyle(color: Color(0xFF94A3B8))),
-        ],
+          child: Icon(icon, color: const Color(0xFF0F172A), size: 24), // Slate 900
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)), // Slate 500
+        ),
+        trailing: const Icon(LucideIcons.chevronRight, size: 20, color: Color(0xFFCBD5E1)), // Slate 300
+        onTap: onTap,
       ),
     );
   }
