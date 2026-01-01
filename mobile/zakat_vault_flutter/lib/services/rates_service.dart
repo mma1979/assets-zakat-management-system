@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_service.dart';
+import '../core/constants.dart';
 
 final ratesServiceProvider = Provider((ref) => RatesService(ref));
 
@@ -24,19 +25,20 @@ class RateItem {
   factory RateItem.fromJson(Map<String, dynamic> json) {
     return RateItem(
       id: json['id'] ?? 0,
-      name: json['name'] ?? '',
+      name: json['key'] ?? '',  // API uses 'key' not 'name'
       icon: json['icon'] ?? '',
       title: json['title'] ?? '',
       value: (json['value'] ?? 0).toDouble(),
       lastUpdated: DateTime.parse(json['lastUpdated'] ?? DateTime.now().toIso8601String()),
     );
   }
+
 }
 
 class RatesService {
   final Ref _ref;
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://207.180.204.185:9090',
+    baseUrl: AppConstants.baseUrl,
     validateStatus: (status) => status! < 500,
   ));
 
@@ -54,7 +56,7 @@ class RatesService {
   Future<List<RateItem>> getLatestRates() async {
     try {
       final response = await _dio.get(
-        '/api/Rates',
+        '/Rates',
         options: await _getOptions(),
       );
       if (response.statusCode == 200) {

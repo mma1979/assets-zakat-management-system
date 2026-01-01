@@ -2,13 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/dashboard_models.dart';
 import 'auth_service.dart';
+import '../core/constants.dart';
 
 final dashboardServiceProvider = Provider((ref) => DashboardService(ref));
 
 class DashboardService {
   final Ref _ref;
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://207.180.204.185:9090',
+    baseUrl: AppConstants.baseUrl,
     validateStatus: (status) => status! < 500,
   ));
 
@@ -26,10 +27,12 @@ class DashboardService {
   Future<DashboardSummary?> getSummary() async {
     try {
       final response = await _dio.get(
-        '/api/Dashboard/summary',
+        '/Dashboard/summary',
         options: await _getOptions(),
       );
+
       if (response.statusCode == 200) {
+
         return DashboardSummary.fromJson(response.data);
       }
     } catch (e) {
@@ -41,7 +44,7 @@ class DashboardService {
   Future<List<PortfolioMetric>> getComposition() async {
     try {
       final response = await _dio.get(
-        '/api/Dashboard/portfolio-composition',
+        '/Dashboard/portfolio-composition',
         options: await _getOptions(),
       );
       if (response.statusCode == 200) {
@@ -58,7 +61,7 @@ class DashboardService {
   Future<List<PortfolioValueGroup>> getValueHistory() async {
     try {
       final response = await _dio.get(
-        '/api/Dashboard/portfolio-value-history',
+        '/Dashboard/portfolio-value-history',
         options: await _getOptions(),
       );
       if (response.statusCode == 200) {

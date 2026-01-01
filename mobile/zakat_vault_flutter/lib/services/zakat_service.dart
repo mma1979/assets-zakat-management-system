@@ -22,7 +22,7 @@ class ZakatService {
 
   Future<ZakatConfig?> getConfig() async {
     try {
-      final response = await _dio.get('/api/zakat-config', options: await _getOptions());
+      final response = await _dio.get('/zakat-config', options: await _getOptions());
       if (response.statusCode == 200) {
         return ZakatConfig.fromJson(response.data);
       }
@@ -36,7 +36,7 @@ class ZakatService {
     try {
       final method = isUpdate ? 'PUT' : 'POST';
       final response = await _dio.request(
-        '/api/zakat-config',
+        '/zakat-config',
         data: config.toJson(),
         options: (await _getOptions()).copyWith(method: method),
       );

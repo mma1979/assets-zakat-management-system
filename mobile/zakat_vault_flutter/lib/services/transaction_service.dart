@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_service.dart';
+import '../core/constants.dart';
 
 final transactionServiceProvider = Provider((ref) => TransactionService(ref));
 
@@ -36,7 +37,7 @@ class TransactionItem {
 class TransactionService {
   final Ref _ref;
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://207.180.204.185:9090',
+    baseUrl: AppConstants.baseUrl,
     validateStatus: (status) => status! < 500,
   ));
 
@@ -54,7 +55,7 @@ class TransactionService {
   Future<List<TransactionItem>> getTransactions() async {
     try {
       final response = await _dio.get(
-        '/api/Transactions',
+        '/Transactions',
         options: await _getOptions(),
       );
       if (response.statusCode == 200) {
@@ -66,5 +67,32 @@ class TransactionService {
       print('TransactionService: getTransactions error: $e');
     }
     return [];
+  }
+
+  Future<bool> addTransaction(Map<String, dynamic> txData) async {
+    try {
+      final response = await _dio.post(
+        '/Transactions',
+        data: txData,
+        options: await _getOptions(),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print('TransactionService: addTransaction error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> removeTransaction(int id) async {
+    try {
+      final response = await _dio.delete(
+        '/Transactions/$id',
+        options: await _getOptions(),
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      print('TransactionService: removeTransaction error: $e');
+      return false;
+    }
   }
 }
