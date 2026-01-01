@@ -2,11 +2,13 @@ class User {
   final int id;
   final String email;
   final String fullName;
+  final bool isTwoFactorEnabled;
 
   User({
     required this.id,
     required this.email,
     required this.fullName,
+    this.isTwoFactorEnabled = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class User {
       id: json['userId'] ?? json['id'] ?? 0,
       email: json['email'] ?? '',
       fullName: json['name'] ?? json['fullName'] ?? '',
+      isTwoFactorEnabled: json['isTwoFactorEnabled'] ?? false,
     );
   }
 
@@ -21,6 +24,7 @@ class User {
     'id': id,
     'email': email,
     'fullName': fullName,
+    'isTwoFactorEnabled': isTwoFactorEnabled,
   };
 }
 

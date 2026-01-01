@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/widgets/app_drawer.dart';
+import '../auth/auth_notifier.dart';
 import 'pages/profile_settings_page.dart';
 import 'pages/zakat_config_settings_page.dart';
 import 'pages/timeline_settings_page.dart';
@@ -69,6 +71,67 @@ class SettingsPage extends StatelessWidget {
             title: 'Market Rates', 
             subtitle: 'Manual rate overrides and sources',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketRatesSettingsPage())),
+          ),
+
+          const SizedBox(height: 32),
+          Consumer(
+            builder: (context, ref, child) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Logout'),
+                        content: const Text('Are you sure you want to logout?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      await ref.read(authNotifierProvider.notifier).logout();
+                      if (context.mounted) {
+                        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                      }
+                    }
+                  },
+                  icon: const Icon(LucideIcons.logOut, color: Color(0xFFF43F5E)),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: Color(0xFFF43F5E),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(color: Color(0xFFFECDD3)), // Rose 100
+                    ),
+                    backgroundColor: const Color(0xFFFFF1F2), // Rose 50
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          const Center(
+            child: Text(
+              'v1.0.0 • ZakatVault',
+              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            ),
           ),
         ],
       ),

@@ -30,6 +30,7 @@ class ZakatVaultApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       home: const AuthWrapper(),
       routes: {
+        '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/zakat-setup': (context) => const ZakatSetupPage(),
         '/settings': (context) => const SettingsPage(),

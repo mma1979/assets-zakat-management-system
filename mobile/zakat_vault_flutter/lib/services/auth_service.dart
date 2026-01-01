@@ -103,4 +103,104 @@ class AuthService {
   }
 
   Future<String?> getToken() => _storage.read(key: AppConstants.tokenKey);
+
+  Future<(bool, String?)> changePassword(Map<String, dynamic> data) async {
+    try {
+      final token = await getToken();
+      final response = await _dio.put(
+        '/auth/change-password',
+        data: data,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return (true, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Password change failed';
+        return (false, message);
+      }
+    } on DioException catch (e) {
+      final message = (e.response?.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Network error';
+      return (false, message);
+    } catch (e) {
+      return (false, 'Unexpected error occurred');
+    }
+  }
+
+  Future<(Map<String, dynamic>?, String?)> setup2Fa() async {
+    try {
+      final token = await getToken();
+      final response = await _dio.get(
+        '/auth/setup-2fa',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return (response.data as Map<String, dynamic>, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? '2FA setup failed';
+        return (null, message);
+      }
+    } catch (e) {
+      return (null, e.toString());
+    }
+  }
+
+  Future<(bool, String?)> enable2Fa(String code, String secret) async {
+    try {
+      final token = await getToken();
+      final response = await _dio.post(
+        '/auth/enable-2fa',
+        data: {
+          'code': code,
+          'secret': secret,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return (true, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? '2FA activation failed';
+        return (false, message);
+      }
+    } catch (e) {
+      return (false, e.toString());
+    }
+  }
+
+  Future<(bool, String?)> disable2Fa() async {
+    try {
+      final token = await getToken();
+      final response = await _dio.post(
+        '/auth/disable-2fa',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return (true, null);
+      } else {
+        final message = (response.data as Map<String, dynamic>?)?['message']?.toString() ?? 'Disabling 2FA failed';
+        return (false, message);
+      }
+    } catch (e) {
+      return (false, e.toString());
+    }
+  }
 }

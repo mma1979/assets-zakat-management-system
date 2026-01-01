@@ -169,7 +169,32 @@ class AppDrawer extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           TextButton.icon(
-            onPressed: () => ref.read(authNotifierProvider.notifier).logout(),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                await ref.read(authNotifierProvider.notifier).logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
+              }
+            },
             icon: const Icon(LucideIcons.logOut, size: 18, color: Color(0xFFF43F5E)),
             label: const Text('Logout', style: TextStyle(color: Color(0xFFF43F5E))),
             style: TextButton.styleFrom(
