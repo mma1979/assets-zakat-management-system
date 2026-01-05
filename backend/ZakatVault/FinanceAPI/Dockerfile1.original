@@ -13,6 +13,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["FinanceAPI/FinanceAPI.csproj", "FinanceAPI/"]
+COPY ["FinanceAPI.ServiceDefaults/FinanceAPI.ServiceDefaults.csproj", "FinanceAPI.ServiceDefaults/"]
 RUN dotnet restore "./FinanceAPI/FinanceAPI.csproj"
 COPY . .
 WORKDIR "/src/FinanceAPI"
