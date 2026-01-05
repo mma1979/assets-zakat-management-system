@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/widgets/app_drawer.dart';
 import 'zakat_notifier.dart';
-import 'zakat_models.dart';
 import '../../services/zakat_service.dart';
 
 const Color emeraldColor = Color(0xFF10B981);

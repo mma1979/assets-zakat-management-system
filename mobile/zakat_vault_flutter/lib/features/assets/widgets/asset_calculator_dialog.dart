@@ -96,7 +96,7 @@ class _AssetCalculatorDialogState extends State<AssetCalculatorDialog> {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String?>(
-                  value: _fromAsset,
+                  initialValue: _fromAsset,
                   items: widget.rates.map((r) => DropdownMenuItem(value: r.name, child: Text(r.name))).toList(),
                   onChanged: (v) {
                     setState(() => _fromAsset = v!);
@@ -134,7 +134,7 @@ class _AssetCalculatorDialogState extends State<AssetCalculatorDialog> {
           const Text('Convert To', style: TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String?>(
-            value: _toAsset,
+            initialValue: _toAsset,
             items: widget.rates.map((r) => DropdownMenuItem(value: r.name, child: Text(r.name))).toList(),
             onChanged: (v) {
               setState(() => _toAsset = v!);

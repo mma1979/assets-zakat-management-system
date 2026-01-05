@@ -6,7 +6,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/widgets/app_drawer.dart';
 import '../../services/liability_service.dart';
 import 'liabilities_notifier.dart';
-import 'liabilities_models.dart';
 import 'widgets/add_liability_dialog.dart';
 
 const Color emeraldColor = Color(0xFF10B981);

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../services/rates_service.dart';
-import '../assets_notifier.dart';
 
 class AddTransactionDialog extends StatefulWidget {
   final List<RateItem> rates;
@@ -88,7 +86,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                 )
               else
                 DropdownButtonFormField<String?>(
-                  value: _selectedAssetType,
+                  initialValue: _selectedAssetType,
                   decoration: const InputDecoration(labelText: 'Asset'),
                   items: validRates.map((rate) {
                     return DropdownMenuItem(

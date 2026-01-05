@@ -163,7 +163,7 @@ class _SecuritySettingsPageState extends ConsumerState<SecuritySettingsPage> {
                       Switch(
                         value: isEnabled,
                         onChanged: _isLoading ? null : (val) => _handleToggle2Fa(isEnabled),
-                        activeColor: const Color(0xFF10B981),
+                        activeThumbColor: const Color(0xFF10B981),
                       ),
                     ],
                   ),
