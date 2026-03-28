@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     // If keys are not present at build time, use placeholders that will be replaced 
     // by the Docker entrypoint script at runtime.
     define: {
-      'process.env.BACKEND_URL': JSON.stringify(env.BACKEND_URL || "__APP_BACKEND_URL__")
+      'process.env.BACKEND_URL': JSON.stringify(env.BACKEND_URL || "http://localhost:5000")
     },
     server: {
       proxy: {

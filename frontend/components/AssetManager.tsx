@@ -234,6 +234,13 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
             {formatWithCurrency(assetMetrics[activeTab]?.avgCost ?? 0)}
             <span className="text-sm text-slate-400 font-normal block">{t('perUnit')}</span>
           </div>
+          {assetMetrics[activeTab]?.avgCost > 0 && (
+            <div className={`flex items-center gap-1 mt-1 text-sm font-medium ${getCurrentRate(activeTab) >= assetMetrics[activeTab].avgCost ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {getCurrentRate(activeTab) >= assetMetrics[activeTab].avgCost ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+              <span>{formatWithNumber(Math.abs(getCurrentRate(activeTab) - assetMetrics[activeTab].avgCost))} {baseCurrency}</span>
+              <span className="text-xs opacity-70">({formatWithNumber(Math.abs((getCurrentRate(activeTab) - assetMetrics[activeTab].avgCost) / assetMetrics[activeTab].avgCost * 100))}%)</span>
+            </div>
+          )}
         </div>
         <div>
           <p className="text-sm text-slate-500 font-medium">{t('currentMarketValue')}</p>
@@ -288,7 +295,15 @@ export const AssetManager: React.FC<AssetManagerProps> = ({ data, onAddTransacti
                         <span>{formatWithNumber(tx.amount)} {ASSET_UNITS[tx.assetType] || 'Units'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{formatWithNumber(tx.pricePerUnit)} {baseCurrency}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-slate-900 font-medium">{formatWithNumber(tx.pricePerUnit)} {baseCurrency}</div>
+                      {getCurrentRate(tx.assetType) > 0 && (
+                        <div className={`flex items-center gap-1 text-xs mt-0.5 ${getCurrentRate(tx.assetType) >= tx.pricePerUnit ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {getCurrentRate(tx.assetType) >= tx.pricePerUnit ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                          <span>{formatWithNumber(Math.abs(getCurrentRate(tx.assetType) - tx.pricePerUnit))}</span>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-slate-600">{formatWithNumber(tx.amount * tx.pricePerUnit)} {baseCurrency}</td>
                     <td className="px-6 py-4 text-end">
                       <button
