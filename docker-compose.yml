@@ -14,7 +14,7 @@ services:
     build:
       context: ./backend/ZakatVault
       dockerfile: FinanceAPI/Dockerfile
-    image: zakatvault-backend:2.5.3
+    image: zakatvault-backend:2.5.4
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
@@ -28,7 +28,7 @@ services:
       - Resend__ApiToken=${RESEND_API_KEY}
       - Resend__Sender=${RESEND_SENDER}
       - VapidPublicKey=${VAPID_PUBLIC_KEY}
-      - VapidPrivateKey=${VAPID_PRIVATE_KEY}  
+      - VapidPrivateKey=${VAPID_PRIVATE_KEY}
     volumes:
       - ./backend/ZakatVault/FinanceAPI/Logs:/app/Logs
     ports:
@@ -41,7 +41,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: zakatvault-frontend:2.5.3
+    image: zakatvault-frontend:2.5.4
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
