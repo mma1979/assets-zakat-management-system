@@ -13,7 +13,7 @@ import { pushService } from '../services/pushService';
 
 export const SettingsPage: React.FC = () => {
   const { t, language, setLanguage, dir } = useLanguage();
-  const { data, updateZakatConfig, addPriceAlert, removePriceAlert, addRate, removeRate, reorderRates } = useStore();
+  const { data, updateZakatConfig, addPriceAlert, removePriceAlert, addRate, removeRate, reorderRates, closeZakatCycle, fetchZakatCalculation } = useStore();
   const { user, logout, updateUser } = useAuth();
   const [searchParams] = useSearchParams();
 
@@ -59,6 +59,16 @@ export const SettingsPage: React.FC = () => {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
+
+  const [showCloseCycleConfirm, setShowCloseCycleConfirm] = useState(false);
+  const [isClosingCycle, setIsClosingCycle] = useState(false);
+  const [liveCalculation, setLiveCalculation] = useState<any>(null);
+
+  useEffect(() => {
+    if (activeTab === 'timeline') {
+      fetchZakatCalculation().then(setLiveCalculation).catch(console.error);
+    }
+  }, [activeTab, fetchZakatCalculation]);
 
   useEffect(() => {
     pushService.isSupported().then(supported => {
@@ -227,6 +237,18 @@ export const SettingsPage: React.FC = () => {
   const handleDragStart = (e: React.DragEvent, id: number) => {
     setDraggedRateId(id);
     e.dataTransfer.setData('text/plain', id.toString());
+  };
+
+  const handleCloseCycle = async () => {
+    setIsClosingCycle(true);
+    try {
+      const success = await closeZakatCycle();
+      if (success) {
+        setShowCloseCycleConfirm(false);
+      }
+    } finally {
+      setIsClosingCycle(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent, targetId: number) => {
@@ -428,10 +450,21 @@ export const SettingsPage: React.FC = () => {
 
         {activeTab === 'timeline' && (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <History size={20} className="text-emerald-600" />
-              {t('zakatTimeline')}
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <History size={20} className="text-emerald-600" />
+                {t('zakatTimeline')}
+              </h3>
+              {data.zakatCycles.length > 0 && data.zakatCycles[0].status !== 'Paid' && (
+                <button 
+                  onClick={() => setShowCloseCycleConfirm(true)} 
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-emerald-700"
+                >
+                  <CheckCircle size={16} />
+                  {t('closeCurrentCycle')}
+                </button>
+              )}
+            </div>
             
             <div className="relative">
               {(!data.zakatCycles || data.zakatCycles.length === 0) ? (
@@ -440,7 +473,15 @@ export const SettingsPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-emerald-500 before:via-slate-200 before:to-transparent">
-                  {data.zakatCycles.map((cycle) => (
+                  {data.zakatCycles.map((cycle) => {
+                    const isLive = cycle.status === 'Open' && liveCalculation;
+                    const due = isLive ? liveCalculation.totalZakatDue : cycle.zakatDue;
+                    const assets = isLive ? liveCalculation.totalAssets : cycle.totalAssets;
+                    const liabilities = isLive ? liveCalculation.totalDebts : cycle.totalLiabilities;
+                    const paid = isLive ? liveCalculation.totalPayments : cycle.amountPaid;
+                    const remaining = isLive ? liveCalculation.remainingZakatDue : (cycle.zakatDue - cycle.amountPaid);
+                    
+                    return (
                     <div key={cycle.id} className="relative flex items-start gap-6 group">
                       <div className={`mt-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-white shadow-md z-10 transition-colors ${
                         cycle.status === 'Paid' ? 'bg-emerald-500 text-white' : 
@@ -472,7 +513,7 @@ export const SettingsPage: React.FC = () => {
                           </div>
                           <div className="text-right">
                              <div className="text-2xl font-black text-slate-900 leading-none">
-                               {cycle.zakatDue.toLocaleString()} <span className="text-xs font-normal text-slate-400 uppercase">{data.zakatConfig.baseCurrency}</span>
+                               {due.toLocaleString()} <span className="text-xs font-normal text-slate-400 uppercase">{data.zakatConfig.baseCurrency}</span>
                              </div>
                              <p className="text-xs text-slate-400 mt-1">{t('totalZakatDue') || 'Total Zakat Due'}</p>
                           </div>
@@ -481,24 +522,24 @@ export const SettingsPage: React.FC = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-slate-50 rounded-lg">
                            <div>
                               <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('assets')}</p>
-                              <p className="text-sm font-semibold text-slate-700">{cycle.totalAssets.toLocaleString()}</p>
+                              <p className="text-sm font-semibold text-slate-700">{assets.toLocaleString()}</p>
                            </div>
                            <div>
                               <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('liabilities')}</p>
-                              <p className="text-sm font-semibold text-slate-700">{cycle.totalLiabilities.toLocaleString()}</p>
+                              <p className="text-sm font-semibold text-slate-700">{liabilities.toLocaleString()}</p>
                            </div>
                            <div>
                               <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('paid')}</p>
-                              <p className="text-sm font-semibold text-emerald-600 font-mono">{cycle.amountPaid.toLocaleString()}</p>
+                              <p className="text-sm font-semibold text-emerald-600 font-mono">{paid.toLocaleString()}</p>
                            </div>
                            <div>
                               <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{t('remaining')}</p>
-                              <p className="text-sm font-semibold text-slate-700 font-mono">{(cycle.zakatDue - cycle.amountPaid).toLocaleString()}</p>
+                              <p className="text-sm font-semibold text-slate-700 font-mono">{remaining.toLocaleString()}</p>
                            </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -640,6 +681,16 @@ export const SettingsPage: React.FC = () => {
         title={t('twoFactorAuth')}
         message={t('confirmDisable2Fa')}
         icon={<AlertTriangle size={24} />}
+      />
+
+      <ConfirmModal
+        isOpen={showCloseCycleConfirm}
+        onClose={() => setShowCloseCycleConfirm(false)}
+        onConfirm={handleCloseCycle}
+        title={t('closeCycleConfirmTitle')}
+        message={t('closeCycleConfirmMessage')}
+        icon={<CheckCircle size={24} />}
+        isLoading={isClosingCycle}
       />
       
       {showRateModal && (

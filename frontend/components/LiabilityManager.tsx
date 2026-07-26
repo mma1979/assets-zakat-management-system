@@ -52,12 +52,10 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
     if (isNaN(due.getTime())) return true;
     
     // Normalize to start of day for comparison
-    const dStart = new Date(cycleRange.start);
-    dStart.setHours(0,0,0,0);
     const dEnd = new Date(cycleRange.end);
     dEnd.setHours(23,59,59,999);
     
-    return due.getTime() >= dStart.getTime() && due.getTime() <= dEnd.getTime();
+    return due.getTime() <= dEnd.getTime();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,7 +92,7 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
             data.liabilities.map(item => (
               <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between group hover:border-emerald-200 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${checkDeductible(item.dueDate) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                  <div className={`p-2 rounded-lg ${item.isDeductible ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
                     <DollarSign size={20} />
                   </div>
                   <div>
@@ -103,8 +101,8 @@ export const LiabilityManager: React.FC<LiabilityManagerProps> = ({ data, onAddL
                       <Calendar size={12} />
                       {item.dueDate ? format(new Date(item.dueDate), 'dd-MM-yyyy') : t('noDate')}
                       <span className="text-slate-300">|</span>
-                      <span className={checkDeductible(item.dueDate) ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
-                        {checkDeductible(item.dueDate) ? t('deductible') : t('notDeductible')}
+                      <span className={item.isDeductible ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                        {item.isDeductible ? t('deductible') : t('notDeductible')}
                       </span>
                     </div>
                   </div>

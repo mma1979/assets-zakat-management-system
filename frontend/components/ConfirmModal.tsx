@@ -9,6 +9,7 @@ interface ConfirmModalProps {
     title: string;
     message: string;
     icon?: React.ReactNode;
+    isLoading?: boolean;
 }
 
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -17,7 +18,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onConfirm,
     title,
     message,
-    icon
+    icon,
+    isLoading
 }) => {
     const { t } = useLanguage();
 
@@ -36,18 +38,20 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     <div className="flex gap-3 justify-center">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
                         >
                             {t('cancel')}
                         </button>
                         <button
                             onClick={() => {
                                 onConfirm();
-                                onClose();
+                                if (!isLoading) onClose();
                             }}
-                            className="px-4 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm"
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm disabled:opacity-50"
                         >
-                            {t('confirm')}
+                            {isLoading ? t('loading') || 'Loading...' : t('confirm')}
                         </button>
                     </div>
                 </div>

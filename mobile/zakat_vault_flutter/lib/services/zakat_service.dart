@@ -185,4 +185,34 @@ class ZakatService {
       return (false, e.toString());
     }
   }
+
+  Future<List<ZakatCycle>> getZakatCycles() async {
+    try {
+      final response = await _dio.get(
+        '/ZakatCycles',
+        options: await _getOptions(),
+      );
+      if (response.statusCode == 200) {
+        return (response.data as List)
+            .map((c) => ZakatCycle.fromJson(c))
+            .toList();
+      }
+    } catch (e) {
+      print('ZakatService: getZakatCycles error: $e');
+    }
+    return [];
+  }
+
+  Future<bool> closeCurrentCycle() async {
+    try {
+      final response = await _dio.post(
+        '/ZakatCycles/close-current',
+        options: await _getOptions(),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('ZakatService: closeCurrentCycle error: $e');
+    }
+    return false;
+  }
 }

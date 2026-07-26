@@ -98,12 +98,12 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
 
   const clientCalculation = useMemo(() => {
     // 0. Time Windows
-    let startDate = parseLocal(zakatDate);
-    if (!isValidDate(startDate)) {
-      startDate = new Date();
+    let lunarEndDate = parseLocal(zakatDate);
+    if (!isValidDate(lunarEndDate)) {
+      lunarEndDate = new Date();
     }
     const lunarYearDays = 355; // Approx lunar year
-    const lunarEndDate = addDays(startDate, lunarYearDays);
+    const startDate = addDays(lunarEndDate, -lunarYearDays);
 
     // 1. Calculate Total Assets Value (Market Value)
     const holdings: Record<string, number> = {};
@@ -114,9 +114,16 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     holdings[baseCurr] = 0;
 
     data.transactions.forEach(tx => {
+      const txDate = parseLocal(tx.date);
+      if (!isValidDate(txDate)) return;
+      
       if (holdings[tx.assetType] === undefined) holdings[tx.assetType] = 0;
-      if (tx.type === 'BUY') holdings[tx.assetType] += tx.amount;
-      else holdings[tx.assetType] -= tx.amount;
+      
+      if (tx.type === 'BUY' && (isBefore(txDate, startDate) || isSameDay(txDate, startDate))) {
+        holdings[tx.assetType] += tx.amount;
+      } else if (tx.type === 'SELL' && (isBefore(txDate, lunarEndDate) || isSameDay(txDate, lunarEndDate))) {
+        holdings[tx.assetType] -= tx.amount;
+      }
     });
 
     const getRate = (k: string) => data.rates.find(r => r.key === k)?.value || 0;
@@ -190,14 +197,8 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
   }, [serverCalculation]);
 
   const remainingDays = useMemo(() => {
-
-    const endDateStr = zakatDate;
-    // It might be a string or Date depending on source
-    // parseLocal handles string 'YYYY-MM-DD'. If it's a Date object, wrapping in new Date() works or check type.
-    // Assuming string based on Step 125 edits '2026-07-23'
-
+    const endDateStr = calculation.lunarEndDate;
     let due: Date;
-    // Check if it looks like a Date object safely
     if (Object.prototype.toString.call(endDateStr) === '[object Date]') {
       due = endDateStr as unknown as Date;
     } else {
@@ -227,6 +228,16 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
     if (!data.zakatCycles || data.zakatCycles.length === 0) return null;
     return [...data.zakatCycles].sort((a, b) => new Date(b.gregorianDate).getTime() - new Date(a.gregorianDate).getTime())[0];
   }, [data.zakatCycles]);
+
+  const currentCyclePayments = useMemo(() => {
+    const start = parseLocal(calculation.zakatStartDate);
+    if (!isValidDate(start)) return data.zakatPayments;
+    
+    return data.zakatPayments.filter(p => {
+      const pDate = new Date(p.date);
+      return pDate >= start;
+    });
+  }, [data.zakatPayments, calculation.zakatStartDate]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -323,7 +334,7 @@ export const ZakatCalculator: React.FC<ZakatCalculatorProps> = ({ data }) => {
       </div>
 
       <ZakatPaymentManager 
-        payments={data.zakatPayments}
+        payments={currentCyclePayments}
         onAddPayment={addZakatPayment}
         onRemovePayment={removeZakatPayment}
         isSyncing={isSyncing}

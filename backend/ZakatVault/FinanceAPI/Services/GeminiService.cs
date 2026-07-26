@@ -5,7 +5,6 @@ using Google.GenAI;
 using Google.GenAI.Types;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 
 using OpenTelemetry.Resources;
 

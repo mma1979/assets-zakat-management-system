@@ -330,6 +330,23 @@ export const useStore = () => {
     return await fetchData<ZakatCalculationResult | null>('zakatCalc', null);
   }, []);
 
+  const closeZakatCycle = useCallback(async () => {
+    setIsSyncing(true);
+    try {
+      const response = await http.post(`${API_ENDPOINTS.zakatCycles}/close-current`);
+      if (response.status >= 200 && response.status < 300) {
+        await loadAllData();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      setSyncError("Failed to close Zakat cycle");
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [loadAllData]);
+
   return {
     data,
     isLoaded,
@@ -351,6 +368,7 @@ export const useStore = () => {
     removePriceAlert,
     addZakatPayment,
     removeZakatPayment,
-    fetchZakatCalculation
+    fetchZakatCalculation,
+    closeZakatCycle
   };
 };

@@ -33,8 +33,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddRazorPages();
 
-// Configure OpenAPI
-builder.Services.AddOpenApi();
 
 // Database Context
 builder.Services.AddDbContext<FinanceDbContext>(options =>
@@ -204,8 +202,6 @@ catch (Exception)
     //Log.Error(e.Message, e);
 }
 
-// Configure the HTTP request pipeline
-app.MapOpenApi();
 app.MapScalarApiReference(options =>
 {
     options

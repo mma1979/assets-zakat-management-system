@@ -34,4 +34,18 @@ public class ZakatCyclesController(IZakatCycleService service) : ControllerBase
         
         return Ok(cycle);
     }
+
+    [HttpPost("close-current")]
+    public async Task<ActionResult<ZakatCycle>> CloseCurrent()
+    {
+        var userIdValue = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userIdValue == null) return Unauthorized();
+
+        var userId = int.Parse(userIdValue);
+        var cycle = await service.CloseCurrentCycleAsync(userId);
+        
+        if (cycle == null) return BadRequest("Could not close cycle. Ensure there is an active cycle.");
+        
+        return Ok(cycle);
+    }
 }
